@@ -1,0 +1,3055 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head><meta name="generator" content="Hexo 3.8.0">
+    <meta charset="utf-8">
+<title>Java Class文件的结构(理论篇) - Joe|博客</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+
+
+    <meta name="description" content="1 Class文件字节编码存储顺序统一 2 无符号数和表 3 class文件中的字节流 4 Class文件中的字节流每项的含义 u4 magic u2 minor_version u2 major_version u2 constant_pool_count cp_info 字面量 符号引用 14个常量   u2 access_flags u2 this_class u2 super_clas">
+<meta name="keywords" content="Java">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Java Class文件的结构(理论篇)">
+<meta property="og:url" content="https://joeskye1701.github.io/Java-Class-structure-theory/index.html">
+<meta property="og:site_name" content="Joe|博客">
+<meta property="og:description" content="1 Class文件字节编码存储顺序统一 2 无符号数和表 3 class文件中的字节流 4 Class文件中的字节流每项的含义 u4 magic u2 minor_version u2 major_version u2 constant_pool_count cp_info 字面量 符号引用 14个常量   u2 access_flags u2 this_class u2 super_clas">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:image" content="https://joeskye1701.github.io/Java-Class-structure-theory/java-class-1-1.jpg">
+<meta property="og:image" content="https://joeskye1701.github.io/Java-Class-structure-theory/java-class-1-2.jpg">
+<meta property="og:image" content="https://joeskye1701.github.io/Java-Class-structure-theory/java-class-1-3.jpg">
+<meta property="og:image" content="https://joeskye1701.github.io/Java-Class-structure-theory/java-class-1-4.jpg">
+<meta property="og:image" content="https://joeskye1701.github.io/Java-Class-structure-theory/java-class-1-5.jpg">
+<meta property="og:image" content="https://joeskye1701.github.io/Java-Class-structure-theory/java-class-1-6.jpg">
+<meta property="og:image" content="https://joeskye1701.github.io/Java-Class-structure-theory/java-class-1-7.jpg">
+<meta property="og:image" content="https://joeskye1701.github.io/Java-Class-structure-theory/java-class-1-8.jpg">
+<meta property="og:image" content="https://joeskye1701.github.io/Java-Class-structure-theory/java-class-1-9.jpg">
+<meta property="og:updated_time" content="2018-10-20T00:20:41.977Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Java Class文件的结构(理论篇)">
+<meta name="twitter:description" content="1 Class文件字节编码存储顺序统一 2 无符号数和表 3 class文件中的字节流 4 Class文件中的字节流每项的含义 u4 magic u2 minor_version u2 major_version u2 constant_pool_count cp_info 字面量 符号引用 14个常量   u2 access_flags u2 this_class u2 super_clas">
+<meta name="twitter:image" content="https://joeskye1701.github.io/Java-Class-structure-theory/java-class-1-1.jpg">
+
+
+
+
+
+<link rel="icon" href="/images/thank-you-kobe.jpg">
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.7.2/css/bulma.css">
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.4.1/css/all.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Ubuntu:400,600|Source+Code+Pro">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@9.12.0/styles/xcode.css">
+
+
+    
+    
+    
+    <style>body>.footer,body>.navbar,body>.section{opacity:0}</style>
+    
+
+    
+    
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lightgallery@1.6.8/dist/css/lightgallery.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/justifiedGallery@3.7.0/dist/css/justifiedGallery.min.css">
+    
+
+    
+    
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/outdatedbrowser@1.1.5/outdatedbrowser/outdatedbrowser.min.css">
+
+
+    
+    
+    
+    
+
+<link rel="stylesheet" href="/css/back-to-top.css">
+
+
+    
+    
+
+    
+    
+<script>
+var _hmt = _hmt || [];
+(function() {
+    var hm = document.createElement("script");
+    hm.src = "//hm.baidu.com/hm.js?c422b171d3bdb7dbfae47ff3f70f9d30";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+    
+    
+
+    
+    
+<link rel="stylesheet" href="/css/progressbar.css">
+<script src="https://cdn.jsdelivr.net/npm/pace-js@1.0.2/pace.min.js"></script>
+
+    
+    
+    
+
+    
+    
+    
+
+
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="is-3-column">
+    <nav class="navbar navbar-main">
+    <div class="container">
+        <div class="navbar-brand is-flex-center">
+            <a class="navbar-item navbar-logo" href="/">
+            
+                Joe|博客
+            
+            </a>
+        </div>
+        <div class="navbar-menu">
+            
+            <div class="navbar-start">
+                
+                <a class="navbar-item" href="/">主页</a>
+                
+                <a class="navbar-item" href="/archives">归档</a>
+                
+                <a class="navbar-item" href="/categories">分类</a>
+                
+                <a class="navbar-item" href="/tags">标签</a>
+                
+                <a class="navbar-item" href="/about">关于</a>
+                
+            </div>
+            
+            <div class="navbar-end">
+                
+                
+                
+                <a class="navbar-item search" title="搜索" href="javascript:;">
+                    <i class="fas fa-search"></i>
+                </a>
+                
+            </div>
+        </div>
+    </div>
+</nav>
+    
+    <section class="section">
+        <div class="container">
+            <div class="columns">
+                <div class="column is-8-tablet is-8-desktop is-6-widescreen has-order-2 column-main"><div class="card">
+    
+    <div class="card-content article ">
+        
+        <div class="level article-meta is-size-7 is-uppercase is-mobile is-overflow-x-auto">
+            <div class="level-left">
+                <time class="level-item has-text-grey" datetime="2013-11-07T04:37:22.000Z">2013-11-07</time>
+                
+                <div class="level-item">
+                <a class="has-link-grey -link" href="/categories/Java/">Java</a>
+                </div>
+                
+                
+                <span class="level-item has-text-grey">
+                    
+                    
+                    1 小时 读完 (大约 8975 个字)
+                </span>
+                
+                
+            </div>
+        </div>
+        
+        <h1 class="title is-size-3 is-size-4-mobile has-text-weight-normal">
+            
+                Java Class文件的结构(理论篇)
+            
+        </h1>
+        <div class="content">
+            <!-- TOC -->
+<ul>
+<li><a href="#1-class文件字节编码存储顺序统一">1 Class文件字节编码存储顺序统一</a></li>
+<li><a href="#2-无符号数和表">2 无符号数和表</a></li>
+<li><a href="#3-class文件中的字节流">3 class文件中的字节流</a></li>
+<li><a href="#4-class文件中的字节流每项的含义">4 Class文件中的字节流每项的含义</a><ul>
+<li><a href="#u4-magic">u4 magic</a></li>
+<li><a href="#u2-minor_version">u2 minor_version</a></li>
+<li><a href="#u2-major_version">u2 major_version</a></li>
+<li><a href="#u2-constant_pool_count">u2 constant_pool_count</a></li>
+<li><a href="#cp_info">cp_info</a><ul>
+<li><a href="#字面量">字面量</a></li>
+<li><a href="#符号引用">符号引用</a></li>
+<li><a href="#14个常量">14个常量</a></li>
+</ul>
+</li>
+<li><a href="#u2-access_flags">u2 access_flags</a></li>
+<li><a href="#u2-this_class">u2 this_class</a></li>
+<li><a href="#u2-super_class">u2 super_class</a></li>
+<li><a href="#u2-interface_counts">u2 interface_counts</a></li>
+<li><a href="#u2-interfaceinterface_counts">u2 interface[interface_counts]</a></li>
+<li><a href="#u2-fields_count">u2 fields_count</a></li>
+<li><a href="#field_info-fieldsfields_count">field_info fields[fields_count]</a><ul>
+<li><a href="#access_flags">access_flags</a></li>
+<li><a href="#name_index">name_index</a></li>
+<li><a href="#descriptor_index">descriptor_index</a></li>
+<li><a href="#attributes_count">attributes_count</a></li>
+</ul>
+</li>
+<li><a href="#u2-methods_count">u2 methods_count</a></li>
+<li><a href="#method_info">method_info</a><ul>
+<li><a href="#access_flags">access_flags</a></li>
+<li><a href="#name_index">name_index</a></li>
+<li><a href="#descriptor_index">descriptor_index</a></li>
+</ul>
+</li>
+<li><a href="#attribute_info">attribute_info</a></li>
+<li><a href="#attribute_count">attribute_count</a></li>
+</ul>
+</li>
+<li><a href="#5-常量池结构">5 常量池结构</a><ul>
+<li><a href="#constant_class_info结构">CONSTANT_Class_info结构</a><ul>
+<li><a href="#tag">tag</a></li>
+<li><a href="#name_index">name_index</a></li>
+</ul>
+</li>
+<li><a href="#constant_fieldref_info结构">CONSTANT_Fieldref_info结构</a><ul>
+<li><a href="#tag">tag</a></li>
+<li><a href="#class_index">class_index</a></li>
+<li><a href="#name_and_type_index">name_and_type_index</a></li>
+</ul>
+</li>
+<li><a href="#constant_methodref_info结构">CONSTANT_Methodref_info结构</a><ul>
+<li><a href="#tag">tag</a></li>
+<li><a href="#class_index">class_index</a></li>
+<li><a href="#name_and_type_index">name_and_type_index</a></li>
+</ul>
+</li>
+<li><a href="#constant_interfacemethodref_info结构">CONSTANT_InterfaceMethodref_info结构</a><ul>
+<li><a href="#tag">tag</a></li>
+<li><a href="#class_index">class_index</a></li>
+<li><a href="#name_and_type_index">name_and_type_index</a></li>
+</ul>
+</li>
+<li><a href="#constant_string_info结构">CONSTANT_String_info结构</a><ul>
+<li><a href="#tag">tag</a></li>
+<li><a href="#string_index">string_index</a></li>
+</ul>
+</li>
+<li><a href="#constant_integer_info结构">CONSTANT_Integer_info结构</a><ul>
+<li><a href="#tag">tag</a></li>
+<li><a href="#bytes">bytes</a></li>
+</ul>
+</li>
+<li><a href="#constant_float_info结构">CONSTANT_Float_info结构</a><ul>
+<li><a href="#tag">tag</a></li>
+<li><a href="#bytes">bytes</a></li>
+</ul>
+</li>
+<li><a href="#constant_long_info结构">CONSTANT_Long_info结构</a><ul>
+<li><a href="#tag">tag</a></li>
+<li><a href="#high_bytes-和-low_bytes">high_bytes 和 low_bytes</a></li>
+</ul>
+</li>
+<li><a href="#constant_double_info结构">CONSTANT_Double_info结构</a><ul>
+<li><a href="#tag">tag</a></li>
+<li><a href="#high_bytes-和-low_bytes">high_bytes 和 low_bytes</a></li>
+</ul>
+</li>
+<li><a href="#constant_nameandtype_info-结构">CONSTANT_NameAndType_info 结构</a><ul>
+<li><a href="#tag">tag</a></li>
+<li><a href="#name_index">name_index</a></li>
+<li><a href="#descriptor_index">descriptor_index</a></li>
+</ul>
+</li>
+<li><a href="#constant_utf8_info结构">CONSTANT_Utf8_info结构</a><ul>
+<li><a href="#tag">tag</a></li>
+<li><a href="#length">length</a></li>
+<li><a href="#bytes">bytes[]</a></li>
+</ul>
+</li>
+<li><a href="#constant_methodhandle_info-结构">CONSTANT_MethodHandle_info 结构</a><ul>
+<li><a href="#tag">tag</a></li>
+<li><a href="#reference_kind">reference_kind</a></li>
+<li><a href="#reference_index">reference_index</a></li>
+</ul>
+</li>
+<li><a href="#constant_methodtype_info-结构">CONSTANT_MethodType_info 结构</a><ul>
+<li><a href="#tag">tag</a></li>
+<li><a href="#descriptor_index">descriptor_index</a></li>
+</ul>
+</li>
+<li><a href="#constant_invokedynamic_info-结构">CONSTANT_InvokeDynamic_info 结构</a><ul>
+<li><a href="#tag">tag</a></li>
+<li><a href="#bootstrap_method_attr_index">bootstrap_method_attr_index</a></li>
+<li><a href="#name_and_type_index">name_and_type_index</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#6-属性表集合attributes_count和attribute">6 属性表集合（attributes_count和attribute）</a><ul>
+<li><a href="#code属性">Code属性</a><ul>
+<li><a href="#max_stack">max_stack</a></li>
+<li><a href="#max_locals">max_locals</a></li>
+<li><a href="#code_length和code">code_length和code</a></li>
+</ul>
+</li>
+<li><a href="#constantvalue属性">ConstantValue属性</a></li>
+<li><a href="#exceptions属性">Exceptions属性</a><ul>
+<li><a href="#number_of_exceptions">number_of_exceptions</a></li>
+<li><a href="#exception_index_table">exception_index_table</a></li>
+</ul>
+</li>
+<li><a href="#innerclasses属性">InnerClasses属性</a><ul>
+<li><a href="#inner_classes">inner_classes</a></li>
+<li><a href="#inner_class_info_index和outer_class_info_index">inner_class_info_index和outer_class_info_index</a></li>
+<li><a href="#inner_name_index">inner_name_index</a></li>
+<li><a href="#inner_name_access_flags">inner_name_access_flags</a></li>
+</ul>
+</li>
+<li><a href="#linenumbertale属性">LineNumberTale属性</a><ul>
+<li><a href="#line_number_table">line_number_table</a></li>
+<li><a href="#line_number_info">line_number_info</a></li>
+</ul>
+</li>
+<li><a href="#localvariabletable属性">LocalVariableTable属性</a><ul>
+<li><a href="#local_variable_table">local_variable_table</a></li>
+<li><a href="#local_variable_info">local_variable_info</a></li>
+</ul>
+</li>
+<li><a href="#sourcefile属性">SourceFile属性</a></li>
+<li><a href="#deprecated属性和synthetic属性">Deprecated属性和Synthetic属性</a></li>
+</ul>
+</li>
+</ul>
+<!-- /TOC -->
+<p><img src="./java-class-1-1.jpg" alt><br>学习Java的朋友应该都知道Java从刚开始的时候就打着平台无关性的旗号，说“一次编写，到处运行”，其实说到无关性，Java平台还有另外一个无关性那就是语言无关性，要实现语言无关性，那么Java体系中的class的文件结构或者说是字节码就显得相当重要了，其实Java从刚开始的时候就有两套规范，一个是Java语言规范，另外一个是Java虚拟机规范，Java语言规范只是规定了Java语言相关的约束以及规则，而虚拟机规范则才是真正从跨平台的角度去设计的。今天我们就以一个实际的例子来看看，到底Java中一个Class文件对应的字节码应该是什么样子。 这篇文章将首先总体上阐述一下Class到底由哪些内容构成，然后再用一个实际的Java类入手去分析class的文件结构。<br><a id="more"></a></p>
+<h1 id="1-Class文件字节编码存储顺序统一"><a href="#1-Class文件字节编码存储顺序统一" class="headerlink" title="1 Class文件字节编码存储顺序统一"></a>1 Class文件字节编码存储顺序统一</h1><p>Class文件是有8位为基础的字节流构成的，这些字节流之间都严格按照规定的顺序排列，并且字节之间不存在任何空隙，对于超过8位的数据，将按照Big-Endian的顺序存储的，也就是说高位字节存储在低的地址上面，而低位字节存储到高地址上面，其实这也是class文件要跨平台的关键，因为PowerPC架构的处理采用Big-Endian的存储顺序，而x86系列的处理器则采用Little-Endian的存储顺序，因此为了Class文件在各中处理器架构下保持统一的存储顺序，虚拟机规范必须对起进行统一。 </p>
+<h1 id="2-无符号数和表"><a href="#2-无符号数和表" class="headerlink" title="2 无符号数和表"></a>2 无符号数和表</h1><p>Class文件结构采用类似C语言的结构体来存储数据的，主要有两类数据项，无符号数和表。无符号数用来表述数字，索引引用以及字符串等，比如<code>u1</code>，<code>u2</code>，<code>u4</code>，<code>u8</code>分别代表1个字节，2个字节，4个字节，8个字节的无符号数，而表是有多个无符号数以及其它的表组成的复合结构。可能大家看到这里对无符号数和表到底是上面也不是很清楚，不过不要紧，等下面实例的时候，我会再以实例来解释。</p>
+<h1 id="3-class文件中的字节流"><a href="#3-class文件中的字节流" class="headerlink" title="3 class文件中的字节流"></a>3 class文件中的字节流</h1><p>Class文件结构。<br>图来自<code>The Java Virtual Machine Specification Java SE 7 Edition</code><br><img src="./java-class-1-2.jpg" alt><br>比如<code>cp_info</code>，<code>cp_info</code>表示常量池，上图中用<code>constant_pool[constant_pool_count-1]</code>的方式来表示常量池有<code>constant_pool_count-1</code>个常量，它这里是采用数组的表现形式，但是大家不要误以为所有的常量池的常量长度都是一样的，其实这个地方只是为了方便描述采用了数组的方式，但是这里并不像编程语言那里，一个<code>int</code>型的数组，每个<code>int</code>长度都一样。</p>
+<h1 id="4-Class文件中的字节流每项的含义"><a href="#4-Class文件中的字节流每项的含义" class="headerlink" title="4 Class文件中的字节流每项的含义"></a>4 Class文件中的字节流每项的含义</h1><p>每一项都具体代表含义。  </p>
+<h2 id="u4-magic"><a href="#u4-magic" class="headerlink" title="u4 magic"></a>u4 magic</h2><p>表示魔数，并且魔数占用了4个字节，魔数到底是做什么的呢？它其实就是表示一下这个文件的类型是一个Class文件，而不是一张JPG图片，或者AVI的电影。而Class文件对应的魔数是<code>0xCAFEBABE</code>。</p>
+<h2 id="u2-minor-version"><a href="#u2-minor-version" class="headerlink" title="u2 minor_version"></a>u2 minor_version</h2><p>表示Class文件的次版本号，并且此版本号是<code>u2</code>类型的无符号数表示。</p>
+<h2 id="u2-major-version"><a href="#u2-major-version" class="headerlink" title="u2 major_version"></a>u2 major_version</h2><p>表示Class文件的主版本号，并且主版本号是<code>u2</code>类型的无符号数表示。<code>major_version</code>和<code>minor_version</code>主要用来表示当前的虚拟机是否接受当前这种版本的Class文件。不同版本的Java编译器编译的Class文件对应的版本是不一样的。高版本的虚拟机支持低版本的编译器编译的Class文件结构。比如Java SE 6.0对应的虚拟机支持Java SE 5.0的编译器编译的Class文件结构，反之则不行。</p>
+<h2 id="u2-constant-pool-count"><a href="#u2-constant-pool-count" class="headerlink" title="u2 constant_pool_count"></a>u2 constant_pool_count</h2><p>常量池的数量。</p>
+<h2 id="cp-info"><a href="#cp-info" class="headerlink" title="cp_info"></a>cp_info</h2><p>表示常量池，这里面就存储了各种各样的字面量和符号引用。<br>放到常量池的中数据项在<code>The Java Virtual Machine Specification Java SE 7 Edition</code>中一共有14个常量，每一种常量都是一个表，并且每种常量都用一个公共的部分tag（标识符）来表示是哪种类型的常量。<br>这里我们需要重点来说一下常量池是什么东西，请大家不要与JVM内存模型中的运行时常量池混淆了，Class文件中常量池主要存储了字面量以及符号引用。  </p>
+<h3 id="字面量"><a href="#字面量" class="headerlink" title="字面量"></a>字面量</h3><p>包括字符串，final常量的值或者某个属性的初始值等等。  </p>
+<h3 id="符号引用"><a href="#符号引用" class="headerlink" title="符号引用"></a>符号引用</h3><p>存储类和接口的全限定名称，字段的名称以及描述符，方法的名称以及描述符。<br>这里名称可能大家都容易理解，至于描述符的概念，放到下面说字段表以及方法表的时候再说。另外大家都知道JVM的内存模型中有堆、栈、方法区、程序计数器构成，而方法区中又存在一块区域叫运行时常量池，运行时常量池中存放的东西其实也就是编译器产生的各种字面量以及符号引用，只不过运行时常量池具有动态性，它可以在运行的时候向其中增加其它的常量进去，最具代表性的就是<code>String</code>的<code>intern()</code>。  </p>
+<h3 id="14个常量"><a href="#14个常量" class="headerlink" title="14个常量"></a>14个常量</h3><table>
+<thead>
+<tr>
+<th>名字</th>
+<th>tag(标识位)</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>CONSTANT_Utf8_info</td>
+<td>1</td>
+<td>UTF-8编码的字符串</td>
+</tr>
+<tr>
+<td>CONSTANT_Integer_info</td>
+<td>3</td>
+<td>整形字面量 </td>
+</tr>
+<tr>
+<td>CONSTANT_Float_info</td>
+<td>4</td>
+<td>浮点型字面量 </td>
+</tr>
+<tr>
+<td>CONSTANT_Long_info</td>
+<td>5</td>
+<td>长整形字面量 </td>
+</tr>
+<tr>
+<td>CONSTANT_Double_info</td>
+<td>6</td>
+<td>双精度字面量 </td>
+</tr>
+<tr>
+<td>CONSTANT_Class_info</td>
+<td>7</td>
+<td>类或接口的符号引用</td>
+</tr>
+<tr>
+<td>CONSTANT_String_info</td>
+<td>8</td>
+<td>字符串类型的字面量</td>
+</tr>
+<tr>
+<td>CONSTANT_Fieldref_info</td>
+<td>9</td>
+<td>字段的符号引用 </td>
+</tr>
+<tr>
+<td>CONSTANT_Methodref_info</td>
+<td>10</td>
+<td>类中方法的符号引用</td>
+</tr>
+<tr>
+<td>CONSTANT_InterfaceMethodref_info</td>
+<td>11</td>
+<td>接口中方法的符号引用</td>
+</tr>
+<tr>
+<td>CONSTANT_NameAndType_info</td>
+<td>12</td>
+<td>字段和方法的名称以及类型的符号引用</td>
+</tr>
+</tbody>
+</table>
+<h2 id="u2-access-flags"><a href="#u2-access-flags" class="headerlink" title="u2 access_flags"></a>u2 access_flags</h2><p>类或者接口的访问信息（权限），如下图。<br><img src="./java-class-1-3.jpg" alt></p>
+<h2 id="u2-this-class"><a href="#u2-this-class" class="headerlink" title="u2 this_class"></a>u2 this_class</h2><p>类的常量池索引，指向常量池中<code>CONSTANT_Class_info</code>的常量。</p>
+<h2 id="u2-super-class"><a href="#u2-super-class" class="headerlink" title="u2 super_class"></a>u2 super_class</h2><p>超类的索引，指向常量池中<code>CONSTANT_Class_info</code>的常量。</p>
+<h2 id="u2-interface-counts"><a href="#u2-interface-counts" class="headerlink" title="u2 interface_counts"></a>u2 interface_counts</h2><p>接口的数量</p>
+<h2 id="u2-interface-interface-counts"><a href="#u2-interface-interface-counts" class="headerlink" title="u2 interface[interface_counts]"></a>u2 interface[interface_counts]</h2><p>接口表，它里面每一项都指向常量池中<code>CONSTANT_Class_info</code>常量。</p>
+<h2 id="u2-fields-count"><a href="#u2-fields-count" class="headerlink" title="u2 fields_count"></a>u2 fields_count</h2><p>类的实例变量和类变量的数量。</p>
+<h2 id="field-info-fields-fields-count"><a href="#field-info-fields-fields-count" class="headerlink" title="field_info fields[fields_count]"></a>field_info fields[fields_count]</h2><p>字段表的信息，其中字段表的属性结构如下图。<br><img src="./java-class-1-4.jpg" alt></p>
+<h3 id="access-flags"><a href="#access-flags" class="headerlink" title="access_flags"></a>access_flags</h3><p>字段的访问标示，比如字段是<code>public</code>，<code>private</code>，<code>protect</code>等。</p>
+<h3 id="name-index"><a href="#name-index" class="headerlink" title="name_index"></a>name_index</h3><p>字段名称，指向常量池中类型是<code>CONSTANT_UTF8_info</code>的常量。</p>
+<h3 id="descriptor-index"><a href="#descriptor-index" class="headerlink" title="descriptor_index"></a>descriptor_index</h3><p>字段的描述符，它也指向常量池中类型为<code>CONSTANT_UTF8_info</code>的常量。</p>
+<h3 id="attributes-count"><a href="#attributes-count" class="headerlink" title="attributes_count"></a>attributes_count</h3><p>字段表中的属性表的数量，而属性表是则是一种用与描述字段，方法以及类的属性的可扩展的结构，不同版本的Java虚拟机所支持的属性表的数量是不同的。</p>
+<h2 id="u2-methods-count"><a href="#u2-methods-count" class="headerlink" title="u2 methods_count"></a>u2 methods_count</h2><p>方法表的数量。</p>
+<h2 id="method-info"><a href="#method-info" class="headerlink" title="method_info"></a>method_info</h2><p>方法表，方法表的具体结构如下图。<br><img src="./java-class-1-5.jpg" alt></p>
+<h3 id="access-flags-1"><a href="#access-flags-1" class="headerlink" title="access_flags"></a>access_flags</h3><p>方法的访问标示。</p>
+<h3 id="name-index-1"><a href="#name-index-1" class="headerlink" title="name_index"></a>name_index</h3><p>名称的索引。</p>
+<h3 id="descriptor-index-1"><a href="#descriptor-index-1" class="headerlink" title="descriptor_index"></a>descriptor_index</h3><p>方法的描述符。</p>
+<h2 id="attribute-info"><a href="#attribute-info" class="headerlink" title="attribute_info"></a>attribute_info</h2><p>类似字段表中的属性表，只不过字段表和方法表中属性表中的属性是不同的，比如方法表中就Code属性，表示方法的代码，而字段表中就没有<code>Code</code>属性。其中具体Class中到底有多少种属性，等到Class文件结构中的属性表的时候再说说。</p>
+<h2 id="attribute-count"><a href="#attribute-count" class="headerlink" title="attribute_count"></a>attribute_count</h2><p>属性表的数量，说到属性表，需要明确以下2点。</p>
+<ol>
+<li>属性表存在于Class文件结构的最后，字段表，方法表以及<code>Code</code>属性中，也就是说属性表中也可以存在属性表。</li>
+<li>属性表的长度是不固定的，不同的属性，属性表的长度是不同的。<h1 id="5-常量池结构"><a href="#5-常量池结构" class="headerlink" title="5 常量池结构"></a>5 常量池结构</h1><h2 id="CONSTANT-Class-info结构"><a href="#CONSTANT-Class-info结构" class="headerlink" title="CONSTANT_Class_info结构"></a>CONSTANT_Class_info结构</h2><code>CONSTANT_Class_info</code>结构用于表示类或接口，格式如下。  <figure class="highlight c hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">CONSTANT_Class_info &#123;</span><br><span class="line">  u1 tag;</span><br><span class="line">  u2 name_index;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+</li>
+</ol>
+<h3 id="tag"><a href="#tag" class="headerlink" title="tag"></a>tag</h3><p><code>CONSTANT_Class_info</code>结构的<code>tag</code>项的值为<code>CONSTANT_Class(7)</code></p>
+<h3 id="name-index-2"><a href="#name-index-2" class="headerlink" title="name_index"></a>name_index</h3><p>值，必须是对常量池的一个有效索引。 常量池在该索引处的项必须是<code>CONSTANT_Utf8_info</code>结构， 代表一个有效的类或接口二进制名称的内部形式。</p>
+<h2 id="CONSTANT-Fieldref-info结构"><a href="#CONSTANT-Fieldref-info结构" class="headerlink" title="CONSTANT_Fieldref_info结构"></a>CONSTANT_Fieldref_info结构</h2><figure class="highlight c hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">CONSTANT_Fieldref_info &#123;</span><br><span class="line">  u1 tag;</span><br><span class="line">  u2 class_index;</span><br><span class="line">  u2 name_and_type_index;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="tag-1"><a href="#tag-1" class="headerlink" title="tag"></a>tag</h3><p>值是<code>CONSTANT_Fieldref(9)</code></p>
+<h3 id="class-index"><a href="#class-index" class="headerlink" title="class_index"></a>class_index</h3><p>值必须是对常量池的有效索引，常量池在该索引处的项必须是<code>CONSTANT_Class_info</code>结构，表示一个类或接口，当前字段或方法是这个类或接口的成员。<br>类型既可以是类也可以是接口。</p>
+<h3 id="name-and-type-index"><a href="#name-and-type-index" class="headerlink" title="name_and_type_index"></a>name_and_type_index</h3><p>值必须是对常量池的有效索引，常量池在该索引处的项必须是<code>CONSTANT_NameAndType_info</code>结构，它表示当前字段或方法的名字和描述符。<br>给定的描述符必须是字段描述符。</p>
+<h2 id="CONSTANT-Methodref-info结构"><a href="#CONSTANT-Methodref-info结构" class="headerlink" title="CONSTANT_Methodref_info结构"></a>CONSTANT_Methodref_info结构</h2><figure class="highlight c hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">CONSTANT_Methodref_info &#123;</span><br><span class="line">  u1 tag;</span><br><span class="line">  u2 class_index;</span><br><span class="line">  u2 name_and_type_index;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="tag-2"><a href="#tag-2" class="headerlink" title="tag"></a>tag</h3><p>值是CONSTANT_Methodref（10）</p>
+<h3 id="class-index-1"><a href="#class-index-1" class="headerlink" title="class_index"></a>class_index</h3><p>值必须是对常量池的有效索引，常量池在该索引处的项必须是<code>CONSTANT_Class_info</code>结构，表示一个类或接口，当前字段或方法是这个类或接口的成员。<br>类型必须是类（不能是接口）。</p>
+<h3 id="name-and-type-index-1"><a href="#name-and-type-index-1" class="headerlink" title="name_and_type_index"></a>name_and_type_index</h3><p>值必须是对常量池的有效索引， 常量池在该索引处的项必须是<code>CONSTANT_NameAndType_info</code>结构，它表示当前字段或方法的名字和描述符。<br>给定的描述符必须是方法描述符。<br>如果一个<code>CONSTANT_Methodref_info</code>结构的方法名以<code>&lt;`</code>(‘\u003c’)<code>开头，则说明这个方法名是特殊的</code><init>`，即这个方法是实例初始化方法，它的返回类型必须为空。</init></p>
+<h2 id="CONSTANT-InterfaceMethodref-info结构"><a href="#CONSTANT-InterfaceMethodref-info结构" class="headerlink" title="CONSTANT_InterfaceMethodref_info结构"></a>CONSTANT_InterfaceMethodref_info结构</h2><figure class="highlight c hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">CONSTANT_InterfaceMethodref_info &#123;</span><br><span class="line">  u1 tag;</span><br><span class="line">  u2 class_index;</span><br><span class="line">  u2 name_and_type_index;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="tag-3"><a href="#tag-3" class="headerlink" title="tag"></a>tag</h3><p>值是CONSTANT_InterfaceMethodref（11）</p>
+<h3 id="class-index-2"><a href="#class-index-2" class="headerlink" title="class_index"></a>class_index</h3><p>值必须是对常量池的有效索引，常量池在该索引处的项必须是<code>CONSTANT_Class_info</code>结构，表示一个类或接口，当前字段或方法是这个类或接口的成员。<br>类型必须是接口（不能是类）。</p>
+<h3 id="name-and-type-index-2"><a href="#name-and-type-index-2" class="headerlink" title="name_and_type_index"></a>name_and_type_index</h3><p>值必须是对常量池的有效索引， 常量池在该索引处的项必须是<code>CONSTANT_NameAndType_info</code>结构，它表示当前字段或方法的名字和描述符。<br>给定的描述符必须是方法描述符。</p>
+<h2 id="CONSTANT-String-info结构"><a href="#CONSTANT-String-info结构" class="headerlink" title="CONSTANT_String_info结构"></a>CONSTANT_String_info结构</h2><p><code>CONSTANT_String_info</code>用于表示<code>java.lang.String</code>类型的常量对象。<br><figure class="highlight c hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">CONSTANT_String_info &#123;</span><br><span class="line">   u1 tag;</span><br><span class="line">   u2 string_index;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<h3 id="tag-4"><a href="#tag-4" class="headerlink" title="tag"></a>tag</h3><p>值是<code>CONSTANT_String(8)</code>。</p>
+<h3 id="string-index"><a href="#string-index" class="headerlink" title="string_index"></a>string_index</h3><p><code>string_index</code>项的值必须是对常量池的有效索引， 常量池在该索引处的项必须是<code>CONSTANT_Utf8_info</code>结构，表示一组<code>Unicode</code>码点序列，这组<code>Unicode</code>码点序列最终会被初始化为一个<code>String</code>对象。</p>
+<h2 id="CONSTANT-Integer-info结构"><a href="#CONSTANT-Integer-info结构" class="headerlink" title="CONSTANT_Integer_info结构"></a>CONSTANT_Integer_info结构</h2><p><code>CONSTANT_Intrger_info</code>结构表示4字节(<code>int</code>和<code>float</code>)的数值常量。<br><figure class="highlight c hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">CONSTANT_Integer_info &#123;</span><br><span class="line">  u1 tag;</span><br><span class="line">  u4 bytes;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<h3 id="tag-5"><a href="#tag-5" class="headerlink" title="tag"></a>tag</h3><p>值是<code>CONSTANT_Integer(3)</code>。</p>
+<h3 id="bytes"><a href="#bytes" class="headerlink" title="bytes"></a>bytes</h3><p><code>int</code>常量的值，按照Big-Endian的顺序存储。</p>
+<h2 id="CONSTANT-Float-info结构"><a href="#CONSTANT-Float-info结构" class="headerlink" title="CONSTANT_Float_info结构"></a>CONSTANT_Float_info结构</h2><figure class="highlight c hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">CONSTANT_Float_info &#123;</span><br><span class="line">  u1 tag;</span><br><span class="line">  u4 bytes;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="tag-6"><a href="#tag-6" class="headerlink" title="tag"></a>tag</h3><p>值是<code>CONSTANT_Float(4)</code>。</p>
+<h3 id="bytes-1"><a href="#bytes-1" class="headerlink" title="bytes"></a>bytes</h3><p><code>bytes</code>项按照<code>IEEE 754</code>单精度浮点格式。表示<code>float</code>常量的值，按照Big-Endian的顺序存储。<br><code>CONSTANT_Float_info</code>结构表示的值将按照下列方式来表示，<code>bytes</code>项的值首先被转换成一个 <code>int</code>常量的<code>bits</code>。  </p>
+<ul>
+<li>如果<code>bits</code>值为<code>0x7f800000</code>，表示<code>float</code>值为正无穷。  </li>
+<li>如果<code>bits</code>值为<code>0xff800000</code>，表示<code>float</code>值为负无穷。  </li>
+<li>如果<code>bits</code>值在范围<code>0x7f800001</code>到<code>0x7fffffff</code>或者<code>0xff800001</code>到<code>0xffffffff</code>内，表示float值为<code>NaN</code>。</li>
+</ul>
+<p>在其它情况下，设 s、 e、 m，它们值根据<code>bits</code>和如下公式计算。<code>float</code>的浮点值为数值表达式 <code>s·m·2e–150</code>的计算结果。<br><figure class="highlight c hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">int</span> s =((bits &gt;&gt; <span class="hljs-number">31</span>) == <span class="hljs-number">0</span>) ? <span class="hljs-number">1</span> : <span class="hljs-number">-1</span>;</span><br><span class="line"><span class="hljs-keyword">int</span> e =((bits &gt;&gt; <span class="hljs-number">23</span>) &amp; <span class="hljs-number">0xff</span>);</span><br><span class="line"><span class="hljs-keyword">int</span> m =(e == <span class="hljs-number">0</span>） ?</span><br><span class="line">bits &amp; <span class="hljs-number">0x7fffff</span>) &lt;&lt; <span class="hljs-number">1</span> :</span><br><span class="line">(bits &amp; <span class="hljs-number">0x7fffff</span>) | <span class="hljs-number">0x800000</span>;</span><br></pre></td></tr></table></figure></p>
+<h2 id="CONSTANT-Long-info结构"><a href="#CONSTANT-Long-info结构" class="headerlink" title="CONSTANT_Long_info结构"></a>CONSTANT_Long_info结构</h2><p><code>CONSTANT_Long_info</code>结构表示8字节(<code>long</code>和<code>double</code>)的数值常量。<br><figure class="highlight c hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">CONSTANT_Long_info &#123;</span><br><span class="line">  u1 tag;</span><br><span class="line">  u4 high_bytes;</span><br><span class="line">  u4 low_bytes;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>在Class文件的常量池中，所有的8字节的常量都占两个表成员（项）的空间。<code>CONSTANT_Long_info</code>结构的项在常量池中的索引为n，则常量池中下一个有效的项的索引为<code>n+2</code>，此时常量池中索引为<code>n+1</code>的项有效但必须被认为不可用。</p>
+<h3 id="tag-7"><a href="#tag-7" class="headerlink" title="tag"></a>tag</h3><p>值是<code>CONSTANT_Long(5)</code>。</p>
+<h3 id="high-bytes-和-low-bytes"><a href="#high-bytes-和-low-bytes" class="headerlink" title="high_bytes 和 low_bytes"></a>high_bytes 和 low_bytes</h3><p>无符号的 <code>high_bytes</code> 和 <code>low_bytes</code> 项用于共同表示 <code>long</code> 型常量，构造形式为<code>((long) high_bytes &lt;&lt; 32) + low_bytes，high_bytes</code> 和 <code>low_bytes</code> 都按照 Big-Endian顺序存储。</p>
+<h2 id="CONSTANT-Double-info结构"><a href="#CONSTANT-Double-info结构" class="headerlink" title="CONSTANT_Double_info结构"></a>CONSTANT_Double_info结构</h2><p><code>CONSTANT_Double_info</code> 结构表示8字节（<code>long</code>和<code>double</code>）的数值常量。<br><figure class="highlight c hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">CONSTANT_Double_info &#123;</span><br><span class="line">  u1 tag;</span><br><span class="line">  u4 high_bytes;</span><br><span class="line">  u4 low_bytes;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>在Class 文件的常量池中，所有的8字节的常量都占两个表成员（项）的空间。 <code>CONSTANT_Double_info</code> 结构的项在常量池中的索引为n，则常量池中下一个有效的项的索引为<code>n+2</code>， 此时常量池中索引为<code>n+1</code>的项有效但必须被认为不可用。</p>
+<h3 id="tag-8"><a href="#tag-8" class="headerlink" title="tag"></a>tag</h3><p>值是 <code>CONSTANT_Double(6)</code>。</p>
+<h3 id="high-bytes-和-low-bytes-1"><a href="#high-bytes-和-low-bytes-1" class="headerlink" title="high_bytes 和 low_bytes"></a>high_bytes 和 low_bytes</h3><p><code>high_bytes</code>和<code>low_bytes</code>共同按照<code>IEEE 754</code>双精度浮点格式表示<code>double</code>常量的值。<code>high_bytes</code>和<code>low_bytes</code>都按照Big-Endian顺序存储。<br><code>CONSTANT_Double_info</code>结构表示的值将按照下列方式来表示，<code>high_bytes</code>和<code>low_bytes</code> 首先被转换成一个<code>long</code>常量的<code>bits</code>。</p>
+<ul>
+<li>如果<code>bits</code>值为<code>0x7ff0000000000000L</code>，表示<code>double</code>值为正无穷。</li>
+<li>如果<code>bits</code>值为<code>0xfff0000000000000L</code>，表示<code>double</code>值为负无穷。</li>
+<li>如果<code>bits</code>值在范围<code>0x7ff0000000000001L</code>到<code>0x7fffffffffffffffL</code>或者<code>0xfff0000000000001L</code>到<code>0xffffffffffffffffL</code>内，表示<code>double</code>值为<code>NaN</code>。</li>
+</ul>
+<p>在其它情况下，设s、 e、 m，它们的值根据<code>bits</code>和如下公式计算。<code>double</code>的浮点值为数学表达式<code>s·m·2e – 1075</code>的计算结果。<br><figure class="highlight c hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">int</span> s =((bits &gt;&gt; <span class="hljs-number">63</span>) == <span class="hljs-number">0</span>) ? <span class="hljs-number">1</span> : <span class="hljs-number">-1</span>;</span><br><span class="line"><span class="hljs-keyword">int</span> e =(<span class="hljs-keyword">int</span>)((bits &gt;&gt; <span class="hljs-number">52</span>) &amp; <span class="hljs-number">0x7ff</span>L);</span><br><span class="line"><span class="hljs-keyword">long</span> m =(e == <span class="hljs-number">0</span>) ?</span><br><span class="line">(bits &amp; <span class="hljs-number">0xfffffffffffff</span>L) &lt;&lt; <span class="hljs-number">1</span> :</span><br><span class="line">(bits &amp; <span class="hljs-number">0xfffffffffffff</span>L) | <span class="hljs-number">0x10000000000000</span>L;</span><br></pre></td></tr></table></figure></p>
+<h2 id="CONSTANT-NameAndType-info-结构"><a href="#CONSTANT-NameAndType-info-结构" class="headerlink" title="CONSTANT_NameAndType_info 结构"></a>CONSTANT_NameAndType_info 结构</h2><p><code>CONSTANT_NameAndType_info</code>结构没有标识出它所属的类或接口，格式如下。<br><figure class="highlight c hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">CONSTANT_NameAndType_info &#123;</span><br><span class="line">  u1 tag;</span><br><span class="line">  u2 name_index;</span><br><span class="line">  u2 descriptor_index;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<h3 id="tag-9"><a href="#tag-9" class="headerlink" title="tag"></a>tag</h3><p>值为<code>CONSTANT_NameAndType(12)</code>。</p>
+<h3 id="name-index-3"><a href="#name-index-3" class="headerlink" title="name_index"></a>name_index</h3><p><code>name_index</code> 项的值必须是对常量池的有效索引， 常量池在该索引处的项必须是<code>CONSTANT_Utf8_info</code>结构，这个结构要么表示特殊的方法名<code>&lt;init&gt;</code>，要么表示一个有效的字段或方法的非限定名<code>Unqualified Name</code>。</p>
+<h3 id="descriptor-index-2"><a href="#descriptor-index-2" class="headerlink" title="descriptor_index"></a>descriptor_index</h3><p><code>descriptor_index</code>项的值必须是对常量池的有效索引， 常量池在该索引处的项必须是<code>CONSTANT_Utf8_info</code>结构，这个结构表示一个有效的字段描述符或方法描述符。</p>
+<h2 id="CONSTANT-Utf8-info结构"><a href="#CONSTANT-Utf8-info结构" class="headerlink" title="CONSTANT_Utf8_info结构"></a>CONSTANT_Utf8_info结构</h2><p><code>CONSTANT_Utf8_info</code>结构用于表示字符串常量的值。<br><figure class="highlight c hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">CONSTANT_Utf8_info &#123;</span><br><span class="line">  u1 tag;</span><br><span class="line">  u2 length;</span><br><span class="line">  u1 bytes[length];</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<h3 id="tag-10"><a href="#tag-10" class="headerlink" title="tag"></a>tag</h3><p>值为<code>CONSTANT_Utf8(1)</code>。</p>
+<h3 id="length"><a href="#length" class="headerlink" title="length"></a>length</h3><p><code>bytes[]</code>数组的长度（注意，不能等同于当前结构所表示的<code>String</code>对象的长度）， <code>CONSTANT_Utf8_info</code>结构中的内容是以<code>length</code>属性确定长度而不是以null作为字符串的终结符。</p>
+<h3 id="bytes-2"><a href="#bytes-2" class="headerlink" title="bytes[]"></a>bytes[]</h3><p><code>bytes[]</code>是表示字符串值的<code>byte</code>数组，<code>bytes[]</code>数组中每个成员的<code>byte</code>值都不会是0，也不在<code>0xf0</code>至<code>0xff</code>范围内。字符串常量采用改进过的UTF-8编码表示。 这种以改进过的UTF-8编码中，用于表示的字符串的码点字符序列可以包含ASCII中的所有非空（<code>Non-Null</code>）字符和所有 <code>Unicode</code>编码的字符，一个字符占一个<code>byte</code>。（1个英文字符占1个<code>byte</code>，1个中文字符占2个byte），长度=<code>byte</code>长度。<br>码点在范围’<code>\u0001</code>‘至’<code>\u007F</code>‘内的字符用一个单字节表示。<br>| 0 | bits 6-0 |<br><img src="./java-class-1-6.jpg" alt><br><code>byte</code>的后7位数据表示一个码点值。<br>字符为’<code>\u0000</code>‘（表示字符’null’），或者在范围’<code>\u0080</code>‘至’<code>\u07FF</code>‘的字符用一对字节x和y表示。<br>x:| 1 | 1 | 0 | bits 10-6 |<br>y:| 1 | 0 | bits 5-0 |<br><img src="./java-class-1-7.jpg" alt><br>x 和 y 计算字符值的公式:<code>((x &amp; 0x1f) &lt;&lt; 6) + (y &amp; 0x3f)</code><br>在范围’<code>\u0800</code>‘至’<code>\uFFFF</code>‘中的字符用 3 个字节 x， y 和 z 表示。<br>x:| 1 | 1 | 1 | 0 | bits 15-12 |<br>y:| 1 | 0 | bits 11-6 |<br>z:| 1 | 0 | bits 5-0 |<br><img src="./java-class-1-8.jpg" alt><br>x，y和z计算字符值的公式:<code>((x &amp; 0xf) &lt;&lt; 12) + ((y &amp; 0x3f) &lt;&lt; 6) + (z &amp; 0x3f)</code><br>超过<code>U+FFFF</code>范围的字符（ 称为补充字符，Supplementary Characters），在UTF-16编码中也需要2个UTF-16字符单元来表示，而UTF-16中的每个字符单元占3个字节，这就意味着在我们的编码方式中，补充字符需要6个字节来表示，u，v，w，x，y和z。字符值的公式为<code>0x10000+((v&amp;0x0f)&lt;&lt;16)+((w&amp;0x3f)&lt;&lt;10)+(y&amp;0x0f)&lt;&lt;6)+(z&amp;0x3f)</code><br>x:| 1 | 1 | 1 | 0 | 1 | 1 | 0 | 1 |<br>y:| 1 | 0 | 1 | 1 | bits 9-6 |<br>z:| 1 | 0 | bits 5-0 |<br>u:| 1 | 1 | 1 | 0 | 1 | 1 | 0 | 1 |<br>v:| 1 | 0 | 1 | 0 | (bits 20-16)-1 |<br>w:| 1 | 0 | bits 15-10 |<br><img src="./java-class-1-9.jpg" alt><br>在Class文件中，多字节字符按照Big-Endian顺序存储。<br>和“标准”版UTF-8格式相比， Java虚拟机采用的改进版UTF-8格式有2点不同。  </p>
+<ol>
+<li>“null”字符<code>(char) 0</code>用双字节格式编码表示而不是单字节，所以，改进版UTF-8格式不会直接出现null值。</li>
+<li>改进版的UTF-8只使用标准版UTF-8中的单字节、双字节和三字节格式。 Java虚拟机不能识别标准版UTF-8格式定义4字节格式，而是使用自定义的二次三字节（<strong>Two-Times-Three-Byte</strong>）格式来代替。  </li>
+</ol>
+<p>更多关于标准版UTF-8格式的内容可以参考《The Unicode Standard》（版本 6.0.0）的第 3.9 章节“Unicode Encoding Forms”。</p>
+<h2 id="CONSTANT-MethodHandle-info-结构"><a href="#CONSTANT-MethodHandle-info-结构" class="headerlink" title="CONSTANT_MethodHandle_info 结构"></a>CONSTANT_MethodHandle_info 结构</h2><p><code>CONSTANT_MethodHandle_info</code>结构用于表示方法句柄<br><figure class="highlight c hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">CONSTANT_MethodHandle_info &#123;</span><br><span class="line">   u1 tag;</span><br><span class="line">   u1 reference_kind;</span><br><span class="line">   u2 reference_index;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<h3 id="tag-11"><a href="#tag-11" class="headerlink" title="tag"></a>tag</h3><p>值为 CONSTANT_MethodHandle。</p>
+<h3 id="reference-kind"><a href="#reference-kind" class="headerlink" title="reference_kind"></a>reference_kind</h3><p>值必须在1至9之间（包括1和9），它决定了方法句柄的类型。方法句柄类型的值表示方法句柄的字节码行为（<strong>Bytecode Behavior</strong>）。</p>
+<h3 id="reference-index"><a href="#reference-index" class="headerlink" title="reference_index"></a>reference_index</h3><p>值必须是对常量池的有效索引。</p>
+<ul>
+<li><code>reference_kind</code>项的值为1（<code>REF_getField</code>）、2（<code>REF_getStatic</code>）、3（<code>REF_putField</code>）或4（<code>REF_putStatic</code>），那么常量池在<code>reference_index</code>索引处的项必须是<code>CONSTANT_Fieldref_info</code>（§4.4.2）结构，表示由一个字段创建的方法句柄。</li>
+<li><code>reference_kind</code>项的值是5（<code>REF_invokeVirtual</code>）、6（<code>REF_invokeStatic</code>）、7（<code>REF_invokeSpecial</code>）或8（REF_newInvokeSpecial），那么常量池在<code>reference_index</code>索引处的项必须是<code>CONSTANT_Methodref_info</code>（§4.4.2）结构，表示由类的方法或构造函数创建的方法句柄。如果<code>reference_kind</code>项的值是9（<code>REF_invokeInterface</code>），那么常量池在<code>reference_index</code>索引处的项必须是<code>CONSTANT_InterfaceMethodref_info</code>（§4.4.2）结构，表示由接口方法创建的方法句柄。</li>
+<li><code>reference_kind</code>项的值是5（<code>REF_invokeVirtual</code>）、6（<code>REF_invokeStatic</code>）、7（<code>REF_invokeSpecial</code>）或9（<code>REF_invokeInterface</code>），那么方法句柄对应的方法不能为实例初始化<code>&lt;init&gt;</code>方法或类初始化方法<code>&lt;clinit&gt;</code>。  </li>
+<li><code>reference_kind</code>项的值是8（<code>REF_newInvokeSpecial</code>），那么方法句柄对应的方法必须为实例初始化<code>&lt;init&gt;</code>方法。<h2 id="CONSTANT-MethodType-info-结构"><a href="#CONSTANT-MethodType-info-结构" class="headerlink" title="CONSTANT_MethodType_info 结构"></a>CONSTANT_MethodType_info 结构</h2><figure class="highlight c hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">CONSTANT_MethodType_info &#123;</span><br><span class="line">  u1 tag;</span><br><span class="line">  u2 descriptor_index;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<h3 id="tag-12"><a href="#tag-12" class="headerlink" title="tag"></a>tag</h3><p>值为<code>CONSTANT_MethodType(16)</code>。</p>
+<h3 id="descriptor-index-3"><a href="#descriptor-index-3" class="headerlink" title="descriptor_index"></a>descriptor_index</h3><p>值是对常量池的有效索引，常量池在该索引处的项必须是<code>CONSTANT_Utf8_info</code>结构，表示方法的描述符。</p>
+<h2 id="CONSTANT-InvokeDynamic-info-结构"><a href="#CONSTANT-InvokeDynamic-info-结构" class="headerlink" title="CONSTANT_InvokeDynamic_info 结构"></a>CONSTANT_InvokeDynamic_info 结构</h2><p><code>CONSTANT_InvokeDynamic_info</code>用于表示<code>invokedynamic</code>指令所使用到的引导方法（Bootstrap Method）、引导方法使用到动态调用名称（Dynamic Invocation Name）、 参数和请求返回类型、以及可以选择性的附加被称为静态参数（Static Arguments）的常量序列。<br><figure class="highlight c hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">CONSTANT_InvokeDynamic_info &#123;</span><br><span class="line">   u1 tag;</span><br><span class="line">   u2 bootstrap_method_attr_index;</span><br><span class="line">   u2 name_and_type_index;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<h3 id="tag-13"><a href="#tag-13" class="headerlink" title="tag"></a>tag</h3><p>值为CONSTANT_InvokeDynamic（18）。</p>
+<h3 id="bootstrap-method-attr-index"><a href="#bootstrap-method-attr-index" class="headerlink" title="bootstrap_method_attr_index"></a>bootstrap_method_attr_index</h3><p>值是对当前Class文件中引导方法表的<code>bootstrap_methods[]</code>数组的有效索引。</p>
+<h3 id="name-and-type-index-3"><a href="#name-and-type-index-3" class="headerlink" title="name_and_type_index"></a>name_and_type_index</h3><p>值是对当前常量池的有效索引，常量池在该索引处的项必须是<code>CONSTANT_NameAndType_info</code>结构，表示方法名和方法描述符。 </p>
+<h1 id="6-属性表集合（attributes-count和attribute）"><a href="#6-属性表集合（attributes-count和attribute）" class="headerlink" title="6 属性表集合（attributes_count和attribute）"></a>6 属性表集合（attributes_count和attribute）</h1><p>在Class文件、属性表、方法表中都可以包含自己的属性表集合，用于描述某些场景的专有信息。<br>与Class文件中其它数据项对长度、顺序、格式的严格要求不同，属性表集合不要求其中包含的属性表具有严格的顺序，并且只要属性的名称不与已有的属性名称重复，任何人实现的编译器可以向属性表中写入自己定义的属性信息。虚拟机在运行时会忽略不能识别的属性，为了能正确解析Class文件，虚拟机规范中预定义虚拟机实现必须能够识别的9项属性。<br>属性名称 | 使用位置 | 含义<br>—–|——|—<br>Code | 方法表 | Java代码编译成的字节码指令<br>ConstantValue | 字段表 | final关键字定义的常量值<br>Deprecated | 类文件、字段表、方法表 | 被声明为deprecated的方法和字段<br>Exceptions | 方法表 | 方法抛出的异常<br>InnerClasses | 类文件 | 内部类列表<br>LineNumberTale | Code属性 | Java源码的行号与字节码指令的对应关系<br>LocalVariableTable | Code属性 | 方法的局部变量描述<br>SourceFile | 类文件 | 源文件名称<br>Synthetic | 类文件、方法表、字段表 | 标识方法或字段是由编译器自动生成的<br>每种属性均有各自的表结构。这9种表结构有一个共同的特点，即均由一个u2类型的属性名称开始，可以通过这个属性名称来判段属性的类型。</p>
+<h2 id="Code属性"><a href="#Code属性" class="headerlink" title="Code属性"></a>Code属性</h2><p>Java程序方法体中的代码经过Javac编译器处理后，最终变为字节码指令存储在<code>Code</code>属性中。当然不是所有的方法都必须有这个属性（接口中的方法或抽象方法就不存在<code>Code</code>属性），<code>Code</code>属性表结构如下。<br>类型 | 名称 | 数量<br>—|—-|—<br>u2 | attribute_name_index | 1<br>u4 | attribute_length | 1<br>u2 | max_stack | 1<br>u2 | max_locals | 1<br>u4 | code_length | 1<br>u1 | code | code_length<br>u2 | exception_table_length | 1<br>exception_info | exception_table | exception_table_length<br>u2 | attributes_count | 1<br>attribute_info | attributes | attributes_count</p>
+<h3 id="max-stack"><a href="#max-stack" class="headerlink" title="max_stack"></a>max_stack</h3><p>操作数栈深度最大值，在方法执行的任何时刻，操作数栈深度都不会超过这个值。虚拟机运行时根据这个值来分配栈帧的操作数栈深度。</p>
+<h3 id="max-locals"><a href="#max-locals" class="headerlink" title="max_locals"></a>max_locals</h3><p>局部变量表所需存储空间，单位为<code>Slot</code>。并不是所有局部变量占用的<code>Slot</code>之和，当一个局部变量的生命周期结束后，其所占用的<code>Slot</code>将分配给其它依然存活的局部变量使用，按此方式计算出方法运行时局部变量表所需的存储空间。</p>
+<h3 id="code-length和code"><a href="#code-length和code" class="headerlink" title="code_length和code"></a>code_length和code</h3><p>用来存放Java源程序编译后生成的字节码指令。<code>code_length</code>代表字节码长度，<code>code</code>是用于存储字节码指令的一系列字节流。<br>每一个指令是一个<code>u1</code>类型的单字节，当虚拟机读到<code>code</code>中的一个字节码（一个字节能表示256种指令，Java虚拟机规范定义了其中约200个编码对应的指令），就可以判断出该字节码代表的指令，指令后面是否带有参数，参数该如何解释，虽然<code>code_length</code>占4个字节，但是Java虚拟机规范中限制一个方法不能超过65535条字节码指令，如果超过，<code>Javac</code>将拒绝编译。</p>
+<h2 id="ConstantValue属性"><a href="#ConstantValue属性" class="headerlink" title="ConstantValue属性"></a>ConstantValue属性</h2><p>通知虚拟机自动为静态变量赋值，只有被<code>static</code>关键字修饰的变量（类变量）才可以使用这项属性。<br>类型 | 名称 | 数量<br>—|—-|—<br>u2 | attribute_name_index | 1<br>u4 | attribute_length | 1<br>u2 | constantvalue_index | 1<br>可以看出<code>ConstantValue</code>属性是一个定长属性，其中<code>attribute_length</code>的值固定为<code>0x00000002</code>，<code>constantvalue_index</code>为一常量池字面量类型常量索引（Class文件格式的常量类型中只有与基本类型和字符串类型相对应的字面量常量，所以<code>ConstantValue</code>属性只支持基本类型和字符串类型）。<br>对非<code>static</code>类型变量（实例变量，如：<code>int a = 123;</code>）的赋值是在实例构造器<code>&lt;init&gt;</code>方法中进行的。<br>对类变量（如：<code>static int a = 123;</code>）的赋值有2种选择，在类构造器<code>&lt;clinit&gt;</code>方法中或使用<code>ConstantValue</code>属性。当前Javac编译器的选择是：如果变量同时被<code>static</code>和<code>final</code>修饰（虚拟机规范只要求有<code>ConstantValue</code>属性的字段必须设置<code>ACC_STATIC</code>标志，对<code>final</code>关键字的要求是<code>Javac</code>编译器自己加入的要求），并且该变量的数据类型为基本类型或字符串类型，就生成<code>ConstantValue</code>属性进行初始化；否则在类构造器<code>&lt;clinit&gt;</code>方法中进行初始化。  </p>
+<h2 id="Exceptions属性"><a href="#Exceptions属性" class="headerlink" title="Exceptions属性"></a>Exceptions属性</h2><p>列举出方法中可能抛出的受查异常（即方法描述时<code>throws</code>关键字后列出的异常），与<code>Code</code>属性平级，与<code>Code</code>属性包含的异常表不同。<br>类型 | 名称 | 数量<br>—|—-|—<br>u2 | attribute_name_index | 1<br>u4 | attribute_length | 1<br>u2 | number_of_exceptions | 1<br>u2 | exception_index_table | number_of_exceptions</p>
+<h3 id="number-of-exceptions"><a href="#number-of-exceptions" class="headerlink" title="number_of_exceptions"></a>number_of_exceptions</h3><p>抛出<code>number_of_exceptions</code>种受查异常。</p>
+<h3 id="exception-index-table"><a href="#exception-index-table" class="headerlink" title="exception_index_table"></a>exception_index_table</h3><p>异常索引集合，一组u2类型<code>exception_index</code>的集合，每一个<code>exception_index</code>为一个指向常量池中<code>CONSTANT_Class_info</code>型常量的索引，代表该受查异常的类型。</p>
+<h2 id="InnerClasses属性"><a href="#InnerClasses属性" class="headerlink" title="InnerClasses属性"></a>InnerClasses属性</h2><p>该属性用于记录内部类和宿主类之间的关系。如果一个类中定义了内部类，编译器将会为这个类与这个类包含的内部类生成<code>InnerClasses</code>属性。<br>类型 | 名称 | 数量<br>—|—-|—<br>u2 | attribute_name_index | 1<br>u4 | attribute_length | 1<br>u2 | number_of_classes | 1<br>inner_classes_info | inner_classes | number_of_classes</p>
+<h3 id="inner-classes"><a href="#inner-classes" class="headerlink" title="inner_classes"></a>inner_classes</h3><p>内部类表集合，一组内部类表类型数据的集合，<code>number_of_classes</code>即为集合中内部类表类型数据的个数。<br>每一个内部类的信息都由一个<code>inner_classes_info</code>表来描述，<code>inner_classes_info</code>表结构如下。<br>类型 | 名称 | 数量<br>—|—-|—<br>u2 | inner_class_info_index | 1<br>u2 | outer_class_info_index | 1<br>u2 | inner_name_index | 1<br>u2 | inner_name_access_flags | 1</p>
+<h3 id="inner-class-info-index和outer-class-info-index"><a href="#inner-class-info-index和outer-class-info-index" class="headerlink" title="inner_class_info_index和outer_class_info_index"></a>inner_class_info_index和outer_class_info_index</h3><p>指向常量池中<code>CONSTANT_Class_info</code>类型常量索引，该<code>CONSTANT_Class_info</code>类型常量指向常量池中<code>CONSTANT_Utf8_info</code>类型常量，分别为内部类的全限定名和宿主类的全限定名。</p>
+<h3 id="inner-name-index"><a href="#inner-name-index" class="headerlink" title="inner_name_index"></a>inner_name_index</h3><p>指向常量池中<code>CONSTANT_Utf8_info</code>类型常量的索引，为内部类名称，如果为匿名内部类，则该值为0。  </p>
+<h3 id="inner-name-access-flags"><a href="#inner-name-access-flags" class="headerlink" title="inner_name_access_flags"></a>inner_name_access_flags</h3><p>和<code>access_flags</code>一样，是内部类的访问标志。<br>标志名称 | 标志值 | 含义<br>—–|—–|—<br>ACC_PUBLIC | 0x0001 | 内部类是否为public<br>ACC_PRIVATE | 0x0002 | 内部类是否为private<br>ACC_PROTECTED | 0x0004 | 内部类是否为protected<br>ACC_STATIC | 0x0008 | 内部类是否为static<br>ACC_FINAL | 0x0010 | 内部类是否为final<br>ACC_INTERFACE | 0x0020 | 内部类是否为一个接口<br>ACC_ABSTRACT | 0x0400 | 内部类是否为abstract<br>ACC_SYNTHETIC | 0x1000 | 内部类是否为编译器自动产生<br>ACC_ANNOTATION | 0x4000 | 内部类是否是一个注解<br>ACC_ENUM | 0x4000 | 内部类是否是一个枚举</p>
+<h2 id="LineNumberTale属性"><a href="#LineNumberTale属性" class="headerlink" title="LineNumberTale属性"></a>LineNumberTale属性</h2><p>用于描述Java源码的行号与字节码行号之间的对应关系，非运行时必需属性，会默认生成至Class文件中，可以使用<code>Javac</code>的<code>-g:none</code>或<code>-g:lines</code>关闭或要求生成该项属性信息，其结构如下。<br>类型 | 名称 | 数量<br>—|—-|—<br>u2 | attribute_name_index | 1<br>u4 | attribute_length | 1<br>u2 | line_number_table_length | 1<br>line_number_info | line_number_table | line_number_table_length</p>
+<h3 id="line-number-table"><a href="#line-number-table" class="headerlink" title="line_number_table"></a>line_number_table</h3><p>一组<code>line_number_info</code>类型数据的集合，其所包含的<code>line_number_info</code>类型数据的数量为<code>line_number_table_length</code>。</p>
+<h3 id="line-number-info"><a href="#line-number-info" class="headerlink" title="line_number_info"></a>line_number_info</h3><table>
+<thead>
+<tr>
+<th>类型</th>
+<th>名称</th>
+<th>数量</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>u2</td>
+<td>start_pc</td>
+<td>1</td>
+<td>字节码行号</td>
+</tr>
+<tr>
+<td>u2</td>
+<td>line_number</td>
+<td>1</td>
+<td>Java源码行号</td>
+</tr>
+</tbody>
+</table>
+<p>不生成该属性的最大影响。</p>
+<ul>
+<li>抛出异常时，堆栈将不会显示出错的行号。</li>
+<li>调试程序时无法按照源码设置断点。<h2 id="LocalVariableTable属性"><a href="#LocalVariableTable属性" class="headerlink" title="LocalVariableTable属性"></a>LocalVariableTable属性</h2>用于描述栈帧中局部变量表中的变量与Java源码中定义的变量之间的关系，非运行时必需属性，默认不会生成至Class文件中，可以使用<code>Javac</code>的<code>-g:none</code>或<code>-g:vars</code>关闭或要求生成该项属性信息，其结构如下。<br>类型 | 名称 | 数量<br>—|—-|—<br>u2 | attribute_name_index | 1<br>u4 | attribute_length | 1<br>u2 | local_variable_table_length | 1<br>local_variable_info | local_variable_table | local_variable_table_length<h3 id="local-variable-table"><a href="#local-variable-table" class="headerlink" title="local_variable_table"></a>local_variable_table</h3>一组<code>local_variable_info</code>类型数据的集合，其所包含的<code>local_variable_info</code>类型数据的数量为<code>local_variable_table_length</code>。<h3 id="local-variable-info"><a href="#local-variable-info" class="headerlink" title="local_variable_info"></a>local_variable_info</h3>类型 | 名称 | 数量 | 说明<br>—|—-|—-|—<br>u2 | start_pc | 1 | 局部变量的生命周期开始的字节码偏移量。<br>u2 | length | 1 | 局部变量作用范围覆盖的长度。<br>u2 | name_index | 1 | 指向常量池中CONSTANT_Utf8_info类型常量的索引，局部变量名称。<br>u2 | descriptor_index | 1 | 指向常量池中CONSTANT_Utf8_info类型常量的索引，局部变量描述符。<br>u2 | index | 1 | 局部变量在栈帧局部变量表中Slot的位置，如果这个变量的数据类型为64位类型（long或double），它占用的Slot为index和index+1这2个位置。<br><code>start_pc + length</code>即为该局部变量在字节码中的作用域范围。<br>不生成该属性的最大影响。</li>
+<li>当其他人引用这个方法时，所有的参数名称都将丢失，IDE可能会使用诸如arg0、arg1之类的占位符代替原有的参数名称，对代码运行无影响，会给代码的编写带来不便。</li>
+<li>调试时调试器无法根据参数名称从运行上下文中获取参数值。<h2 id="SourceFile属性"><a href="#SourceFile属性" class="headerlink" title="SourceFile属性"></a>SourceFile属性</h2>用于记录生成这个Class文件的源码文件名称，为可选项，可以使用<code>Javac</code>的<code>-g:none</code>或<code>-g:source</code>关闭或要求生成该项属性信息，其结构如下。<br>类型 | 名称 | 数量<br>—|—-|—<br>u2 | attribute_name_index | 1<br>u4 | attribute_length | 1<br>u2 | sourcefile_index | 1<br>可以看出<code>SourceFile</code>属性是一个定长属性，<code>sourcefile_index</code>是指向常量池中<code>CONSTANT_Utf8_info</code>类型常量的索引，常量的值为源码文件的文件名。<br>对大多数文件，类名和文件名是一致的，少数特殊类除外（如：内部类），此时如果不生成这项属性，当抛出异常时，堆栈中将不会显示出错误代码所属的文件名。  <h2 id="Deprecated属性和Synthetic属性"><a href="#Deprecated属性和Synthetic属性" class="headerlink" title="Deprecated属性和Synthetic属性"></a>Deprecated属性和Synthetic属性</h2>这两个属性都属于标志类型的布尔属性，只存在有和没有的区别，没有属性值的概念。<br><code>Deprecated</code>属性表示某个类、字段或方法已经被程序作者定为不再推荐使用，可在代码中使用<code>@Deprecated</code>注解进行设置。<br><code>Synthetic</code>属性表示该字段或方法不是由Java源码直接产生的，而是由编译器自行添加的（当然也可设置访问标志中的<code>ACC_SYNTHETIC</code>标志，所有由非用户代码产生的类、方法和字段都应当至少设置<code>Synthetic</code>属性和<code>ACC_SYNTHETIC</code>标志位中的一项，唯一的例外是实例构造器<code>&lt;init&gt;</code>和类构造器<code>&lt;clinit&gt;</code>方法）<br><code>Deprecated</code>属性、<code>Synthetic</code>属性结构如下。<br>类型 | 名称 | 数量<br>—|—-|—<br>u2 | attribute_name_index | 1<br>u4 | attribute_length | 1<br>attribute_length的值必须为0x00000000。</li>
+</ul>
+
+        </div>
+        
+        <div class="level is-size-7 is-uppercase">
+            <div class="level-start">
+                <div class="level-item">
+                    <span class="is-size-6 has-text-grey has-mr-7">#</span>
+                    <a class="has-link-grey -link" href="/tags/Java/">Java</a>
+                </div>
+            </div>
+        </div>
+        
+        
+        
+        <div class="social-share"></div>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/social-share.js@1.0.16/dist/css/share.min.css">
+<script src="https://cdn.jsdelivr.net/npm/social-share.js@1.0.16/dist/js/social-share.min.js"></script>
+        
+    </div>
+</div>
+
+
+
+<div class="card">
+    <div class="card-content">
+        <h3 class="menu-label has-text-centered">喜欢这篇文章？打赏一下作者吧</h3>
+        <div class="buttons is-centered">
+            
+                
+<a class="button is-info donate">
+    <span class="icon is-small">
+        <i class="fab fa-alipay"></i>
+    </span>
+    <span>支付宝</span>
+    <div class="qrcode"><img src="/images/alipaycode.jpg" alt="支付宝"></div>
+</a>
+
+                
+                
+<a class="button is-success donate">
+    <span class="icon is-small">
+        <i class="fab fa-weixin"></i>
+    </span>
+    <span>微信</span>
+    <div class="qrcode"><img src="/images/wxcode.png" alt="微信"></div>
+</a>
+
+                
+        </div>
+    </div>
+</div>
+
+
+
+<div class="card card-transparent">
+    <div class="level post-navigation is-flex-wrap is-mobile">
+        
+        <div class="level-start">
+            <a class="level level-item has-link-grey  article-nav-prev" href="/Java-Class-structure-practice/">
+                <i class="level-item fas fa-chevron-left"></i>
+                <span class="level-item">Java Class文件的结构(实践篇)</span>
+            </a>
+        </div>
+        
+        
+        <div class="level-end">
+            <a class="level level-item has-link-grey  article-nav-next" href="/Byte-BigSmall/">
+                <span class="level-item">Byte大小端模式</span>
+                <i class="level-item fas fa-chevron-right"></i>
+            </a>
+        </div>
+        
+    </div>
+</div>
+
+
+
+<div class="card">
+    <div class="card-content">
+        <h3 class="title is-5 has-text-weight-normal">评论</h3>
+        
+<div id="comment-container"></div>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gitalk@1.4.1/dist/gitalk.css">
+<script src="https://cdn.jsdelivr.net/npm/gitalk@1.4.1/dist/gitalk.min.js"></script>
+<script>
+    var gitalk = new Gitalk({
+        clientID: 'a70be08270bc7c083f83',
+        clientSecret: '1b08252e3cf4b0c29b5f52f431ad9a54eef0a74a',
+        id: '7202aa82b40cfe7723dfde50e4ceb532',
+        repo: 'joeskye1701.github.io',
+        owner: 'joeskye1701',
+        admin: "joeskye1701"
+    })
+    gitalk.render('comment-container')
+</script>
+
+    </div>
+</div>
+</div>
+                
+
+
+
+
+<div class="column is-4-tablet is-4-desktop is-3-widescreen  has-order-1 column-left ">
+    
+        
+<div class="card widget">
+    <div class="card-content">
+        <nav class="level">
+            <div class="level-item has-text-centered">
+                <div>
+                    
+                        <img class="image is-128x128 has-mb-6" src="/images/thank-you-kobe.jpg" alt="Joe">
+                    
+                    
+                    <p class="is-size-4 is-block">
+                        Joe
+                    </p>
+                    
+                    
+                    <p class="is-size-6 is-block">
+                        Developer &amp; Designer
+                    </p>
+                    
+                    
+                    <p class="is-size-6 is-flex is-flex-center has-text-grey">
+                        <i class="fas fa-map-marker-alt has-mr-7"></i>
+                        <span>Shenzhen, China</span>
+                    </p>
+                    
+                </div>
+            </div>
+        </nav>
+        <nav class="level is-mobile">
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        文章
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        129
+                    </p>
+                </div>
+            </div>
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        分类
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        26
+                    </p>
+                </div>
+            </div>
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        标签
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        54
+                    </p>
+                </div>
+            </div>
+        </nav>
+        <div class="level">
+            <a class="level-item button is-link is-rounded" href="https://github.com/joeskye1701">
+                关注我</a>
+        </div>
+        
+        
+        <div class="level is-mobile">
+            
+            <a class="level-item button is-white is-marginless" target="_blank" title="Github" href="https://github.com/joeskye1701">
+                
+                <i class="fab fa-github"></i>
+                
+            </a>
+            
+        </div>
+        
+    </div>
+</div>
+    
+        
+
+<div class="card widget">
+    <div class="card-content">
+        <div class="menu">
+        <h3 class="menu-label">
+            链接
+        </h3>
+        <ul class="menu-list">
+        
+            <li>
+                <a class="level is-mobile" href="http://wss.xxyseo.cn/" target="_blank">
+                    <span class="level-left">
+                        <span class="level-item">西乡大佬</span>
+                    </span>
+                    <span class="level-right">
+                        <span class="level-item tag">wss.xxyseo.cn</span>
+                    </span>
+                </a>
+            </li>
+        
+        </ul>
+        </div>
+    </div>
+</div>
+
+
+    
+        
+<div class="card widget">
+    <div class="card-content">
+        <div class="menu">
+            <h3 class="menu-label">
+                分类
+            </h3>
+            <ul class="menu-list">
+            <li>
+        <a class="level is-marginless" href="/categories/Android/">
+            <span class="level-start">
+                <span class="level-item">Android</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">1</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/JDK6-源码/">
+            <span class="level-start">
+                <span class="level-item">JDK6 源码</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">18</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/JDK7-源码/">
+            <span class="level-start">
+                <span class="level-item">JDK7 源码</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">6</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/JDK8-源码/">
+            <span class="level-start">
+                <span class="level-item">JDK8 源码</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">1</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/JMM/">
+            <span class="level-start">
+                <span class="level-item">JMM</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">6</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/JVM/">
+            <span class="level-start">
+                <span class="level-item">JVM</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">10</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Java/">
+            <span class="level-start">
+                <span class="level-item">Java</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">20</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Linux/">
+            <span class="level-start">
+                <span class="level-item">Linux</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">4</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/MyBatis/">
+            <span class="level-start">
+                <span class="level-item">MyBatis</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">3</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/MySQL/">
+            <span class="level-start">
+                <span class="level-item">MySQL</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">2</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Redis/">
+            <span class="level-start">
+                <span class="level-item">Redis</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">1</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Spring/">
+            <span class="level-start">
+                <span class="level-item">Spring</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">4</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Tomcat/">
+            <span class="level-start">
+                <span class="level-item">Tomcat</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">7</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/书/">
+            <span class="level-start">
+                <span class="level-item">书</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">3</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/多线程/">
+            <span class="level-start">
+                <span class="level-item">多线程</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">1</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/并发/">
+            <span class="level-start">
+                <span class="level-item">并发</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">3</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/开源项目/">
+            <span class="level-start">
+                <span class="level-item">开源项目</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">3</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/数学/">
+            <span class="level-start">
+                <span class="level-item">数学</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">1</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/数据库/">
+            <span class="level-start">
+                <span class="level-item">数据库</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">2</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/数据结构/">
+            <span class="level-start">
+                <span class="level-item">数据结构</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">5</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/日语/">
+            <span class="level-start">
+                <span class="level-item">日语</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">1</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/机器学习/">
+            <span class="level-start">
+                <span class="level-item">机器学习</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">1</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/算法/">
+            <span class="level-start">
+                <span class="level-item">算法</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">23</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/计算机基础/">
+            <span class="level-start">
+                <span class="level-item">计算机基础</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">1</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/设计模式/">
+            <span class="level-start">
+                <span class="level-item">设计模式</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">1</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/面试/">
+            <span class="level-start">
+                <span class="level-item">面试</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">1</span>
+            </span>
+        </a></li>
+            </ul>
+        </div>
+    </div>
+</div>
+    
+        
+<div class="card widget">
+    <div class="card-content">
+        <h3 class="menu-label">
+            标签云
+        </h3>
+        <a href="/tags/Android/" style="font-size: 10px;">Android</a> <a href="/tags/Centos/" style="font-size: 11.82px;">Centos</a> <a href="/tags/Effect-Java/" style="font-size: 10.91px;">Effect Java</a> <a href="/tags/JDK6-源码/" style="font-size: 18.18px;">JDK6 源码</a> <a href="/tags/JDK7-源码/" style="font-size: 14.55px;">JDK7 源码</a> <a href="/tags/JDK8-源码/" style="font-size: 10px;">JDK8 源码</a> <a href="/tags/JMM/" style="font-size: 15.45px;">JMM</a> <a href="/tags/JVM/" style="font-size: 16.36px;">JVM</a> <a href="/tags/Java/" style="font-size: 20px;">Java</a> <a href="/tags/Linux/" style="font-size: 12.73px;">Linux</a> <a href="/tags/MongoDB/" style="font-size: 10px;">MongoDB</a> <a href="/tags/Mongodb/" style="font-size: 10px;">Mongodb</a> <a href="/tags/MyBatis/" style="font-size: 11.82px;">MyBatis</a> <a href="/tags/MySQL/" style="font-size: 10.91px;">MySQL</a> <a href="/tags/Redis/" style="font-size: 10px;">Redis</a> <a href="/tags/Spring/" style="font-size: 12.73px;">Spring</a> <a href="/tags/Think-In-Java/" style="font-size: 10px;">Think In Java</a> <a href="/tags/Tomcat/" style="font-size: 15.45px;">Tomcat</a> <a href="/tags/Ubuntu/" style="font-size: 10px;">Ubuntu</a> <a href="/tags/一致性哈希算法/" style="font-size: 10px;">一致性哈希算法</a> <a href="/tags/书/" style="font-size: 11.82px;">书</a> <a href="/tags/倒排索引/" style="font-size: 10px;">倒排索引</a> <a href="/tags/内存泄漏/" style="font-size: 10px;">内存泄漏</a> <a href="/tags/分支限界算法/" style="font-size: 10.91px;">分支限界算法</a> <a href="/tags/分治法/" style="font-size: 10px;">分治法</a> <a href="/tags/分治算法/" style="font-size: 10px;">分治算法</a> <a href="/tags/分词算法/" style="font-size: 10.91px;">分词算法</a> <a href="/tags/动态规划/" style="font-size: 10px;">动态规划</a> <a href="/tags/动态规划算法/" style="font-size: 10.91px;">动态规划算法</a> <a href="/tags/华为/" style="font-size: 10px;">华为</a> <a href="/tags/回溯算法/" style="font-size: 12.73px;">回溯算法</a> <a href="/tags/多线程/" style="font-size: 10.91px;">多线程</a> <a href="/tags/工具/" style="font-size: 10px;">工具</a> <a href="/tags/并发/" style="font-size: 13.64px;">并发</a> <a href="/tags/开源项目/" style="font-size: 17.27px;">开源项目</a> <a href="/tags/手机游戏/" style="font-size: 10px;">手机游戏</a> <a href="/tags/排序算法/" style="font-size: 10px;">排序算法</a> <a href="/tags/推荐/" style="font-size: 10px;">推荐</a> <a href="/tags/散列表/" style="font-size: 10px;">散列表</a> <a href="/tags/数学/" style="font-size: 10px;">数学</a> <a href="/tags/数据库/" style="font-size: 10.91px;">数据库</a> <a href="/tags/数据结构/" style="font-size: 13.64px;">数据结构</a> <a href="/tags/日语/" style="font-size: 10px;">日语</a> <a href="/tags/最优路径算法/" style="font-size: 10px;">最优路径算法</a> <a href="/tags/机器学习/" style="font-size: 10px;">机器学习</a> <a href="/tags/源码/" style="font-size: 11.82px;">源码</a> <a href="/tags/算法/" style="font-size: 19.09px;">算法</a> <a href="/tags/线程安全/" style="font-size: 10.91px;">线程安全</a> <a href="/tags/编程珠玑/" style="font-size: 11.82px;">编程珠玑</a> <a href="/tags/计算机基础/" style="font-size: 10px;">计算机基础</a> <a href="/tags/设计模式/" style="font-size: 12.73px;">设计模式</a> <a href="/tags/贪心算法/" style="font-size: 11.82px;">贪心算法</a> <a href="/tags/跳表/" style="font-size: 10px;">跳表</a> <a href="/tags/面试/" style="font-size: 10px;">面试</a>
+    </div>
+</div>
+
+    
+    
+        <div class="column-right-shadow is-hidden-widescreen ">
+        
+            
+        
+            
+<div class="card widget">
+    <div class="card-content">
+        <h3 class="menu-label">
+            最新文章
+        </h3>
+        
+        <article class="media">
+            <!-- 
+            <a href="/VIM-Command/" class="media-left">
+                <p class="image is-64x64">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="VIM 命令">
+                </p>
+            </a>
+             -->
+            <div class="media-content">
+                <div class="content">
+                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-12-10T02:31:22.000Z">2018-12-10</time></div>
+                    <a href="/VIM-Command/" class="has-link-black-ter is-size-6">VIM 命令</a>
+                    <p class="is-size-7 is-uppercase">
+                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
+                    </p>
+                </div>
+            </div>
+        </article>
+        
+        <article class="media">
+            <!-- 
+            <a href="/Lock-Control/" class="media-left">
+                <p class="image is-64x64">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="锁粒度的控制">
+                </p>
+            </a>
+             -->
+            <div class="media-content">
+                <div class="content">
+                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-04T04:37:22.000Z">2018-11-04</time></div>
+                    <a href="/Lock-Control/" class="has-link-black-ter is-size-6">锁粒度的控制</a>
+                    <p class="is-size-7 is-uppercase">
+                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
+                    </p>
+                </div>
+            </div>
+        </article>
+        
+        <article class="media">
+            <!-- 
+            <a href="/Temporary-Menory-Table/" class="media-left">
+                <p class="image is-64x64">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="临时表和内存表">
+                </p>
+            </a>
+             -->
+            <div class="media-content">
+                <div class="content">
+                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-04T04:37:22.000Z">2018-11-04</time></div>
+                    <a href="/Temporary-Menory-Table/" class="has-link-black-ter is-size-6">临时表和内存表</a>
+                    <p class="is-size-7 is-uppercase">
+                        <a class="has-link-grey -link" href="/categories/MySQL/">MySQL</a>
+                    </p>
+                </div>
+            </div>
+        </article>
+        
+        <article class="media">
+            <!-- 
+            <a href="/MySQL-Command/" class="media-left">
+                <p class="image is-64x64">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="MySQL基本命令">
+                </p>
+            </a>
+             -->
+            <div class="media-content">
+                <div class="content">
+                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
+                    <a href="/MySQL-Command/" class="has-link-black-ter is-size-6">MySQL基本命令</a>
+                    <p class="is-size-7 is-uppercase">
+                        <a class="has-link-grey -link" href="/categories/MySQL/">MySQL</a>
+                    </p>
+                </div>
+            </div>
+        </article>
+        
+        <article class="media">
+            <!-- 
+            <a href="/Python2ToPython3/" class="media-left">
+                <p class="image is-64x64">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Python2切换Python3">
+                </p>
+            </a>
+             -->
+            <div class="media-content">
+                <div class="content">
+                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
+                    <a href="/Python2ToPython3/" class="has-link-black-ter is-size-6">Python2切换Python3</a>
+                    <p class="is-size-7 is-uppercase">
+                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
+                    </p>
+                </div>
+            </div>
+        </article>
+        
+    </div>
+</div>
+
+        
+            <div class="card widget">
+    <div class="card-content">
+        <div class="menu">
+        <h3 class="menu-label">
+            归档
+        </h3>
+        <ul class="menu-list">
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2018/12/">
+                <span class="level-start">
+                    <span class="level-item">十二月 2018</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">1</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2018/11/">
+                <span class="level-start">
+                    <span class="level-item">十一月 2018</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">7</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2018/01/">
+                <span class="level-start">
+                    <span class="level-item">一月 2018</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">1</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2017/01/">
+                <span class="level-start">
+                    <span class="level-item">一月 2017</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">1</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2016/10/">
+                <span class="level-start">
+                    <span class="level-item">十月 2016</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">9</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2016/09/">
+                <span class="level-start">
+                    <span class="level-item">九月 2016</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">3</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2016/08/">
+                <span class="level-start">
+                    <span class="level-item">八月 2016</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">4</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2016/07/">
+                <span class="level-start">
+                    <span class="level-item">七月 2016</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">7</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2016/06/">
+                <span class="level-start">
+                    <span class="level-item">六月 2016</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">1</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2016/05/">
+                <span class="level-start">
+                    <span class="level-item">五月 2016</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">6</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2016/04/">
+                <span class="level-start">
+                    <span class="level-item">四月 2016</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">1</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2016/03/">
+                <span class="level-start">
+                    <span class="level-item">三月 2016</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">4</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2016/02/">
+                <span class="level-start">
+                    <span class="level-item">二月 2016</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">1</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2015/12/">
+                <span class="level-start">
+                    <span class="level-item">十二月 2015</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">7</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2015/11/">
+                <span class="level-start">
+                    <span class="level-item">十一月 2015</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">3</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2015/10/">
+                <span class="level-start">
+                    <span class="level-item">十月 2015</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">13</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2015/09/">
+                <span class="level-start">
+                    <span class="level-item">九月 2015</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">4</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2015/08/">
+                <span class="level-start">
+                    <span class="level-item">八月 2015</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">6</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2015/07/">
+                <span class="level-start">
+                    <span class="level-item">七月 2015</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">6</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2015/06/">
+                <span class="level-start">
+                    <span class="level-item">六月 2015</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">3</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2015/05/">
+                <span class="level-start">
+                    <span class="level-item">五月 2015</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">2</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2015/04/">
+                <span class="level-start">
+                    <span class="level-item">四月 2015</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">4</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2015/03/">
+                <span class="level-start">
+                    <span class="level-item">三月 2015</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">3</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2015/02/">
+                <span class="level-start">
+                    <span class="level-item">二月 2015</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">4</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2015/01/">
+                <span class="level-start">
+                    <span class="level-item">一月 2015</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">2</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2014/12/">
+                <span class="level-start">
+                    <span class="level-item">十二月 2014</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">1</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2014/11/">
+                <span class="level-start">
+                    <span class="level-item">十一月 2014</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">1</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2014/09/">
+                <span class="level-start">
+                    <span class="level-item">九月 2014</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">1</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2014/03/">
+                <span class="level-start">
+                    <span class="level-item">三月 2014</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">1</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2013/12/">
+                <span class="level-start">
+                    <span class="level-item">十二月 2013</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">1</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2013/11/">
+                <span class="level-start">
+                    <span class="level-item">十一月 2013</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">2</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2013/10/">
+                <span class="level-start">
+                    <span class="level-item">十月 2013</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">1</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2013/08/">
+                <span class="level-start">
+                    <span class="level-item">八月 2013</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">1</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2013/07/">
+                <span class="level-start">
+                    <span class="level-item">七月 2013</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">1</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2013/06/">
+                <span class="level-start">
+                    <span class="level-item">六月 2013</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">1</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2013/04/">
+                <span class="level-start">
+                    <span class="level-item">四月 2013</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">7</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2013/03/">
+                <span class="level-start">
+                    <span class="level-item">三月 2013</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">2</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2013/02/">
+                <span class="level-start">
+                    <span class="level-item">二月 2013</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">3</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2013/01/">
+                <span class="level-start">
+                    <span class="level-item">一月 2013</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">3</span>
+                </span>
+            </a>
+        </li>
+        
+        </ul>
+        </div>
+    </div>
+</div>
+        
+            <div class="card widget">
+    <div class="card-content">
+        <div class="menu">
+            <h3 class="menu-label">
+                标签
+            </h3>
+            <div class="field is-grouped is-grouped-multiline">
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/Android/">
+                        <span class="tag">Android</span>
+                        <span class="tag is-grey">1</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/Centos/">
+                        <span class="tag">Centos</span>
+                        <span class="tag is-grey">3</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/Effect-Java/">
+                        <span class="tag">Effect Java</span>
+                        <span class="tag is-grey">2</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/JDK6-源码/">
+                        <span class="tag">JDK6 源码</span>
+                        <span class="tag is-grey">18</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/JDK7-源码/">
+                        <span class="tag">JDK7 源码</span>
+                        <span class="tag is-grey">6</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/JDK8-源码/">
+                        <span class="tag">JDK8 源码</span>
+                        <span class="tag is-grey">1</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/JMM/">
+                        <span class="tag">JMM</span>
+                        <span class="tag is-grey">7</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/JVM/">
+                        <span class="tag">JVM</span>
+                        <span class="tag is-grey">10</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/Java/">
+                        <span class="tag">Java</span>
+                        <span class="tag is-grey">40</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/Linux/">
+                        <span class="tag">Linux</span>
+                        <span class="tag is-grey">4</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/MongoDB/">
+                        <span class="tag">MongoDB</span>
+                        <span class="tag is-grey">1</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/Mongodb/">
+                        <span class="tag">Mongodb</span>
+                        <span class="tag is-grey">1</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/MyBatis/">
+                        <span class="tag">MyBatis</span>
+                        <span class="tag is-grey">3</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/MySQL/">
+                        <span class="tag">MySQL</span>
+                        <span class="tag is-grey">2</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/Redis/">
+                        <span class="tag">Redis</span>
+                        <span class="tag is-grey">1</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/Spring/">
+                        <span class="tag">Spring</span>
+                        <span class="tag is-grey">4</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/Think-In-Java/">
+                        <span class="tag">Think In Java</span>
+                        <span class="tag is-grey">1</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/Tomcat/">
+                        <span class="tag">Tomcat</span>
+                        <span class="tag is-grey">7</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/Ubuntu/">
+                        <span class="tag">Ubuntu</span>
+                        <span class="tag is-grey">1</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/一致性哈希算法/">
+                        <span class="tag">一致性哈希算法</span>
+                        <span class="tag is-grey">1</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/书/">
+                        <span class="tag">书</span>
+                        <span class="tag is-grey">3</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/倒排索引/">
+                        <span class="tag">倒排索引</span>
+                        <span class="tag is-grey">1</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/内存泄漏/">
+                        <span class="tag">内存泄漏</span>
+                        <span class="tag is-grey">1</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/分支限界算法/">
+                        <span class="tag">分支限界算法</span>
+                        <span class="tag is-grey">2</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/分治法/">
+                        <span class="tag">分治法</span>
+                        <span class="tag is-grey">1</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/分治算法/">
+                        <span class="tag">分治算法</span>
+                        <span class="tag is-grey">1</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/分词算法/">
+                        <span class="tag">分词算法</span>
+                        <span class="tag is-grey">2</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/动态规划/">
+                        <span class="tag">动态规划</span>
+                        <span class="tag is-grey">1</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/动态规划算法/">
+                        <span class="tag">动态规划算法</span>
+                        <span class="tag is-grey">2</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/华为/">
+                        <span class="tag">华为</span>
+                        <span class="tag is-grey">1</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/回溯算法/">
+                        <span class="tag">回溯算法</span>
+                        <span class="tag is-grey">4</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/多线程/">
+                        <span class="tag">多线程</span>
+                        <span class="tag is-grey">2</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/工具/">
+                        <span class="tag">工具</span>
+                        <span class="tag is-grey">1</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/并发/">
+                        <span class="tag">并发</span>
+                        <span class="tag is-grey">5</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/开源项目/">
+                        <span class="tag">开源项目</span>
+                        <span class="tag is-grey">17</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/手机游戏/">
+                        <span class="tag">手机游戏</span>
+                        <span class="tag is-grey">1</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/排序算法/">
+                        <span class="tag">排序算法</span>
+                        <span class="tag is-grey">1</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/推荐/">
+                        <span class="tag">推荐</span>
+                        <span class="tag is-grey">1</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/散列表/">
+                        <span class="tag">散列表</span>
+                        <span class="tag is-grey">1</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/数学/">
+                        <span class="tag">数学</span>
+                        <span class="tag is-grey">1</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/数据库/">
+                        <span class="tag">数据库</span>
+                        <span class="tag is-grey">2</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/数据结构/">
+                        <span class="tag">数据结构</span>
+                        <span class="tag is-grey">5</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/日语/">
+                        <span class="tag">日语</span>
+                        <span class="tag is-grey">1</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/最优路径算法/">
+                        <span class="tag">最优路径算法</span>
+                        <span class="tag is-grey">1</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/机器学习/">
+                        <span class="tag">机器学习</span>
+                        <span class="tag is-grey">1</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/源码/">
+                        <span class="tag">源码</span>
+                        <span class="tag is-grey">3</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/算法/">
+                        <span class="tag">算法</span>
+                        <span class="tag is-grey">26</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/线程安全/">
+                        <span class="tag">线程安全</span>
+                        <span class="tag is-grey">2</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/编程珠玑/">
+                        <span class="tag">编程珠玑</span>
+                        <span class="tag is-grey">3</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/计算机基础/">
+                        <span class="tag">计算机基础</span>
+                        <span class="tag is-grey">1</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/设计模式/">
+                        <span class="tag">设计模式</span>
+                        <span class="tag is-grey">4</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/贪心算法/">
+                        <span class="tag">贪心算法</span>
+                        <span class="tag is-grey">3</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/跳表/">
+                        <span class="tag">跳表</span>
+                        <span class="tag is-grey">1</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/面试/">
+                        <span class="tag">面试</span>
+                        <span class="tag is-grey">1</span>
+                    </a>
+                </div>
+                
+            </div>
+        </div>
+    </div>
+</div>
+        
+        </div>
+    
+</div>
+
+                
+
+
+
+
+<div class="column is-4-tablet is-4-desktop is-3-widescreen is-hidden-touch is-hidden-desktop-only has-order-3 column-right ">
+    
+        
+    
+        
+<div class="card widget">
+    <div class="card-content">
+        <h3 class="menu-label">
+            最新文章
+        </h3>
+        
+        <article class="media">
+            <!-- 
+            <a href="/VIM-Command/" class="media-left">
+                <p class="image is-64x64">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="VIM 命令">
+                </p>
+            </a>
+             -->
+            <div class="media-content">
+                <div class="content">
+                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-12-10T02:31:22.000Z">2018-12-10</time></div>
+                    <a href="/VIM-Command/" class="has-link-black-ter is-size-6">VIM 命令</a>
+                    <p class="is-size-7 is-uppercase">
+                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
+                    </p>
+                </div>
+            </div>
+        </article>
+        
+        <article class="media">
+            <!-- 
+            <a href="/Lock-Control/" class="media-left">
+                <p class="image is-64x64">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="锁粒度的控制">
+                </p>
+            </a>
+             -->
+            <div class="media-content">
+                <div class="content">
+                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-04T04:37:22.000Z">2018-11-04</time></div>
+                    <a href="/Lock-Control/" class="has-link-black-ter is-size-6">锁粒度的控制</a>
+                    <p class="is-size-7 is-uppercase">
+                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
+                    </p>
+                </div>
+            </div>
+        </article>
+        
+        <article class="media">
+            <!-- 
+            <a href="/Temporary-Menory-Table/" class="media-left">
+                <p class="image is-64x64">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="临时表和内存表">
+                </p>
+            </a>
+             -->
+            <div class="media-content">
+                <div class="content">
+                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-04T04:37:22.000Z">2018-11-04</time></div>
+                    <a href="/Temporary-Menory-Table/" class="has-link-black-ter is-size-6">临时表和内存表</a>
+                    <p class="is-size-7 is-uppercase">
+                        <a class="has-link-grey -link" href="/categories/MySQL/">MySQL</a>
+                    </p>
+                </div>
+            </div>
+        </article>
+        
+        <article class="media">
+            <!-- 
+            <a href="/MySQL-Command/" class="media-left">
+                <p class="image is-64x64">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="MySQL基本命令">
+                </p>
+            </a>
+             -->
+            <div class="media-content">
+                <div class="content">
+                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
+                    <a href="/MySQL-Command/" class="has-link-black-ter is-size-6">MySQL基本命令</a>
+                    <p class="is-size-7 is-uppercase">
+                        <a class="has-link-grey -link" href="/categories/MySQL/">MySQL</a>
+                    </p>
+                </div>
+            </div>
+        </article>
+        
+        <article class="media">
+            <!-- 
+            <a href="/Python2ToPython3/" class="media-left">
+                <p class="image is-64x64">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Python2切换Python3">
+                </p>
+            </a>
+             -->
+            <div class="media-content">
+                <div class="content">
+                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
+                    <a href="/Python2ToPython3/" class="has-link-black-ter is-size-6">Python2切换Python3</a>
+                    <p class="is-size-7 is-uppercase">
+                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
+                    </p>
+                </div>
+            </div>
+        </article>
+        
+    </div>
+</div>
+
+    
+        <div class="card widget">
+    <div class="card-content">
+        <div class="menu">
+        <h3 class="menu-label">
+            归档
+        </h3>
+        <ul class="menu-list">
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2018/12/">
+                <span class="level-start">
+                    <span class="level-item">十二月 2018</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">1</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2018/11/">
+                <span class="level-start">
+                    <span class="level-item">十一月 2018</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">7</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2018/01/">
+                <span class="level-start">
+                    <span class="level-item">一月 2018</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">1</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2017/01/">
+                <span class="level-start">
+                    <span class="level-item">一月 2017</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">1</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2016/10/">
+                <span class="level-start">
+                    <span class="level-item">十月 2016</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">9</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2016/09/">
+                <span class="level-start">
+                    <span class="level-item">九月 2016</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">3</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2016/08/">
+                <span class="level-start">
+                    <span class="level-item">八月 2016</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">4</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2016/07/">
+                <span class="level-start">
+                    <span class="level-item">七月 2016</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">7</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2016/06/">
+                <span class="level-start">
+                    <span class="level-item">六月 2016</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">1</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2016/05/">
+                <span class="level-start">
+                    <span class="level-item">五月 2016</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">6</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2016/04/">
+                <span class="level-start">
+                    <span class="level-item">四月 2016</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">1</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2016/03/">
+                <span class="level-start">
+                    <span class="level-item">三月 2016</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">4</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2016/02/">
+                <span class="level-start">
+                    <span class="level-item">二月 2016</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">1</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2015/12/">
+                <span class="level-start">
+                    <span class="level-item">十二月 2015</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">7</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2015/11/">
+                <span class="level-start">
+                    <span class="level-item">十一月 2015</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">3</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2015/10/">
+                <span class="level-start">
+                    <span class="level-item">十月 2015</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">13</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2015/09/">
+                <span class="level-start">
+                    <span class="level-item">九月 2015</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">4</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2015/08/">
+                <span class="level-start">
+                    <span class="level-item">八月 2015</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">6</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2015/07/">
+                <span class="level-start">
+                    <span class="level-item">七月 2015</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">6</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2015/06/">
+                <span class="level-start">
+                    <span class="level-item">六月 2015</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">3</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2015/05/">
+                <span class="level-start">
+                    <span class="level-item">五月 2015</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">2</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2015/04/">
+                <span class="level-start">
+                    <span class="level-item">四月 2015</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">4</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2015/03/">
+                <span class="level-start">
+                    <span class="level-item">三月 2015</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">3</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2015/02/">
+                <span class="level-start">
+                    <span class="level-item">二月 2015</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">4</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2015/01/">
+                <span class="level-start">
+                    <span class="level-item">一月 2015</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">2</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2014/12/">
+                <span class="level-start">
+                    <span class="level-item">十二月 2014</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">1</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2014/11/">
+                <span class="level-start">
+                    <span class="level-item">十一月 2014</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">1</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2014/09/">
+                <span class="level-start">
+                    <span class="level-item">九月 2014</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">1</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2014/03/">
+                <span class="level-start">
+                    <span class="level-item">三月 2014</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">1</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2013/12/">
+                <span class="level-start">
+                    <span class="level-item">十二月 2013</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">1</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2013/11/">
+                <span class="level-start">
+                    <span class="level-item">十一月 2013</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">2</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2013/10/">
+                <span class="level-start">
+                    <span class="level-item">十月 2013</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">1</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2013/08/">
+                <span class="level-start">
+                    <span class="level-item">八月 2013</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">1</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2013/07/">
+                <span class="level-start">
+                    <span class="level-item">七月 2013</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">1</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2013/06/">
+                <span class="level-start">
+                    <span class="level-item">六月 2013</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">1</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2013/04/">
+                <span class="level-start">
+                    <span class="level-item">四月 2013</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">7</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2013/03/">
+                <span class="level-start">
+                    <span class="level-item">三月 2013</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">2</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2013/02/">
+                <span class="level-start">
+                    <span class="level-item">二月 2013</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">3</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2013/01/">
+                <span class="level-start">
+                    <span class="level-item">一月 2013</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">3</span>
+                </span>
+            </a>
+        </li>
+        
+        </ul>
+        </div>
+    </div>
+</div>
+    
+        <div class="card widget">
+    <div class="card-content">
+        <div class="menu">
+            <h3 class="menu-label">
+                标签
+            </h3>
+            <div class="field is-grouped is-grouped-multiline">
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/Android/">
+                        <span class="tag">Android</span>
+                        <span class="tag is-grey">1</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/Centos/">
+                        <span class="tag">Centos</span>
+                        <span class="tag is-grey">3</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/Effect-Java/">
+                        <span class="tag">Effect Java</span>
+                        <span class="tag is-grey">2</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/JDK6-源码/">
+                        <span class="tag">JDK6 源码</span>
+                        <span class="tag is-grey">18</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/JDK7-源码/">
+                        <span class="tag">JDK7 源码</span>
+                        <span class="tag is-grey">6</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/JDK8-源码/">
+                        <span class="tag">JDK8 源码</span>
+                        <span class="tag is-grey">1</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/JMM/">
+                        <span class="tag">JMM</span>
+                        <span class="tag is-grey">7</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/JVM/">
+                        <span class="tag">JVM</span>
+                        <span class="tag is-grey">10</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/Java/">
+                        <span class="tag">Java</span>
+                        <span class="tag is-grey">40</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/Linux/">
+                        <span class="tag">Linux</span>
+                        <span class="tag is-grey">4</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/MongoDB/">
+                        <span class="tag">MongoDB</span>
+                        <span class="tag is-grey">1</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/Mongodb/">
+                        <span class="tag">Mongodb</span>
+                        <span class="tag is-grey">1</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/MyBatis/">
+                        <span class="tag">MyBatis</span>
+                        <span class="tag is-grey">3</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/MySQL/">
+                        <span class="tag">MySQL</span>
+                        <span class="tag is-grey">2</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/Redis/">
+                        <span class="tag">Redis</span>
+                        <span class="tag is-grey">1</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/Spring/">
+                        <span class="tag">Spring</span>
+                        <span class="tag is-grey">4</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/Think-In-Java/">
+                        <span class="tag">Think In Java</span>
+                        <span class="tag is-grey">1</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/Tomcat/">
+                        <span class="tag">Tomcat</span>
+                        <span class="tag is-grey">7</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/Ubuntu/">
+                        <span class="tag">Ubuntu</span>
+                        <span class="tag is-grey">1</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/一致性哈希算法/">
+                        <span class="tag">一致性哈希算法</span>
+                        <span class="tag is-grey">1</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/书/">
+                        <span class="tag">书</span>
+                        <span class="tag is-grey">3</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/倒排索引/">
+                        <span class="tag">倒排索引</span>
+                        <span class="tag is-grey">1</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/内存泄漏/">
+                        <span class="tag">内存泄漏</span>
+                        <span class="tag is-grey">1</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/分支限界算法/">
+                        <span class="tag">分支限界算法</span>
+                        <span class="tag is-grey">2</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/分治法/">
+                        <span class="tag">分治法</span>
+                        <span class="tag is-grey">1</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/分治算法/">
+                        <span class="tag">分治算法</span>
+                        <span class="tag is-grey">1</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/分词算法/">
+                        <span class="tag">分词算法</span>
+                        <span class="tag is-grey">2</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/动态规划/">
+                        <span class="tag">动态规划</span>
+                        <span class="tag is-grey">1</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/动态规划算法/">
+                        <span class="tag">动态规划算法</span>
+                        <span class="tag is-grey">2</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/华为/">
+                        <span class="tag">华为</span>
+                        <span class="tag is-grey">1</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/回溯算法/">
+                        <span class="tag">回溯算法</span>
+                        <span class="tag is-grey">4</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/多线程/">
+                        <span class="tag">多线程</span>
+                        <span class="tag is-grey">2</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/工具/">
+                        <span class="tag">工具</span>
+                        <span class="tag is-grey">1</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/并发/">
+                        <span class="tag">并发</span>
+                        <span class="tag is-grey">5</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/开源项目/">
+                        <span class="tag">开源项目</span>
+                        <span class="tag is-grey">17</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/手机游戏/">
+                        <span class="tag">手机游戏</span>
+                        <span class="tag is-grey">1</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/排序算法/">
+                        <span class="tag">排序算法</span>
+                        <span class="tag is-grey">1</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/推荐/">
+                        <span class="tag">推荐</span>
+                        <span class="tag is-grey">1</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/散列表/">
+                        <span class="tag">散列表</span>
+                        <span class="tag is-grey">1</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/数学/">
+                        <span class="tag">数学</span>
+                        <span class="tag is-grey">1</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/数据库/">
+                        <span class="tag">数据库</span>
+                        <span class="tag is-grey">2</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/数据结构/">
+                        <span class="tag">数据结构</span>
+                        <span class="tag is-grey">5</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/日语/">
+                        <span class="tag">日语</span>
+                        <span class="tag is-grey">1</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/最优路径算法/">
+                        <span class="tag">最优路径算法</span>
+                        <span class="tag is-grey">1</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/机器学习/">
+                        <span class="tag">机器学习</span>
+                        <span class="tag is-grey">1</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/源码/">
+                        <span class="tag">源码</span>
+                        <span class="tag is-grey">3</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/算法/">
+                        <span class="tag">算法</span>
+                        <span class="tag is-grey">26</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/线程安全/">
+                        <span class="tag">线程安全</span>
+                        <span class="tag is-grey">2</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/编程珠玑/">
+                        <span class="tag">编程珠玑</span>
+                        <span class="tag is-grey">3</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/计算机基础/">
+                        <span class="tag">计算机基础</span>
+                        <span class="tag is-grey">1</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/设计模式/">
+                        <span class="tag">设计模式</span>
+                        <span class="tag is-grey">4</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/贪心算法/">
+                        <span class="tag">贪心算法</span>
+                        <span class="tag is-grey">3</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/跳表/">
+                        <span class="tag">跳表</span>
+                        <span class="tag is-grey">1</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/面试/">
+                        <span class="tag">面试</span>
+                        <span class="tag is-grey">1</span>
+                    </a>
+                </div>
+                
+            </div>
+        </div>
+    </div>
+</div>
+    
+    
+</div>
+
+            </div>
+        </div>
+    </section>
+    <footer class="footer">
+    <div class="container">
+        <div class="level">
+            <div class="level-start has-text-centered-mobile">
+                <a class="footer-logo is-block has-mb-6" href="/">
+                
+                    Joe|博客
+                
+                </a>
+                <p class="is-size-7">
+                &copy; 2019 Joe&nbsp;
+                <!-- Powered by <a href="http://hexo.io/" target="_blank">Hexo</a> & <a
+                        href="http://github.com/ppoffice/hexo-theme-icarus" target="_blank">Icarus</a> -->
+                
+                </p>
+            </div>
+            <div class="level-end">
+            
+            </div>
+        </div>
+    </div>
+</footer>
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/moment@2.22.2/min/moment-with-locales.min.js"></script>
+<script>moment.locale("zh-CN");</script>
+
+
+    
+    
+    
+    <script src="/js/animation.js"></script>
+    
+
+    
+    
+    
+    <script src="https://cdn.jsdelivr.net/npm/lightgallery@1.6.8/dist/js/lightgallery.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/justifiedGallery@3.7.0/dist/js/jquery.justifiedGallery.min.js" defer></script>
+    <script src="/js/gallery.js" defer></script>
+    
+
+    
+    
+
+<div id="outdated">
+    <h6>Your browser is out-of-date!</h6>
+    <p>Update your browser to view this website correctly. <a id="btnUpdateBrowser" href="http://outdatedbrowser.com/">Update
+            my browser now </a></p>
+    <p class="last"><a href="#" id="btnCloseUpdateBrowser" title="Close">&times;</a></p>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/outdatedbrowser@1.1.5/outdatedbrowser/outdatedbrowser.min.js" defer></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        outdatedBrowser({
+            bgColor: '#f25648',
+            color: '#ffffff',
+            lowerThan: 'flex'
+        });
+    });
+</script>
+
+
+    
+    
+<script src="https://cdn.jsdelivr.net/npm/mathjax@2.7.5/unpacked/MathJax.js?config=TeX-MML-AM_CHTML" defer></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    MathJax.Hub.Config({
+        'HTML-CSS': {
+            matchFontHeight: false
+        },
+        SVG: {
+            matchFontHeight: false
+        },
+        CommonHTML: {
+            matchFontHeight: false
+        },
+        tex2jax: {
+            inlineMath: [
+                ['$','$'],
+                ['\\(','\\)']
+            ]
+        }
+    });
+});
+</script>
+
+    
+    
+
+<a id="back-to-top" title="回到顶端" href="javascript:;">
+    <i class="fas fa-chevron-up"></i>
+</a>
+<script src="/js/back-to-top.js" defer></script>
+
+
+    
+    
+
+    
+    
+    
+    
+
+    
+    
+    
+    
+    
+    <script src="https://cdn.jsdelivr.net/npm/clipboard@2.0.4/dist/clipboard.min.js" defer></script>
+    <script src="/js/clipboard.js" defer></script>
+    
+
+    
+    
+    
+
+
+<script src="/js/main.js" defer></script>
+
+    
+    <div class="searchbox ins-search">
+    <div class="searchbox-container ins-search-container">
+        <div class="searchbox-input-wrapper">
+            <input type="text" class="searchbox-input ins-search-input" placeholder="想要查找什么...">
+            <span class="searchbox-close ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="searchbox-result-wrapper ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+    (function (window) {
+        var INSIGHT_CONFIG = {
+            TRANSLATION: {
+                POSTS: '文章',
+                PAGES: '页面',
+                CATEGORIES: '分类',
+                TAGS: '标签',
+                UNTITLED: '(无标题)',
+            },
+            CONTENT_URL: '/content.json',
+        };
+        window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+    })(window);
+</script>
+<script src="/js/insight.js" defer></script>
+<link rel="stylesheet" href="/css/search.css">
+<link rel="stylesheet" href="/css/insight.css">
+    
+</body>
+</html>

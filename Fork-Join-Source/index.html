@@ -1,0 +1,2821 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head><meta name="generator" content="Hexo 3.8.0">
+    <meta charset="utf-8">
+<title>Fork-Join源码分析 - Joe|博客</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+
+
+    <meta name="description" content="1 Fork ForkJoinTask#fork() ForkJoinWorkerThread#pushTask() ForkJoinWorkerThread#growQueue()   2 Join ForkJoinTask#doJoin() ForkJoinWorkerThread#unpushTask() ForkJoinWorkerThread#joinTask() ForkJoinW">
+<meta name="keywords" content="Java,设计模式,JDK7 源码">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Fork-Join源码分析">
+<meta property="og:url" content="https://joeskye1701.github.io/Fork-Join-Source/index.html">
+<meta property="og:site_name" content="Joe|博客">
+<meta property="og:description" content="1 Fork ForkJoinTask#fork() ForkJoinWorkerThread#pushTask() ForkJoinWorkerThread#growQueue()   2 Join ForkJoinTask#doJoin() ForkJoinWorkerThread#unpushTask() ForkJoinWorkerThread#joinTask() ForkJoinW">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:updated_time" content="2018-10-22T00:36:19.883Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Fork-Join源码分析">
+<meta name="twitter:description" content="1 Fork ForkJoinTask#fork() ForkJoinWorkerThread#pushTask() ForkJoinWorkerThread#growQueue()   2 Join ForkJoinTask#doJoin() ForkJoinWorkerThread#unpushTask() ForkJoinWorkerThread#joinTask() ForkJoinW">
+
+
+
+
+
+<link rel="icon" href="/images/thank-you-kobe.jpg">
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.7.2/css/bulma.css">
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.4.1/css/all.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Ubuntu:400,600|Source+Code+Pro">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@9.12.0/styles/xcode.css">
+
+
+    
+    
+    
+    <style>body>.footer,body>.navbar,body>.section{opacity:0}</style>
+    
+
+    
+    
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lightgallery@1.6.8/dist/css/lightgallery.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/justifiedGallery@3.7.0/dist/css/justifiedGallery.min.css">
+    
+
+    
+    
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/outdatedbrowser@1.1.5/outdatedbrowser/outdatedbrowser.min.css">
+
+
+    
+    
+    
+    
+
+<link rel="stylesheet" href="/css/back-to-top.css">
+
+
+    
+    
+
+    
+    
+<script>
+var _hmt = _hmt || [];
+(function() {
+    var hm = document.createElement("script");
+    hm.src = "//hm.baidu.com/hm.js?c422b171d3bdb7dbfae47ff3f70f9d30";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+    
+    
+
+    
+    
+<link rel="stylesheet" href="/css/progressbar.css">
+<script src="https://cdn.jsdelivr.net/npm/pace-js@1.0.2/pace.min.js"></script>
+
+    
+    
+    
+
+    
+    
+    
+
+
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="is-3-column">
+    <nav class="navbar navbar-main">
+    <div class="container">
+        <div class="navbar-brand is-flex-center">
+            <a class="navbar-item navbar-logo" href="/">
+            
+                Joe|博客
+            
+            </a>
+        </div>
+        <div class="navbar-menu">
+            
+            <div class="navbar-start">
+                
+                <a class="navbar-item" href="/">主页</a>
+                
+                <a class="navbar-item" href="/archives">归档</a>
+                
+                <a class="navbar-item" href="/categories">分类</a>
+                
+                <a class="navbar-item" href="/tags">标签</a>
+                
+                <a class="navbar-item" href="/about">关于</a>
+                
+            </div>
+            
+            <div class="navbar-end">
+                
+                
+                
+                <a class="navbar-item search" title="搜索" href="javascript:;">
+                    <i class="fas fa-search"></i>
+                </a>
+                
+            </div>
+        </div>
+    </div>
+</nav>
+    
+    <section class="section">
+        <div class="container">
+            <div class="columns">
+                <div class="column is-8-tablet is-8-desktop is-6-widescreen has-order-2 column-main"><div class="card">
+    
+    <div class="card-content article ">
+        
+        <div class="level article-meta is-size-7 is-uppercase is-mobile is-overflow-x-auto">
+            <div class="level-left">
+                <time class="level-item has-text-grey" datetime="2016-03-10T04:37:22.000Z">2016-03-10</time>
+                
+                <div class="level-item">
+                <a class="has-link-grey -link" href="/categories/JDK7-源码/">JDK7 源码</a>
+                </div>
+                
+                
+                <span class="level-item has-text-grey">
+                    
+                    
+                    28 分钟 读完 (大约 4210 个字)
+                </span>
+                
+                
+            </div>
+        </div>
+        
+        <h1 class="title is-size-3 is-size-4-mobile has-text-weight-normal">
+            
+                Fork-Join源码分析
+            
+        </h1>
+        <div class="content">
+            <!-- TOC -->
+<ul>
+<li><a href="#1-fork">1 Fork</a><ul>
+<li><a href="#forkjointaskfork">ForkJoinTask#fork()</a></li>
+<li><a href="#forkjoinworkerthreadpushtask">ForkJoinWorkerThread#pushTask()</a></li>
+<li><a href="#forkjoinworkerthreadgrowqueue">ForkJoinWorkerThread#growQueue()</a></li>
+</ul>
+</li>
+<li><a href="#2-join">2 Join</a><ul>
+<li><a href="#forkjointaskdojoin">ForkJoinTask#doJoin()</a></li>
+<li><a href="#forkjoinworkerthreadunpushtask">ForkJoinWorkerThread#unpushTask()</a></li>
+<li><a href="#forkjoinworkerthreadjointask">ForkJoinWorkerThread#joinTask()</a></li>
+<li><a href="#forkjoinworkerthreadlocalhelpjointask">ForkJoinWorkerThread#localHelpJoinTask()</a></li>
+<li><a href="#forkjoinworkerthreadtrydeqandexec">ForkJoinWorkerThread#tryDeqAndExec()</a></li>
+<li><a href="#forkjoinworkerthreadhelpjointask">ForkJoinWorkerThread#helpJoinTask()</a></li>
+<li><a href="#forkjoinpooltryawaitjoin">ForkJoinPool#tryAwaitJoin()</a></li>
+<li><a href="#forkjoinpooltrypreblock">ForkJoinPool#tryPreBlock()</a></li>
+<li><a href="#forkjointasktryawaitdone">ForkJoinTask#tryAwaitDone()</a></li>
+<li><a href="#forkjoinpoolpostblock">ForkJoinPool#postBlock()</a></li>
+<li><a href="#forkjointaskcancelignoringexceptions">ForkJoinTask#cancelIgnoringExceptions()</a><ul>
+<li><a href="#cancelignoringexceptions">cancelIgnoringExceptions()</a></li>
+</ul>
+</li>
+<li><a href="#forkjointaskgetrawresult">ForkJoinTask#getRawResult()</a></li>
+<li><a href="#recursivetaskgetrawresult">RecursiveTask#getRawResult()</a></li>
+<li><a href="#forkjointaskreportresult">ForkJoinTask#reportResult()</a></li>
+</ul>
+</li>
+<li><a href="#3-总结">3 总结</a></li>
+</ul>
+<!-- /TOC -->
+<p>这篇源码分析基于JDK7。</p>
+<h1 id="1-Fork"><a href="#1-Fork" class="headerlink" title="1 Fork"></a>1 Fork</h1><p>通过分析一个Fork-Join任务的执行过程来分析Fork-Join的相关代码，主要侧重于分裂(Fork)/合并(Join)过程。  </p>
+<p>SumTask<br><figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">SumTask</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">RecursiveTask</span>&lt;<span class="hljs-title">Long</span>&gt;</span>&#123;  </span><br><span class="line">    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">int</span> THRESHOLD = <span class="hljs-number">10</span>;  </span><br><span class="line">      </span><br><span class="line">    <span class="hljs-keyword">private</span> <span class="hljs-keyword">long</span> start;  </span><br><span class="line">    <span class="hljs-keyword">private</span> <span class="hljs-keyword">long</span> end;  </span><br><span class="line">      </span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-title">SumTask</span><span class="hljs-params">(<span class="hljs-keyword">long</span> n)</span> </span>&#123;  </span><br><span class="line">        <span class="hljs-keyword">this</span>(<span class="hljs-number">1</span>,n);  </span><br><span class="line">    &#125;  </span><br><span class="line">      </span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">private</span> <span class="hljs-title">SumTask</span><span class="hljs-params">(<span class="hljs-keyword">long</span> start, <span class="hljs-keyword">long</span> end)</span> </span>&#123;  </span><br><span class="line">        <span class="hljs-keyword">this</span>.start = start;  </span><br><span class="line">        <span class="hljs-keyword">this</span>.end = end;  </span><br><span class="line">    &#125;  </span><br><span class="line">    <span class="hljs-meta">@Override</span>  </span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">protected</span> Long <span class="hljs-title">compute</span><span class="hljs-params">()</span> </span>&#123;  </span><br><span class="line">        <span class="hljs-keyword">long</span> sum = <span class="hljs-number">0</span>;  </span><br><span class="line">        <span class="hljs-keyword">if</span>((end - start) &lt;= THRESHOLD)&#123;  </span><br><span class="line">            <span class="hljs-keyword">for</span>(<span class="hljs-keyword">long</span> l = start; l &lt;= end; l++)&#123;  </span><br><span class="line">                sum += l;  </span><br><span class="line">            &#125;  </span><br><span class="line">        &#125;<span class="hljs-keyword">else</span>&#123;  </span><br><span class="line">            <span class="hljs-keyword">long</span> mid = (start + end) &gt;&gt;&gt; <span class="hljs-number">1</span>;  </span><br><span class="line">            SumTask left = <span class="hljs-keyword">new</span> SumTask(start, mid);  </span><br><span class="line">            SumTask right = <span class="hljs-keyword">new</span> SumTask(mid + <span class="hljs-number">1</span>, end);  </span><br><span class="line">            left.fork();  </span><br><span class="line">            right.fork();  </span><br><span class="line">            sum = left.join() + right.join();  </span><br><span class="line">        &#125;  </span><br><span class="line">        <span class="hljs-keyword">return</span> sum;  </span><br><span class="line">    &#125;  </span><br><span class="line">    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">long</span> serialVersionUID = <span class="hljs-number">1L</span>;  </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<h2 id="ForkJoinTask-fork"><a href="#ForkJoinTask-fork" class="headerlink" title="ForkJoinTask#fork()"></a>ForkJoinTask#fork()</h2><figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment">    * Arranges to asynchronously execute this task.  While it is not</span></span><br><span class="line"><span class="hljs-comment">    * necessarily enforced, it is a usage error to fork a task more</span></span><br><span class="line"><span class="hljs-comment">    * than once unless it has completed and been reinitialized.</span></span><br><span class="line"><span class="hljs-comment">    * Subsequent modifications to the state of this task or any data</span></span><br><span class="line"><span class="hljs-comment">    * it operates on are not necessarily consistently observable by</span></span><br><span class="line"><span class="hljs-comment">    * any thread other than the one executing it unless preceded by a</span></span><br><span class="line"><span class="hljs-comment">    * call to &#123;<span class="hljs-doctag">@link</span> #join&#125; or related methods, or a call to &#123;<span class="hljs-doctag">@link</span></span></span><br><span class="line"><span class="hljs-comment">    * #isDone&#125; returning &#123;<span class="hljs-doctag">@code</span> true&#125;.</span></span><br><span class="line"><span class="hljs-comment">    *</span></span><br><span class="line"><span class="hljs-comment">    * &lt;p&gt;This method may be invoked only from within &#123;<span class="hljs-doctag">@code</span></span></span><br><span class="line"><span class="hljs-comment">    * ForkJoinPool&#125; computations (as may be determined using method</span></span><br><span class="line"><span class="hljs-comment">    * &#123;<span class="hljs-doctag">@link</span> #inForkJoinPool&#125;).  Attempts to invoke in other contexts</span></span><br><span class="line"><span class="hljs-comment">    * result in exceptions or errors, possibly including &#123;<span class="hljs-doctag">@code</span></span></span><br><span class="line"><span class="hljs-comment">    * ClassCastException&#125;.</span></span><br><span class="line"><span class="hljs-comment">    *</span></span><br><span class="line"><span class="hljs-comment">    * <span class="hljs-doctag">@return</span> &#123;<span class="hljs-doctag">@code</span> this&#125;, to simplify usage</span></span><br><span class="line"><span class="hljs-comment">    */</span></span><br><span class="line">   <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">final</span> ForkJoinTask&lt;V&gt; <span class="hljs-title">fork</span><span class="hljs-params">()</span> </span>&#123;</span><br><span class="line">       ((ForkJoinWorkerThread) Thread.currentThread())</span><br><span class="line">           .pushTask(<span class="hljs-keyword">this</span>);</span><br><span class="line">       <span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>;</span><br><span class="line">   &#125;</span><br></pre></td></tr></table></figure>
+<h2 id="ForkJoinWorkerThread-pushTask"><a href="#ForkJoinWorkerThread-pushTask" class="headerlink" title="ForkJoinWorkerThread#pushTask()"></a>ForkJoinWorkerThread#pushTask()</h2><figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment">  * Pushes a task. Call only from this thread.</span></span><br><span class="line"><span class="hljs-comment">  *</span></span><br><span class="line"><span class="hljs-comment">  * <span class="hljs-doctag">@param</span> t the task. Caller must ensure non-null.</span></span><br><span class="line"><span class="hljs-comment">  */</span></span><br><span class="line"> <span class="hljs-function"><span class="hljs-keyword">final</span> <span class="hljs-keyword">void</span> <span class="hljs-title">pushTask</span><span class="hljs-params">(ForkJoinTask&lt;?&gt; t)</span> </span>&#123;</span><br><span class="line">     ForkJoinTask&lt;?&gt;[] q; <span class="hljs-keyword">int</span> s, m;</span><br><span class="line">     <span class="hljs-keyword">if</span> ((q = queue) != <span class="hljs-keyword">null</span>) &#123;    <span class="hljs-comment">// ignore if queue removed</span></span><br><span class="line">         <span class="hljs-comment">// 1</span></span><br><span class="line">         <span class="hljs-keyword">long</span> u = (((s = queueTop) &amp; (m = q.length - <span class="hljs-number">1</span>)) &lt;&lt; ASHIFT) + ABASE;</span><br><span class="line">         <span class="hljs-comment">// 2</span></span><br><span class="line">         UNSAFE.putOrderedObject(q, u, t);</span><br><span class="line">         <span class="hljs-comment">// 3</span></span><br><span class="line">         queueTop = s + <span class="hljs-number">1</span>;         <span class="hljs-comment">// or use putOrderedInt</span></span><br><span class="line">         <span class="hljs-keyword">if</span> ((s -= queueBase) &lt;= <span class="hljs-number">2</span>)</span><br><span class="line">             pool.signalWork();</span><br><span class="line">         <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (s == m)</span><br><span class="line">             <span class="hljs-comment">// 4</span></span><br><span class="line">             growQueue();</span><br><span class="line">     &#125;</span><br><span class="line"> &#125;</span><br></pre></td></tr></table></figure>
+<p>标注代码分析</p>
+<ol>
+<li>这里首先根据当前的<code>queueTop</code>对队列(数组)长度取模来算出放置任务的下标,然后再通过下标算出偏移地址，提供给<code>Unsafe</code>使用。</li>
+<li>设置任务。</li>
+<li>修改<code>queueTop</code>。</li>
+<li>如果队列满了，扩展一下队列容量。<h2 id="ForkJoinWorkerThread-growQueue"><a href="#ForkJoinWorkerThread-growQueue" class="headerlink" title="ForkJoinWorkerThread#growQueue()"></a>ForkJoinWorkerThread#growQueue()</h2><figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment">     * Creates or doubles queue array.  Transfers elements by</span></span><br><span class="line"><span class="hljs-comment">     * emulating steals (deqs) from old array and placing, oldest</span></span><br><span class="line"><span class="hljs-comment">     * first, into new array.</span></span><br><span class="line"><span class="hljs-comment">     */</span></span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">private</span> <span class="hljs-keyword">void</span> <span class="hljs-title">growQueue</span><span class="hljs-params">()</span> </span>&#123;</span><br><span class="line">        ForkJoinTask&lt;?&gt;[] oldQ = queue;</span><br><span class="line">        <span class="hljs-keyword">int</span> size = oldQ != <span class="hljs-keyword">null</span> ? oldQ.length &lt;&lt; <span class="hljs-number">1</span> : INITIAL_QUEUE_CAPACITY;</span><br><span class="line">        <span class="hljs-comment">// 1</span></span><br><span class="line">        <span class="hljs-keyword">if</span> (size &gt; MAXIMUM_QUEUE_CAPACITY)</span><br><span class="line">            <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> RejectedExecutionException(<span class="hljs-string">"Queue capacity exceeded"</span>);</span><br><span class="line">        <span class="hljs-comment">// 2</span></span><br><span class="line">        <span class="hljs-keyword">if</span> (size &lt; INITIAL_QUEUE_CAPACITY)</span><br><span class="line">            size = INITIAL_QUEUE_CAPACITY;</span><br><span class="line">        ForkJoinTask&lt;?&gt;[] q = queue = <span class="hljs-keyword">new</span> ForkJoinTask&lt;?&gt;[size];</span><br><span class="line">        <span class="hljs-keyword">int</span> mask = size - <span class="hljs-number">1</span>;</span><br><span class="line">        <span class="hljs-keyword">int</span> top = queueTop;</span><br><span class="line">        <span class="hljs-keyword">int</span> oldMask;</span><br><span class="line">        <span class="hljs-keyword">if</span> (oldQ != <span class="hljs-keyword">null</span> &amp;&amp; (oldMask = oldQ.length - <span class="hljs-number">1</span>) &gt;= <span class="hljs-number">0</span>) &#123;</span><br><span class="line">            <span class="hljs-keyword">for</span> (<span class="hljs-keyword">int</span> b = queueBase; b != top; ++b) &#123;</span><br><span class="line">                <span class="hljs-keyword">long</span> u = ((b &amp; oldMask) &lt;&lt; ASHIFT) + ABASE;</span><br><span class="line">                Object x = UNSAFE.getObjectVolatile(oldQ, u);</span><br><span class="line">                <span class="hljs-keyword">if</span> (x != <span class="hljs-keyword">null</span> &amp;&amp; UNSAFE.compareAndSwapObject(oldQ, u, x, <span class="hljs-keyword">null</span>))</span><br><span class="line">                    UNSAFE.putObjectVolatile</span><br><span class="line">                        (q, ((b &amp; mask) &lt;&lt; ASHIFT) + ABASE, x);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+</li>
+</ol>
+<p>标注代码分析</p>
+<ol>
+<li>容量为原来的2倍，不超过<code>MAXIMUM_QUEUE_CAPACITY(1 &lt;&lt; 24)</code>。</li>
+<li>最小为<code>INITIAL_QUEUE_CAPACITY(1 &lt;&lt; 13)</code>。</li>
+</ol>
+<a id="more"></a>
+<h1 id="2-Join"><a href="#2-Join" class="headerlink" title="2 Join"></a>2 Join</h1><figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment"> * Returns the result of the computation when it &#123;<span class="hljs-doctag">@link</span> #isDone is</span></span><br><span class="line"><span class="hljs-comment"> * done&#125;.  This method differs from &#123;<span class="hljs-doctag">@link</span> #get()&#125; in that</span></span><br><span class="line"><span class="hljs-comment"> * abnormal completion results in &#123;<span class="hljs-doctag">@code</span> RuntimeException&#125; or</span></span><br><span class="line"><span class="hljs-comment"> * &#123;<span class="hljs-doctag">@code</span> Error&#125;, not &#123;<span class="hljs-doctag">@code</span> ExecutionException&#125;, and that</span></span><br><span class="line"><span class="hljs-comment"> * interrupts of the calling thread do &lt;em&gt;not&lt;/em&gt; cause the</span></span><br><span class="line"><span class="hljs-comment"> * method to abruptly return by throwing &#123;<span class="hljs-doctag">@code</span></span></span><br><span class="line"><span class="hljs-comment"> * InterruptedException&#125;.</span></span><br><span class="line"><span class="hljs-comment"> *</span></span><br><span class="line"><span class="hljs-comment"> * <span class="hljs-doctag">@return</span> the computed result</span></span><br><span class="line"><span class="hljs-comment"> */</span></span><br><span class="line"><span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">final</span> V <span class="hljs-title">join</span><span class="hljs-params">()</span> </span>&#123;</span><br><span class="line">    <span class="hljs-comment">// 1</span></span><br><span class="line">    <span class="hljs-keyword">if</span> (doJoin() != NORMAL)</span><br><span class="line">        <span class="hljs-keyword">return</span> reportResult();</span><br><span class="line">    <span class="hljs-keyword">else</span></span><br><span class="line">        <span class="hljs-keyword">return</span> getRawResult();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>标注代码分析</p>
+<ol>
+<li>先调用<code>doJoin()</code>，如果<code>doJoin()</code>返回<code>NORMAL</code>，那么通过<code>getRawResult()</code>来获取结果；否则会调用<code>reportResult()</code>来处理和获取结果。<h2 id="ForkJoinTask-doJoin"><a href="#ForkJoinTask-doJoin" class="headerlink" title="ForkJoinTask#doJoin()"></a>ForkJoinTask#doJoin()</h2><figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment">  * Primary mechanics for join, get, quietlyJoin.</span></span><br><span class="line"><span class="hljs-comment">  * <span class="hljs-doctag">@return</span> status upon completion</span></span><br><span class="line"><span class="hljs-comment">  */</span></span><br><span class="line"> <span class="hljs-function"><span class="hljs-keyword">private</span> <span class="hljs-keyword">int</span> <span class="hljs-title">doJoin</span><span class="hljs-params">()</span> </span>&#123;</span><br><span class="line">     Thread t; ForkJoinWorkerThread w; <span class="hljs-keyword">int</span> s; <span class="hljs-keyword">boolean</span> completed;</span><br><span class="line">     <span class="hljs-keyword">if</span> ((t = Thread.currentThread()) <span class="hljs-keyword">instanceof</span> ForkJoinWorkerThread) &#123;</span><br><span class="line">         <span class="hljs-comment">// 1</span></span><br><span class="line">         <span class="hljs-keyword">if</span> ((s = status) &lt; <span class="hljs-number">0</span>)</span><br><span class="line">             <span class="hljs-keyword">return</span> s;</span><br><span class="line">         <span class="hljs-comment">// 2</span></span><br><span class="line">         <span class="hljs-keyword">if</span> ((w = (ForkJoinWorkerThread)t).unpushTask(<span class="hljs-keyword">this</span>)) &#123;</span><br><span class="line">             <span class="hljs-keyword">try</span> &#123;</span><br><span class="line">                 completed = exec();</span><br><span class="line">             &#125; <span class="hljs-keyword">catch</span> (Throwable rex) &#123;</span><br><span class="line">                 <span class="hljs-keyword">return</span> setExceptionalCompletion(rex);</span><br><span class="line">             &#125;</span><br><span class="line">             <span class="hljs-keyword">if</span> (completed)</span><br><span class="line">                 <span class="hljs-keyword">return</span> setCompletion(NORMAL);</span><br><span class="line">         &#125;</span><br><span class="line">         <span class="hljs-comment">// 3</span></span><br><span class="line">         <span class="hljs-keyword">return</span> w.joinTask(<span class="hljs-keyword">this</span>);</span><br><span class="line">     &#125;</span><br><span class="line">     <span class="hljs-keyword">else</span></span><br><span class="line">         <span class="hljs-comment">// 4</span></span><br><span class="line">         <span class="hljs-keyword">return</span> externalAwaitDone();</span><br><span class="line"> &#125;</span><br></pre></td></tr></table></figure>
+</li>
+</ol>
+<p>标注代码分析</p>
+<ol>
+<li>如果当前任务已经完成，直接返回状态。</li>
+<li>如果当前任务恰好是当前工作线程的队列顶端的第一个任务，那么将该任务出队，然后执行。  </li>
+<li>否则调用当前工作线程的<code>joinTask()</code>。  </li>
+<li>如果当前线程不是ForkJoin工作线程，那么调用<code>externalAwaitDone()</code>。<h2 id="ForkJoinWorkerThread-unpushTask"><a href="#ForkJoinWorkerThread-unpushTask" class="headerlink" title="ForkJoinWorkerThread#unpushTask()"></a>ForkJoinWorkerThread#unpushTask()</h2><figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment"> * Specialized version of popTask to pop only if topmost element</span></span><br><span class="line"><span class="hljs-comment"> * is the given task. Called only by this thread.</span></span><br><span class="line"><span class="hljs-comment"> *</span></span><br><span class="line"><span class="hljs-comment"> * <span class="hljs-doctag">@param</span> t the task. Caller must ensure non-null.</span></span><br><span class="line"><span class="hljs-comment"> */</span></span><br><span class="line"><span class="hljs-function"><span class="hljs-keyword">final</span> <span class="hljs-keyword">boolean</span> <span class="hljs-title">unpushTask</span><span class="hljs-params">(ForkJoinTask&lt;?&gt; t)</span> </span>&#123;</span><br><span class="line">    ForkJoinTask&lt;?&gt;[] q;</span><br><span class="line">    <span class="hljs-keyword">int</span> s;</span><br><span class="line">    <span class="hljs-keyword">if</span> ((q = queue) != <span class="hljs-keyword">null</span> &amp;&amp; (s = queueTop) != queueBase &amp;&amp;</span><br><span class="line">        UNSAFE.compareAndSwapObject</span><br><span class="line">        (q, (((q.length - <span class="hljs-number">1</span>) &amp; --s) &lt;&lt; ASHIFT) + ABASE, t, <span class="hljs-keyword">null</span>)) &#123;</span><br><span class="line">        queueTop = s; <span class="hljs-comment">// or putOrderedInt</span></span><br><span class="line">        <span class="hljs-keyword">return</span> <span class="hljs-keyword">true</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="hljs-keyword">return</span> <span class="hljs-keyword">false</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+</li>
+</ol>
+<p>这是另一个版本的<code>pop</code>。<code>unpushTash()</code>中仅当给定的t是队列顶端的任务，才会返回并移除t。</p>
+<h2 id="ForkJoinWorkerThread-joinTask"><a href="#ForkJoinWorkerThread-joinTask" class="headerlink" title="ForkJoinWorkerThread#joinTask()"></a>ForkJoinWorkerThread#joinTask()</h2><figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment">    * Possibly runs some tasks and/or blocks, until joinMe is done.</span></span><br><span class="line"><span class="hljs-comment">    *</span></span><br><span class="line"><span class="hljs-comment">    * <span class="hljs-doctag">@param</span> joinMe the task to join</span></span><br><span class="line"><span class="hljs-comment">    * <span class="hljs-doctag">@return</span> completion status on exit</span></span><br><span class="line"><span class="hljs-comment">    */</span></span><br><span class="line">   <span class="hljs-function"><span class="hljs-keyword">final</span> <span class="hljs-keyword">int</span> <span class="hljs-title">joinTask</span><span class="hljs-params">(ForkJoinTask&lt;?&gt; joinMe)</span> </span>&#123;</span><br><span class="line">       <span class="hljs-comment">// 1</span></span><br><span class="line">       ForkJoinTask&lt;?&gt; prevJoin = currentJoin;</span><br><span class="line">       <span class="hljs-comment">// 2</span></span><br><span class="line">       currentJoin = joinMe;</span><br><span class="line">       <span class="hljs-keyword">for</span> (<span class="hljs-keyword">int</span> s, retries = MAX_HELP;;) &#123;</span><br><span class="line">           <span class="hljs-keyword">if</span> ((s = joinMe.status) &lt; <span class="hljs-number">0</span>) &#123;</span><br><span class="line">               <span class="hljs-comment">// 3</span></span><br><span class="line">               currentJoin = prevJoin;</span><br><span class="line">               <span class="hljs-comment">// 4</span></span><br><span class="line">               <span class="hljs-keyword">return</span> s;</span><br><span class="line">           &#125;</span><br><span class="line">           <span class="hljs-keyword">if</span> (retries &gt; <span class="hljs-number">0</span>) &#123;</span><br><span class="line">               <span class="hljs-keyword">if</span> (queueTop != queueBase) &#123;</span><br><span class="line">                   <span class="hljs-comment">// 5</span></span><br><span class="line">                   <span class="hljs-keyword">if</span> (!localHelpJoinTask(joinMe))</span><br><span class="line">                       retries = <span class="hljs-number">0</span>;           <span class="hljs-comment">// cannot help</span></span><br><span class="line">               &#125;</span><br><span class="line">               <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (retries == MAX_HELP &gt;&gt;&gt; <span class="hljs-number">1</span>) &#123;</span><br><span class="line">                   --retries;                 <span class="hljs-comment">// check uncommon case</span></span><br><span class="line">                   <span class="hljs-comment">// 6</span></span><br><span class="line">                   <span class="hljs-keyword">if</span> (tryDeqAndExec(joinMe) &gt;= <span class="hljs-number">0</span>)</span><br><span class="line">                       <span class="hljs-comment">// 7</span></span><br><span class="line">                       Thread.yield();        <span class="hljs-comment">// for politeness</span></span><br><span class="line">               &#125;</span><br><span class="line">               <span class="hljs-keyword">else</span></span><br><span class="line">                   retries = helpJoinTask(joinMe) ? MAX_HELP : retries - <span class="hljs-number">1</span>;</span><br><span class="line">           &#125;</span><br><span class="line">           <span class="hljs-keyword">else</span> &#123;</span><br><span class="line">               retries = MAX_HELP;           <span class="hljs-comment">// restart if not done</span></span><br><span class="line">               pool.tryAwaitJoin(joinMe);</span><br><span class="line">           &#125;</span><br><span class="line">       &#125;</span><br><span class="line">   &#125;</span><br></pre></td></tr></table></figure>
+<p>标注代码分析</p>
+<ol>
+<li>记录之前的合并任务。</li>
+<li>设置当前工作线程的合并任务。</li>
+<li>如果合并任务已经完成，恢复之前的合并任务。</li>
+<li>返回任务状态。</li>
+<li>如果当前任务队列中有任务，尝试从当前队列顶端获取给定任务 (如果给定任务恰好在当前任务队列顶端的话)或者其他一个已经被取消的任务。</li>
+<li>这里尝试一种特殊情况：如果给定的任务正好在其他工作线程的队列的底部，那么尝试窃取这个任务并执行。</li>
+<li>如果没成功，这里出让一下CPU。</li>
+</ol>
+<p><code>joinTask</code>方法中主体是一个无限循环，里面会先尝试帮助合并的一些操作，失败的话会继续重试，最多尝试<code>MAX_HELP</code>次。超过了<code>MAX_HELP</code>无法继续尝试的话，就会调用<code>tryAwaitJoin()</code>等待合并任务。<br>尝试过程中，如果当前任务队列中有任务，会调用<code>localHelpJoinTask()</code>，如果方法调用失败会直接进入合并等待；否则会先进行<code>helpJoinTask()</code>的尝试，尝试<code>MAX_HELP/2</code>次，成功的话会一直尝试，直到给定的任务完成；如果<code>helpJoinTask()</code>尝试了<code>MAX_HELP/2</code>次都没有成功过，且本地队列一直没有任务，那么会进行一个特殊的尝试，会假设给定的任务在其他工作线程的任务队列的底部，然后去窃取这个任务，也会尝试<code>MAX_HELP/2</code>次。</p>
+<h2 id="ForkJoinWorkerThread-localHelpJoinTask"><a href="#ForkJoinWorkerThread-localHelpJoinTask" class="headerlink" title="ForkJoinWorkerThread#localHelpJoinTask()"></a>ForkJoinWorkerThread#localHelpJoinTask()</h2><figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment">     * If present, pops and executes the given task, or any other</span></span><br><span class="line"><span class="hljs-comment">     * cancelled task</span></span><br><span class="line"><span class="hljs-comment">     *</span></span><br><span class="line"><span class="hljs-comment">     * <span class="hljs-doctag">@return</span> false if any other non-cancelled task exists in local queue</span></span><br><span class="line"><span class="hljs-comment">     */</span></span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">private</span> <span class="hljs-keyword">boolean</span> <span class="hljs-title">localHelpJoinTask</span><span class="hljs-params">(ForkJoinTask&lt;?&gt; joinMe)</span> </span>&#123;</span><br><span class="line">        <span class="hljs-keyword">int</span> s, i; ForkJoinTask&lt;?&gt;[] q; ForkJoinTask&lt;?&gt; t;</span><br><span class="line">        <span class="hljs-keyword">if</span> ((s = queueTop) != queueBase &amp;&amp; (q = queue) != <span class="hljs-keyword">null</span> &amp;&amp;</span><br><span class="line">            (i = (q.length - <span class="hljs-number">1</span>) &amp; --s) &gt;= <span class="hljs-number">0</span> &amp;&amp;</span><br><span class="line">            (t = q[i]) != <span class="hljs-keyword">null</span>) &#123;</span><br><span class="line">            <span class="hljs-keyword">if</span> (t != joinMe &amp;&amp; t.status &gt;= <span class="hljs-number">0</span>)</span><br><span class="line">                <span class="hljs-comment">// 1</span></span><br><span class="line">                <span class="hljs-keyword">return</span> <span class="hljs-keyword">false</span>;</span><br><span class="line">            <span class="hljs-keyword">if</span> (UNSAFE.compareAndSwapObject</span><br><span class="line">                (q, (i &lt;&lt; ASHIFT) + ABASE, t, <span class="hljs-keyword">null</span>)) &#123;</span><br><span class="line">                <span class="hljs-comment">// 2</span></span><br><span class="line">                queueTop = s;           <span class="hljs-comment">// or putOrderedInt</span></span><br><span class="line">                t.doExec();</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="hljs-keyword">return</span> <span class="hljs-keyword">true</span>;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>标注代码分析</p>
+<ol>
+<li>如果当前工作线程的任务队列顶端的任务不是给定任务，且任务的状态是未取消(这里如果&lt;0，一定是取消的任务)，返回false。</li>
+<li>取出给定任务或者一个被取消的任务。</li>
+</ol>
+<p>如果当前任务队列顶端的任务是要合并的任务，或者是一个被取消的任务，那么尝试处理这个任务，返回成功；否则失败。</p>
+<h2 id="ForkJoinWorkerThread-tryDeqAndExec"><a href="#ForkJoinWorkerThread-tryDeqAndExec" class="headerlink" title="ForkJoinWorkerThread#tryDeqAndExec()"></a>ForkJoinWorkerThread#tryDeqAndExec()</h2><figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment">  * Performs an uncommon case for joinTask: If task t is at base of</span></span><br><span class="line"><span class="hljs-comment">  * some workers queue, steals and executes it.</span></span><br><span class="line"><span class="hljs-comment">  *</span></span><br><span class="line"><span class="hljs-comment">  * <span class="hljs-doctag">@param</span> t the task</span></span><br><span class="line"><span class="hljs-comment">  * <span class="hljs-doctag">@return</span> t's status</span></span><br><span class="line"><span class="hljs-comment">  */</span></span><br><span class="line"> <span class="hljs-function"><span class="hljs-keyword">private</span> <span class="hljs-keyword">int</span> <span class="hljs-title">tryDeqAndExec</span><span class="hljs-params">(ForkJoinTask&lt;?&gt; t)</span> </span>&#123;</span><br><span class="line">     <span class="hljs-keyword">int</span> m = pool.scanGuard &amp; SMASK;</span><br><span class="line">     ForkJoinWorkerThread[] ws = pool.workers;</span><br><span class="line">     <span class="hljs-comment">// 1</span></span><br><span class="line">     <span class="hljs-keyword">if</span> (ws != <span class="hljs-keyword">null</span> &amp;&amp; ws.length &gt; m &amp;&amp; t.status &gt;= <span class="hljs-number">0</span>) &#123;</span><br><span class="line">         <span class="hljs-keyword">for</span> (<span class="hljs-keyword">int</span> j = <span class="hljs-number">0</span>; j &lt;= m; ++j) &#123;</span><br><span class="line">             ForkJoinTask&lt;?&gt;[] q; <span class="hljs-keyword">int</span> b, i;</span><br><span class="line">             ForkJoinWorkerThread v = ws[j];</span><br><span class="line">             <span class="hljs-keyword">if</span> (v != <span class="hljs-keyword">null</span> &amp;&amp;</span><br><span class="line">                 (b = v.queueBase) != v.queueTop &amp;&amp;</span><br><span class="line">                 (q = v.queue) != <span class="hljs-keyword">null</span> &amp;&amp;</span><br><span class="line">                 (i = (q.length - <span class="hljs-number">1</span>) &amp; b) &gt;= <span class="hljs-number">0</span> &amp;&amp;</span><br><span class="line">                 q[i] ==  t) &#123;</span><br><span class="line">                 <span class="hljs-comment">// 2</span></span><br><span class="line">                 <span class="hljs-keyword">long</span> u = (i &lt;&lt; ASHIFT) + ABASE;</span><br><span class="line">                 <span class="hljs-keyword">if</span> (v.queueBase == b &amp;&amp;</span><br><span class="line">                     UNSAFE.compareAndSwapObject(q, u, t, <span class="hljs-keyword">null</span>)) &#123;</span><br><span class="line">                     v.queueBase = b + <span class="hljs-number">1</span>;</span><br><span class="line">                     v.stealHint = poolIndex;</span><br><span class="line">                     ForkJoinTask&lt;?&gt; ps = currentSteal;</span><br><span class="line">                     currentSteal = t;</span><br><span class="line">                     t.doExec();</span><br><span class="line">                     currentSteal = ps;</span><br><span class="line">                 &#125;</span><br><span class="line">                 <span class="hljs-keyword">break</span>;</span><br><span class="line">             &#125;</span><br><span class="line">         &#125;</span><br><span class="line">     &#125;</span><br><span class="line">     <span class="hljs-keyword">return</span> t.status;</span><br><span class="line"> &#125;</span><br></pre></td></tr></table></figure>
+<p>标注代码分析</p>
+<ol>
+<li>扫描所有工作线程。</li>
+<li>如果有工作线程的任务队列的底部正好是给定任务t。尝试窃取t后执行。</li>
+</ol>
+<p>如果有工作线程的队列底部的任务正好是要合并的任务，那么窃取该任务然后处理之。</p>
+<h2 id="ForkJoinWorkerThread-helpJoinTask"><a href="#ForkJoinWorkerThread-helpJoinTask" class="headerlink" title="ForkJoinWorkerThread#helpJoinTask()"></a>ForkJoinWorkerThread#helpJoinTask()</h2><figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment">  * Tries to locate and execute tasks for a stealer of the given</span></span><br><span class="line"><span class="hljs-comment">  * task, or in turn one of its stealers, Traces</span></span><br><span class="line"><span class="hljs-comment">  * currentSteal-&gt;currentJoin links looking for a thread working on</span></span><br><span class="line"><span class="hljs-comment">  * a descendant of the given task and with a non-empty queue to</span></span><br><span class="line"><span class="hljs-comment">  * steal back and execute tasks from.  The implementation is very</span></span><br><span class="line"><span class="hljs-comment">  * branchy to cope with potential inconsistencies or loops</span></span><br><span class="line"><span class="hljs-comment">  * encountering chains that are stale, unknown, or of length</span></span><br><span class="line"><span class="hljs-comment">  * greater than MAX_HELP links.  All of these cases are dealt with</span></span><br><span class="line"><span class="hljs-comment">  * by just retrying by caller.</span></span><br><span class="line"><span class="hljs-comment">  *</span></span><br><span class="line"><span class="hljs-comment">  * <span class="hljs-doctag">@param</span> joinMe the task to join</span></span><br><span class="line"><span class="hljs-comment">  * <span class="hljs-doctag">@param</span> canSteal true if local queue is empty</span></span><br><span class="line"><span class="hljs-comment">  * <span class="hljs-doctag">@return</span> true if ran a task</span></span><br><span class="line"><span class="hljs-comment">  */</span></span><br><span class="line"> <span class="hljs-function"><span class="hljs-keyword">private</span> <span class="hljs-keyword">boolean</span> <span class="hljs-title">helpJoinTask</span><span class="hljs-params">(ForkJoinTask&lt;?&gt; joinMe)</span> </span>&#123;</span><br><span class="line">     <span class="hljs-keyword">boolean</span> helped = <span class="hljs-keyword">false</span>;</span><br><span class="line">     <span class="hljs-keyword">int</span> m = pool.scanGuard &amp; SMASK;</span><br><span class="line">     ForkJoinWorkerThread[] ws = pool.workers;</span><br><span class="line">     <span class="hljs-keyword">if</span> (ws != <span class="hljs-keyword">null</span> &amp;&amp; ws.length &gt; m &amp;&amp; joinMe.status &gt;= <span class="hljs-number">0</span>) &#123;</span><br><span class="line">         <span class="hljs-keyword">int</span> levels = MAX_HELP;              <span class="hljs-comment">// remaining chain length</span></span><br><span class="line">         ForkJoinTask&lt;?&gt; task = joinMe;      <span class="hljs-comment">// base of chain</span></span><br><span class="line">         outer:<span class="hljs-keyword">for</span> (ForkJoinWorkerThread thread = <span class="hljs-keyword">this</span>;;) &#123;</span><br><span class="line">             <span class="hljs-comment">// Try to find v, the stealer of task, by first using hint</span></span><br><span class="line">             <span class="hljs-comment">// 1</span></span><br><span class="line">             ForkJoinWorkerThread v = ws[thread.stealHint &amp; m];</span><br><span class="line">             <span class="hljs-keyword">if</span> (v == <span class="hljs-keyword">null</span> || v.currentSteal != task) &#123;</span><br><span class="line">                 <span class="hljs-comment">// 2</span></span><br><span class="line">                 <span class="hljs-keyword">for</span> (<span class="hljs-keyword">int</span> j = <span class="hljs-number">0</span>; ;) &#123;        <span class="hljs-comment">// search array</span></span><br><span class="line">                     <span class="hljs-keyword">if</span> ((v = ws[j]) != <span class="hljs-keyword">null</span> &amp;&amp; v.currentSteal == task) &#123;</span><br><span class="line">                         <span class="hljs-comment">// 3</span></span><br><span class="line">                         thread.stealHint = j;</span><br><span class="line">                         <span class="hljs-keyword">break</span>;              <span class="hljs-comment">// save hint for next time</span></span><br><span class="line">                     &#125;</span><br><span class="line">                     <span class="hljs-keyword">if</span> (++j &gt; m)</span><br><span class="line">                         <span class="hljs-comment">// 4</span></span><br><span class="line">                         <span class="hljs-keyword">break</span> outer;        <span class="hljs-comment">// can't find stealer</span></span><br><span class="line">                 &#125;</span><br><span class="line">             &#125;</span><br><span class="line">             <span class="hljs-comment">// Try to help v, using specialized form of deqTask</span></span><br><span class="line">             <span class="hljs-comment">// 5</span></span><br><span class="line">             <span class="hljs-keyword">for</span> (;;) &#123;</span><br><span class="line">                 ForkJoinTask&lt;?&gt;[] q; <span class="hljs-keyword">int</span> b, i;</span><br><span class="line">                 <span class="hljs-keyword">if</span> (joinMe.status &lt; <span class="hljs-number">0</span>)</span><br><span class="line">                     <span class="hljs-comment">// 6</span></span><br><span class="line">                     <span class="hljs-keyword">break</span> outer;</span><br><span class="line">                 <span class="hljs-keyword">if</span> ((b = v.queueBase) == v.queueTop ||</span><br><span class="line">                     (q = v.queue) == <span class="hljs-keyword">null</span> ||</span><br><span class="line">                     (i = (q.length-<span class="hljs-number">1</span>) &amp; b) &lt; <span class="hljs-number">0</span>)</span><br><span class="line">                     <span class="hljs-comment">// 7</span></span><br><span class="line">                     <span class="hljs-keyword">break</span>;                  <span class="hljs-comment">// empty</span></span><br><span class="line">                 <span class="hljs-keyword">long</span> u = (i &lt;&lt; ASHIFT) + ABASE;</span><br><span class="line">                 ForkJoinTask&lt;?&gt; t = q[i];</span><br><span class="line">                 <span class="hljs-keyword">if</span> (task.status &lt; <span class="hljs-number">0</span>)</span><br><span class="line">                     <span class="hljs-comment">// 8</span></span><br><span class="line">                     <span class="hljs-keyword">break</span> outer;            <span class="hljs-comment">// stale</span></span><br><span class="line">                 <span class="hljs-comment">// 9</span></span><br><span class="line">                 <span class="hljs-keyword">if</span> (t != <span class="hljs-keyword">null</span> &amp;&amp; v.queueBase == b &amp;&amp;</span><br><span class="line">                     UNSAFE.compareAndSwapObject(q, u, t, <span class="hljs-keyword">null</span>)) &#123;</span><br><span class="line">                     <span class="hljs-comment">// 10</span></span><br><span class="line">                     v.queueBase = b + <span class="hljs-number">1</span>;</span><br><span class="line">                     v.stealHint = poolIndex;</span><br><span class="line">                     ForkJoinTask&lt;?&gt; ps = currentSteal;</span><br><span class="line">                     currentSteal = t;</span><br><span class="line">                     t.doExec();</span><br><span class="line">                     currentSteal = ps;</span><br><span class="line">                     helped = <span class="hljs-keyword">true</span>;</span><br><span class="line">                 &#125;</span><br><span class="line">             &#125;</span><br><span class="line">             <span class="hljs-comment">// Try to descend to find v's stealer</span></span><br><span class="line">             <span class="hljs-comment">// 11</span></span><br><span class="line">             ForkJoinTask&lt;?&gt; next = v.currentJoin;</span><br><span class="line">             <span class="hljs-keyword">if</span> (--levels &gt; <span class="hljs-number">0</span> &amp;&amp; task.status &gt;= <span class="hljs-number">0</span> &amp;&amp;</span><br><span class="line">                 next != <span class="hljs-keyword">null</span> &amp;&amp; next != task) &#123;</span><br><span class="line">                 task = next;</span><br><span class="line">                 thread = v;</span><br><span class="line">             &#125;</span><br><span class="line">             <span class="hljs-keyword">else</span></span><br><span class="line">                 <span class="hljs-comment">// 12</span></span><br><span class="line">                 <span class="hljs-keyword">break</span>;  <span class="hljs-comment">// max levels, stale, dead-end, or cyclic</span></span><br><span class="line">         &#125;</span><br><span class="line">     &#125;</span><br><span class="line">     <span class="hljs-keyword">return</span> helped;</span><br><span class="line"> &#125;</span><br></pre></td></tr></table></figure>
+<p>标注代码分析</p>
+<ol>
+<li>找到线程<code>thread</code>的窃取者v。</li>
+<li>如果<code>thread</code>没有窃取者或者v当前窃取的任务不是<code>task</code>，扫描工作线程数组。</li>
+<li>如果找到了窃取线程，将其设置为<code>thread</code>的窃取线程。</li>
+<li>没找到的话，直接跳出<code>outer</code>循环。</li>
+<li>找到了窃取者v。</li>
+<li>如果<code>joinMe</code>任务已经完成，跳出<code>outer</code>循环。</li>
+<li>如果v的队列是空的，跳出当前循环。</li>
+<li>如果<code>task</code>任务已经完成，跳出<code>outer</code>循环。  </li>
+<li>尝试窃取v的任务队列底部的任务。</li>
+<li>窃取成功后，执行任务。</li>
+<li>再去找v的窃取者，注意这里是一个链。</li>
+<li>如果超过最大深度<code>(MAX_HELP)</code>或者<code>task</code>已经执行完成 或者 找到了头<code>(next==null)</code>或者出现循环退出。</li>
+</ol>
+<p>这个方法的前提是当前线程需要join给定的任务<code>joinMe</code>，但是这个任务被其他线程(窃取者)窃取了。所以方法中首先找到窃取<code>joinMe</code>任务的工作线程v，如果找到了窃取者v，就会从v的任务队列中窃取任务来完成(帮助v完成任务)。但也有可能v也在join其他的任务(比如当前线程执行任务过程中，分裂出一个子任务A，工作线程v窃取了A，然后执行，执行过程中A由分裂出子任务A1，A1又被另一个工作线程v1给窃取了…是一个链)，所以方法中要顺着这个链一直找下去，目的就是能尽快的合并<code>joinMe</code>任务。为了避免一些情况，这里尝试的最大链深度限定为<code>MAX_HELP</code>。</p>
+<h2 id="ForkJoinPool-tryAwaitJoin"><a href="#ForkJoinPool-tryAwaitJoin" class="headerlink" title="ForkJoinPool#tryAwaitJoin()"></a>ForkJoinPool#tryAwaitJoin()</h2><figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment">     * Possibly blocks waiting for the given task to complete, or</span></span><br><span class="line"><span class="hljs-comment">     * cancels the task if terminating.  Fails to wait if contended.</span></span><br><span class="line"><span class="hljs-comment">     *</span></span><br><span class="line"><span class="hljs-comment">     * <span class="hljs-doctag">@param</span> joinMe the task</span></span><br><span class="line"><span class="hljs-comment">     */</span></span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">final</span> <span class="hljs-keyword">void</span> <span class="hljs-title">tryAwaitJoin</span><span class="hljs-params">(ForkJoinTask&lt;?&gt; joinMe)</span> </span>&#123;</span><br><span class="line">        <span class="hljs-keyword">int</span> s;</span><br><span class="line">        Thread.interrupted(); <span class="hljs-comment">// clear interrupts before checking termination</span></span><br><span class="line">        <span class="hljs-comment">// 1</span></span><br><span class="line">        <span class="hljs-keyword">if</span> (joinMe.status &gt;= <span class="hljs-number">0</span>) &#123;</span><br><span class="line">            <span class="hljs-comment">// 2</span></span><br><span class="line">            <span class="hljs-keyword">if</span> (tryPreBlock()) &#123;</span><br><span class="line">                <span class="hljs-comment">// 3</span></span><br><span class="line">                joinMe.tryAwaitDone(<span class="hljs-number">0L</span>);</span><br><span class="line">                <span class="hljs-comment">// 4</span></span><br><span class="line">                postBlock();</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> ((ctl &amp; STOP_BIT) != <span class="hljs-number">0L</span>)</span><br><span class="line">                <span class="hljs-comment">// 5 </span></span><br><span class="line">                joinMe.cancelIgnoringExceptions();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>标注代码分析</p>
+<ol>
+<li>如果<code>joinMe</code>未完成。</li>
+<li>尝试阻塞等待之前的预操作。</li>
+<li>在<code>joinMe</code>任务上阻塞等待。</li>
+<li>被唤醒后的操作。</li>
+<li>如果<code>Pool</code>关闭了，取消任务。调用其<code>cancelIgnoringExceptions()</code>。<h2 id="ForkJoinPool-tryPreBlock"><a href="#ForkJoinPool-tryPreBlock" class="headerlink" title="ForkJoinPool#tryPreBlock()"></a>ForkJoinPool#tryPreBlock()</h2><figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment">     * Tries to increment blockedCount, decrement active count</span></span><br><span class="line"><span class="hljs-comment">     * (sometimes implicitly) and possibly release or create a</span></span><br><span class="line"><span class="hljs-comment">     * compensating worker in preparation for blocking. Fails</span></span><br><span class="line"><span class="hljs-comment">     * on contention or termination.</span></span><br><span class="line"><span class="hljs-comment">     *</span></span><br><span class="line"><span class="hljs-comment">     * <span class="hljs-doctag">@return</span> true if the caller can block, else should recheck and retry</span></span><br><span class="line"><span class="hljs-comment">     */</span></span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">private</span> <span class="hljs-keyword">boolean</span> <span class="hljs-title">tryPreBlock</span><span class="hljs-params">()</span> </span>&#123;</span><br><span class="line">        <span class="hljs-keyword">int</span> b = blockedCount;</span><br><span class="line">        <span class="hljs-comment">// 1</span></span><br><span class="line">        <span class="hljs-keyword">if</span> (UNSAFE.compareAndSwapInt(<span class="hljs-keyword">this</span>, blockedCountOffset, b, b + <span class="hljs-number">1</span>)) &#123;</span><br><span class="line">            <span class="hljs-keyword">int</span> pc = parallelism;</span><br><span class="line">            <span class="hljs-keyword">do</span> &#123;</span><br><span class="line">                ForkJoinWorkerThread[] ws; ForkJoinWorkerThread w;</span><br><span class="line">                <span class="hljs-keyword">int</span> e, ac, tc, rc, i;</span><br><span class="line">                <span class="hljs-keyword">long</span> c = ctl;</span><br><span class="line">                <span class="hljs-keyword">int</span> u = (<span class="hljs-keyword">int</span>)(c &gt;&gt;&gt; <span class="hljs-number">32</span>);</span><br><span class="line">                <span class="hljs-comment">// 2</span></span><br><span class="line">                <span class="hljs-keyword">if</span> ((e = (<span class="hljs-keyword">int</span>)c) &lt; <span class="hljs-number">0</span>) &#123;</span><br><span class="line">                                                 <span class="hljs-comment">// skip -- terminating</span></span><br><span class="line">                &#125;</span><br><span class="line">                <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> ((ac = (u &gt;&gt; UAC_SHIFT)) &lt;= <span class="hljs-number">0</span> &amp;&amp; e != <span class="hljs-number">0</span> &amp;&amp;</span><br><span class="line">                         (ws = workers) != <span class="hljs-keyword">null</span> &amp;&amp;</span><br><span class="line">                         (i = ~e &amp; SMASK) &lt; ws.length &amp;&amp;</span><br><span class="line">                         (w = ws[i]) != <span class="hljs-keyword">null</span>) &#123;</span><br><span class="line">                    <span class="hljs-comment">// 3</span></span><br><span class="line">                    <span class="hljs-keyword">long</span> nc = ((<span class="hljs-keyword">long</span>)(w.nextWait &amp; E_MASK) |</span><br><span class="line">                               (c &amp; (AC_MASK|TC_MASK)));</span><br><span class="line">                    <span class="hljs-keyword">if</span> (w.eventCount == e &amp;&amp;</span><br><span class="line">                        UNSAFE.compareAndSwapLong(<span class="hljs-keyword">this</span>, ctlOffset, c, nc)) &#123;</span><br><span class="line">                        w.eventCount = (e + EC_UNIT) &amp; E_MASK;</span><br><span class="line">                        <span class="hljs-keyword">if</span> (w.parked)</span><br><span class="line">                            UNSAFE.unpark(w);</span><br><span class="line">                        <span class="hljs-keyword">return</span> <span class="hljs-keyword">true</span>;             <span class="hljs-comment">// release an idle worker</span></span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">                <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> ((tc = (<span class="hljs-keyword">short</span>)(u &gt;&gt;&gt; UTC_SHIFT)) &gt;= <span class="hljs-number">0</span> &amp;&amp; ac + pc &gt; <span class="hljs-number">1</span>) &#123;</span><br><span class="line">                    <span class="hljs-comment">// 4</span></span><br><span class="line">                    <span class="hljs-keyword">long</span> nc = ((c - AC_UNIT) &amp; AC_MASK) | (c &amp; ~AC_MASK);</span><br><span class="line">                    <span class="hljs-keyword">if</span> (UNSAFE.compareAndSwapLong(<span class="hljs-keyword">this</span>, ctlOffset, c, nc))</span><br><span class="line">                        <span class="hljs-keyword">return</span> <span class="hljs-keyword">true</span>;             <span class="hljs-comment">// no compensation needed</span></span><br><span class="line">                &#125;</span><br><span class="line">                <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (tc + pc &lt; MAX_ID) &#123;</span><br><span class="line">                    <span class="hljs-comment">// 5</span></span><br><span class="line">                    <span class="hljs-keyword">long</span> nc = ((c + TC_UNIT) &amp; TC_MASK) | (c &amp; ~TC_MASK);</span><br><span class="line">                    <span class="hljs-keyword">if</span> (UNSAFE.compareAndSwapLong(<span class="hljs-keyword">this</span>, ctlOffset, c, nc)) &#123;</span><br><span class="line">                        addWorker();</span><br><span class="line">                        <span class="hljs-keyword">return</span> <span class="hljs-keyword">true</span>;            <span class="hljs-comment">// create a replacement</span></span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">                <span class="hljs-comment">// try to back out on any failure and let caller retry</span></span><br><span class="line">                <span class="hljs-comment">// 6</span></span><br><span class="line">            &#125; <span class="hljs-keyword">while</span> (!UNSAFE.compareAndSwapInt(<span class="hljs-keyword">this</span>, blockedCountOffset,</span><br><span class="line">                                               b = blockedCount, b - <span class="hljs-number">1</span>));</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="hljs-keyword">return</span> <span class="hljs-keyword">false</span>;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+</li>
+</ol>
+<p>标注代码分析</p>
+<ol>
+<li>累加等待join任务的计数。</li>
+<li>如果<code>Pool</code>关闭了，跳过。</li>
+<li>如果当前活动的工作线程不大于cpu核数，且有线程在等待任务(处于空闲状态)。那么唤醒这个工作线程。</li>
+<li>如果总的工作线程数量不少于cpu核心数量，且至少有一个活动的工作线程。尝试在总控信息上将AC递减。</li>
+<li>如果不满足上面条件，这里会增加一个工作线程。</li>
+<li>如果失败，这里会把刚才对b增加的1给减回去。<h2 id="ForkJoinTask-tryAwaitDone"><a href="#ForkJoinTask-tryAwaitDone" class="headerlink" title="ForkJoinTask#tryAwaitDone()"></a>ForkJoinTask#tryAwaitDone()</h2><figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment"> * Tries to block a worker thread until completed or timed out.</span></span><br><span class="line"><span class="hljs-comment"> * Uses Object.wait time argument conventions.</span></span><br><span class="line"><span class="hljs-comment"> * May fail on contention or interrupt.</span></span><br><span class="line"><span class="hljs-comment"> *</span></span><br><span class="line"><span class="hljs-comment"> * <span class="hljs-doctag">@param</span> millis if &gt; 0, wait time.</span></span><br><span class="line"><span class="hljs-comment"> */</span></span><br><span class="line"><span class="hljs-function"><span class="hljs-keyword">final</span> <span class="hljs-keyword">void</span> <span class="hljs-title">tryAwaitDone</span><span class="hljs-params">(<span class="hljs-keyword">long</span> millis)</span> </span>&#123;</span><br><span class="line">    <span class="hljs-keyword">int</span> s;</span><br><span class="line">    <span class="hljs-keyword">try</span> &#123;</span><br><span class="line">        <span class="hljs-keyword">if</span> (((s = status) &gt; <span class="hljs-number">0</span> ||</span><br><span class="line">             (s == <span class="hljs-number">0</span> &amp;&amp;</span><br><span class="line">              UNSAFE.compareAndSwapInt(<span class="hljs-keyword">this</span>, statusOffset, <span class="hljs-number">0</span>, SIGNAL))) &amp;&amp;</span><br><span class="line">            status &gt; <span class="hljs-number">0</span>) &#123;</span><br><span class="line">            <span class="hljs-keyword">synchronized</span> (<span class="hljs-keyword">this</span>) &#123;</span><br><span class="line">                <span class="hljs-keyword">if</span> (status &gt; <span class="hljs-number">0</span>)</span><br><span class="line">                    wait(millis);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125; <span class="hljs-keyword">catch</span> (InterruptedException ie) &#123;</span><br><span class="line">        <span class="hljs-comment">// caller must check termination</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+</li>
+</ol>
+<p>阻塞等待(join任务)时，首先会检查join任务的状态，如果join任务未完成的话，才可以在join任务上等待。也就是说，join的运行状态(再回顾一下task的运行状态定义)必须大于等于0。如果<code>join#status</code>大于0，说明join任务上已经有其他工作线程等待了，当前线程直接等待就可以了；如果<code>join#status</code>等于0，说明当前线程是第一个要在join任务上阻塞等待的线程，那么会尝试将join的<code>status</code>改为<code>SIGNAL(1)</code>，然后进行阻塞等待工作。注意方法中不会处理中断异常，需要外部来处理。</p>
+<h2 id="ForkJoinPool-postBlock"><a href="#ForkJoinPool-postBlock" class="headerlink" title="ForkJoinPool#postBlock()"></a>ForkJoinPool#postBlock()</h2><figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment">  * Decrements blockedCount and increments active count</span></span><br><span class="line"><span class="hljs-comment">  */</span></span><br><span class="line"> <span class="hljs-function"><span class="hljs-keyword">private</span> <span class="hljs-keyword">void</span> <span class="hljs-title">postBlock</span><span class="hljs-params">()</span> </span>&#123;</span><br><span class="line">     <span class="hljs-keyword">long</span> c;</span><br><span class="line">     <span class="hljs-comment">// 1</span></span><br><span class="line">     <span class="hljs-keyword">do</span> &#123;&#125; <span class="hljs-keyword">while</span> (!UNSAFE.compareAndSwapLong(<span class="hljs-keyword">this</span>, ctlOffset,  <span class="hljs-comment">// no mask</span></span><br><span class="line">                                             c = ctl, c + AC_UNIT));</span><br><span class="line">     <span class="hljs-keyword">int</span> b;</span><br><span class="line">     <span class="hljs-comment">// 2</span></span><br><span class="line">     <span class="hljs-keyword">do</span> &#123;&#125; <span class="hljs-keyword">while</span> (!UNSAFE.compareAndSwapInt(<span class="hljs-keyword">this</span>, blockedCountOffset,</span><br><span class="line">                                            b = blockedCount, b - <span class="hljs-number">1</span>));</span><br><span class="line"> &#125;</span><br></pre></td></tr></table></figure>
+<p>标注代码分析</p>
+<ol>
+<li>累加活动线程计数。</li>
+<li>递减等待join任务的计数。<h2 id="ForkJoinTask-cancelIgnoringExceptions"><a href="#ForkJoinTask-cancelIgnoringExceptions" class="headerlink" title="ForkJoinTask#cancelIgnoringExceptions()"></a>ForkJoinTask#cancelIgnoringExceptions()</h2><figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment"> * Cancels, ignoring any exceptions thrown by cancel. Used during</span></span><br><span class="line"><span class="hljs-comment"> * worker and pool shutdown. Cancel is spec'ed not to throw any</span></span><br><span class="line"><span class="hljs-comment"> * exceptions, but if it does anyway, we have no recourse during</span></span><br><span class="line"><span class="hljs-comment"> * shutdown, so guard against this case.</span></span><br><span class="line"><span class="hljs-comment"> */</span></span><br><span class="line"><span class="hljs-function"><span class="hljs-keyword">final</span> <span class="hljs-keyword">void</span> <span class="hljs-title">cancelIgnoringExceptions</span><span class="hljs-params">()</span> </span>&#123;</span><br><span class="line">    <span class="hljs-keyword">try</span> &#123;</span><br><span class="line">        cancel(<span class="hljs-keyword">false</span>);</span><br><span class="line">    &#125; <span class="hljs-keyword">catch</span> (Throwable ignore) &#123;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+</li>
+</ol>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment">    * Attempts to cancel execution of this task. This attempt will</span></span><br><span class="line"><span class="hljs-comment">    * fail if the task has already completed or could not be</span></span><br><span class="line"><span class="hljs-comment">    * cancelled for some other reason. If successful, and this task</span></span><br><span class="line"><span class="hljs-comment">    * has not started when &#123;<span class="hljs-doctag">@code</span> cancel&#125; is called, execution of</span></span><br><span class="line"><span class="hljs-comment">    * this task is suppressed. After this method returns</span></span><br><span class="line"><span class="hljs-comment">    * successfully, unless there is an intervening call to &#123;<span class="hljs-doctag">@link</span></span></span><br><span class="line"><span class="hljs-comment">    * #reinitialize&#125;, subsequent calls to &#123;<span class="hljs-doctag">@link</span> #isCancelled&#125;,</span></span><br><span class="line"><span class="hljs-comment">    * &#123;<span class="hljs-doctag">@link</span> #isDone&#125;, and &#123;<span class="hljs-doctag">@code</span> cancel&#125; will return &#123;<span class="hljs-doctag">@code</span> true&#125;</span></span><br><span class="line"><span class="hljs-comment">    * and calls to &#123;<span class="hljs-doctag">@link</span> #join&#125; and related methods will result in</span></span><br><span class="line"><span class="hljs-comment">    * &#123;<span class="hljs-doctag">@code</span> CancellationException&#125;.</span></span><br><span class="line"><span class="hljs-comment">    *</span></span><br><span class="line"><span class="hljs-comment">    * &lt;p&gt;This method may be overridden in subclasses, but if so, must</span></span><br><span class="line"><span class="hljs-comment">    * still ensure that these properties hold. In particular, the</span></span><br><span class="line"><span class="hljs-comment">    * &#123;<span class="hljs-doctag">@code</span> cancel&#125; method itself must not throw exceptions.</span></span><br><span class="line"><span class="hljs-comment">    *</span></span><br><span class="line"><span class="hljs-comment">    * &lt;p&gt;This method is designed to be invoked by &lt;em&gt;other&lt;/em&gt;</span></span><br><span class="line"><span class="hljs-comment">    * tasks. To terminate the current task, you can just return or</span></span><br><span class="line"><span class="hljs-comment">    * throw an unchecked exception from its computation method, or</span></span><br><span class="line"><span class="hljs-comment">    * invoke &#123;<span class="hljs-doctag">@link</span> #completeExceptionally&#125;.</span></span><br><span class="line"><span class="hljs-comment">    *</span></span><br><span class="line"><span class="hljs-comment">    * <span class="hljs-doctag">@param</span> mayInterruptIfRunning this value has no effect in the</span></span><br><span class="line"><span class="hljs-comment">    * default implementation because interrupts are not used to</span></span><br><span class="line"><span class="hljs-comment">    * control cancellation.</span></span><br><span class="line"><span class="hljs-comment">    *</span></span><br><span class="line"><span class="hljs-comment">    * <span class="hljs-doctag">@return</span> &#123;<span class="hljs-doctag">@code</span> true&#125; if this task is now cancelled</span></span><br><span class="line"><span class="hljs-comment">    */</span></span><br><span class="line">   <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">boolean</span> <span class="hljs-title">cancel</span><span class="hljs-params">(<span class="hljs-keyword">boolean</span> mayInterruptIfRunning)</span></span>&#123;</span><br><span class="line">       <span class="hljs-keyword">return</span> setCompletion(CANCELLED) == CANCELLED;</span><br><span class="line">   &#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment">  * Marks completion and wakes up threads waiting to join this task,</span></span><br><span class="line"><span class="hljs-comment">  * also clearing signal request bits.</span></span><br><span class="line"><span class="hljs-comment">  *</span></span><br><span class="line"><span class="hljs-comment">  * <span class="hljs-doctag">@param</span> completion one of NORMAL, CANCELLED, EXCEPTIONAL</span></span><br><span class="line"><span class="hljs-comment">  * <span class="hljs-doctag">@return</span> completion status on exit</span></span><br><span class="line"><span class="hljs-comment">  */</span></span><br><span class="line"> <span class="hljs-function"><span class="hljs-keyword">private</span> <span class="hljs-keyword">int</span> <span class="hljs-title">setCompletion</span><span class="hljs-params">(<span class="hljs-keyword">int</span> completion)</span> </span>&#123;</span><br><span class="line">     <span class="hljs-keyword">for</span> (<span class="hljs-keyword">int</span> s;;) &#123;</span><br><span class="line">         <span class="hljs-keyword">if</span> ((s = status) &lt; <span class="hljs-number">0</span>)</span><br><span class="line">             <span class="hljs-keyword">return</span> s;</span><br><span class="line">         <span class="hljs-keyword">if</span> (UNSAFE.compareAndSwapInt(<span class="hljs-keyword">this</span>, statusOffset, s, completion)) &#123;</span><br><span class="line">             <span class="hljs-keyword">if</span> (s != <span class="hljs-number">0</span>)</span><br><span class="line">                 <span class="hljs-keyword">synchronized</span> (<span class="hljs-keyword">this</span>) &#123; notifyAll(); &#125;</span><br><span class="line">             <span class="hljs-keyword">return</span> completion;</span><br><span class="line">         &#125;</span><br><span class="line">     &#125;</span><br><span class="line"> &#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">int</span> CANCELLED   = -<span class="hljs-number">2</span>;</span><br></pre></td></tr></table></figure>
+<h3 id="cancelIgnoringExceptions"><a href="#cancelIgnoringExceptions" class="headerlink" title="cancelIgnoringExceptions()"></a>cancelIgnoringExceptions()</h3><p><code>cancelIgnoringExceptions()</code>中的逻辑就是将任务运行状态设置为<code>CANCELLED</code>，然后唤醒在任务上等待的线程。</p>
+<h2 id="ForkJoinTask-getRawResult"><a href="#ForkJoinTask-getRawResult" class="headerlink" title="ForkJoinTask#getRawResult()"></a>ForkJoinTask#getRawResult()</h2><p>回到<code>ForkJoinTask#join()</code>，如果正常完成会调用<code>getRawResult()</code>。<br><figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment"> * Returns the result that would be returned by &#123;<span class="hljs-doctag">@link</span> #join&#125;, even</span></span><br><span class="line"><span class="hljs-comment"> * if this task completed abnormally, or &#123;<span class="hljs-doctag">@code</span> null&#125; if this task</span></span><br><span class="line"><span class="hljs-comment"> * is not known to have been completed.  This method is designed</span></span><br><span class="line"><span class="hljs-comment"> * to aid debugging, as well as to support extensions. Its use in</span></span><br><span class="line"><span class="hljs-comment"> * any other context is discouraged.</span></span><br><span class="line"><span class="hljs-comment"> *</span></span><br><span class="line"><span class="hljs-comment"> * <span class="hljs-doctag">@return</span> the result, or &#123;<span class="hljs-doctag">@code</span> null&#125; if not completed</span></span><br><span class="line"><span class="hljs-comment"> */</span></span><br><span class="line"><span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">abstract</span> V <span class="hljs-title">getRawResult</span><span class="hljs-params">()</span></span>;</span><br></pre></td></tr></table></figure></p>
+<p><code>ForkJoinTask#getRawResult()</code>未实现，交由子类去实现，比如在<code>RecursiveTask</code>。</p>
+<h2 id="RecursiveTask-getRawResult"><a href="#RecursiveTask-getRawResult" class="headerlink" title="RecursiveTask#getRawResult()"></a>RecursiveTask#getRawResult()</h2><figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">final</span> V <span class="hljs-title">getRawResult</span><span class="hljs-params">()</span> </span>&#123;</span><br><span class="line">    <span class="hljs-keyword">return</span> result;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="hljs-function"><span class="hljs-keyword">protected</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">void</span> <span class="hljs-title">setRawResult</span><span class="hljs-params">(V value)</span> </span>&#123;</span><br><span class="line">    result = value;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="ForkJoinTask-reportResult"><a href="#ForkJoinTask-reportResult" class="headerlink" title="ForkJoinTask#reportResult()"></a>ForkJoinTask#reportResult()</h2><figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment">  * Report the result of invoke or join; called only upon</span></span><br><span class="line"><span class="hljs-comment">  * non-normal return of internal versions.</span></span><br><span class="line"><span class="hljs-comment">  */</span></span><br><span class="line"> <span class="hljs-function"><span class="hljs-keyword">private</span> V <span class="hljs-title">reportResult</span><span class="hljs-params">()</span> </span>&#123;</span><br><span class="line">     <span class="hljs-keyword">int</span> s; Throwable ex;</span><br><span class="line">     <span class="hljs-comment">// 1</span></span><br><span class="line">     <span class="hljs-keyword">if</span> ((s = status) == CANCELLED)</span><br><span class="line">         <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> CancellationException();</span><br><span class="line">     <span class="hljs-comment">// 2</span></span><br><span class="line">     <span class="hljs-keyword">if</span> (s == EXCEPTIONAL &amp;&amp; (ex = getThrowableException()) != <span class="hljs-keyword">null</span>)</span><br><span class="line">         UNSAFE.throwException(ex);</span><br><span class="line">     <span class="hljs-keyword">return</span> getRawResult();</span><br><span class="line"> &#125;</span><br></pre></td></tr></table></figure>
+<p>如果<code>ForkJoinTask#join()</code>中，任务非正常结束，会调用<code>reportResult()</code>。<br>标注代码分析</p>
+<ol>
+<li>如果任务状态为取消，抛出取消异常；</li>
+<li>如果任务状态是异常结束，会从异常表中获取异常，获取到的话，抛出异常。<h1 id="3-总结"><a href="#3-总结" class="headerlink" title="3 总结"></a>3 总结</h1></li>
+</ol>
+<ul>
+<li><code>fork()</code>会将任务添加到当前工作线程的任务队列的里面。</li>
+<li><code>join()</code>某个任务后，当前线程要做的首先是想办法完成这个任务，或者帮助加快这个任务的完成，如果这些尝试失败，当前线程就会在要join的任务(等待队列)上进行阻塞等待，等任务完成后被唤醒。</li>
+</ul>
+
+        </div>
+        
+        <div class="level is-size-7 is-uppercase">
+            <div class="level-start">
+                <div class="level-item">
+                    <span class="is-size-6 has-text-grey has-mr-7">#</span>
+                    <a class="has-link-grey -link" href="/tags/JDK7-源码/">JDK7 源码</a>, <a class="has-link-grey -link" href="/tags/Java/">Java</a>, <a class="has-link-grey -link" href="/tags/设计模式/">设计模式</a>
+                </div>
+            </div>
+        </div>
+        
+        
+        
+        <div class="social-share"></div>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/social-share.js@1.0.16/dist/css/share.min.css">
+<script src="https://cdn.jsdelivr.net/npm/social-share.js@1.0.16/dist/js/social-share.min.js"></script>
+        
+    </div>
+</div>
+
+
+
+<div class="card">
+    <div class="card-content">
+        <h3 class="menu-label has-text-centered">喜欢这篇文章？打赏一下作者吧</h3>
+        <div class="buttons is-centered">
+            
+                
+<a class="button is-info donate">
+    <span class="icon is-small">
+        <i class="fab fa-alipay"></i>
+    </span>
+    <span>支付宝</span>
+    <div class="qrcode"><img src="/images/alipaycode.jpg" alt="支付宝"></div>
+</a>
+
+                
+                
+<a class="button is-success donate">
+    <span class="icon is-small">
+        <i class="fab fa-weixin"></i>
+    </span>
+    <span>微信</span>
+    <div class="qrcode"><img src="/images/wxcode.png" alt="微信"></div>
+</a>
+
+                
+        </div>
+    </div>
+</div>
+
+
+
+<div class="card card-transparent">
+    <div class="level post-navigation is-flex-wrap is-mobile">
+        
+        <div class="level-start">
+            <a class="level level-item has-link-grey  article-nav-prev" href="/JDK1.8-Proxy/">
+                <i class="level-item fas fa-chevron-left"></i>
+                <span class="level-item">JDK1.8 Proxy</span>
+            </a>
+        </div>
+        
+        
+        <div class="level-end">
+            <a class="level level-item has-link-grey  article-nav-next" href="/Fork-Join-Mode/">
+                <span class="level-item">Fork-Join模式</span>
+                <i class="level-item fas fa-chevron-right"></i>
+            </a>
+        </div>
+        
+    </div>
+</div>
+
+
+
+<div class="card">
+    <div class="card-content">
+        <h3 class="title is-5 has-text-weight-normal">评论</h3>
+        
+<div id="comment-container"></div>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gitalk@1.4.1/dist/gitalk.css">
+<script src="https://cdn.jsdelivr.net/npm/gitalk@1.4.1/dist/gitalk.min.js"></script>
+<script>
+    var gitalk = new Gitalk({
+        clientID: 'a70be08270bc7c083f83',
+        clientSecret: '1b08252e3cf4b0c29b5f52f431ad9a54eef0a74a',
+        id: '272f3663180f09fc3346eb3186af9187',
+        repo: 'joeskye1701.github.io',
+        owner: 'joeskye1701',
+        admin: "joeskye1701"
+    })
+    gitalk.render('comment-container')
+</script>
+
+    </div>
+</div>
+</div>
+                
+
+
+
+
+<div class="column is-4-tablet is-4-desktop is-3-widescreen  has-order-1 column-left ">
+    
+        
+<div class="card widget">
+    <div class="card-content">
+        <nav class="level">
+            <div class="level-item has-text-centered">
+                <div>
+                    
+                        <img class="image is-128x128 has-mb-6" src="/images/thank-you-kobe.jpg" alt="Joe">
+                    
+                    
+                    <p class="is-size-4 is-block">
+                        Joe
+                    </p>
+                    
+                    
+                    <p class="is-size-6 is-block">
+                        Developer &amp; Designer
+                    </p>
+                    
+                    
+                    <p class="is-size-6 is-flex is-flex-center has-text-grey">
+                        <i class="fas fa-map-marker-alt has-mr-7"></i>
+                        <span>Shenzhen, China</span>
+                    </p>
+                    
+                </div>
+            </div>
+        </nav>
+        <nav class="level is-mobile">
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        文章
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        129
+                    </p>
+                </div>
+            </div>
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        分类
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        26
+                    </p>
+                </div>
+            </div>
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        标签
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        54
+                    </p>
+                </div>
+            </div>
+        </nav>
+        <div class="level">
+            <a class="level-item button is-link is-rounded" href="https://github.com/joeskye1701">
+                关注我</a>
+        </div>
+        
+        
+        <div class="level is-mobile">
+            
+            <a class="level-item button is-white is-marginless" target="_blank" title="Github" href="https://github.com/joeskye1701">
+                
+                <i class="fab fa-github"></i>
+                
+            </a>
+            
+        </div>
+        
+    </div>
+</div>
+    
+        
+
+<div class="card widget">
+    <div class="card-content">
+        <div class="menu">
+        <h3 class="menu-label">
+            链接
+        </h3>
+        <ul class="menu-list">
+        
+            <li>
+                <a class="level is-mobile" href="http://wss.xxyseo.cn/" target="_blank">
+                    <span class="level-left">
+                        <span class="level-item">西乡大佬</span>
+                    </span>
+                    <span class="level-right">
+                        <span class="level-item tag">wss.xxyseo.cn</span>
+                    </span>
+                </a>
+            </li>
+        
+        </ul>
+        </div>
+    </div>
+</div>
+
+
+    
+        
+<div class="card widget">
+    <div class="card-content">
+        <div class="menu">
+            <h3 class="menu-label">
+                分类
+            </h3>
+            <ul class="menu-list">
+            <li>
+        <a class="level is-marginless" href="/categories/Android/">
+            <span class="level-start">
+                <span class="level-item">Android</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">1</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/JDK6-源码/">
+            <span class="level-start">
+                <span class="level-item">JDK6 源码</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">18</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/JDK7-源码/">
+            <span class="level-start">
+                <span class="level-item">JDK7 源码</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">6</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/JDK8-源码/">
+            <span class="level-start">
+                <span class="level-item">JDK8 源码</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">1</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/JMM/">
+            <span class="level-start">
+                <span class="level-item">JMM</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">6</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/JVM/">
+            <span class="level-start">
+                <span class="level-item">JVM</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">10</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Java/">
+            <span class="level-start">
+                <span class="level-item">Java</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">20</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Linux/">
+            <span class="level-start">
+                <span class="level-item">Linux</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">4</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/MyBatis/">
+            <span class="level-start">
+                <span class="level-item">MyBatis</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">3</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/MySQL/">
+            <span class="level-start">
+                <span class="level-item">MySQL</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">2</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Redis/">
+            <span class="level-start">
+                <span class="level-item">Redis</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">1</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Spring/">
+            <span class="level-start">
+                <span class="level-item">Spring</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">4</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/Tomcat/">
+            <span class="level-start">
+                <span class="level-item">Tomcat</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">7</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/书/">
+            <span class="level-start">
+                <span class="level-item">书</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">3</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/多线程/">
+            <span class="level-start">
+                <span class="level-item">多线程</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">1</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/并发/">
+            <span class="level-start">
+                <span class="level-item">并发</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">3</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/开源项目/">
+            <span class="level-start">
+                <span class="level-item">开源项目</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">3</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/数学/">
+            <span class="level-start">
+                <span class="level-item">数学</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">1</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/数据库/">
+            <span class="level-start">
+                <span class="level-item">数据库</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">2</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/数据结构/">
+            <span class="level-start">
+                <span class="level-item">数据结构</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">5</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/日语/">
+            <span class="level-start">
+                <span class="level-item">日语</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">1</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/机器学习/">
+            <span class="level-start">
+                <span class="level-item">机器学习</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">1</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/算法/">
+            <span class="level-start">
+                <span class="level-item">算法</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">23</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/计算机基础/">
+            <span class="level-start">
+                <span class="level-item">计算机基础</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">1</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/设计模式/">
+            <span class="level-start">
+                <span class="level-item">设计模式</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">1</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/面试/">
+            <span class="level-start">
+                <span class="level-item">面试</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">1</span>
+            </span>
+        </a></li>
+            </ul>
+        </div>
+    </div>
+</div>
+    
+        
+<div class="card widget">
+    <div class="card-content">
+        <h3 class="menu-label">
+            标签云
+        </h3>
+        <a href="/tags/Android/" style="font-size: 10px;">Android</a> <a href="/tags/Centos/" style="font-size: 11.82px;">Centos</a> <a href="/tags/Effect-Java/" style="font-size: 10.91px;">Effect Java</a> <a href="/tags/JDK6-源码/" style="font-size: 18.18px;">JDK6 源码</a> <a href="/tags/JDK7-源码/" style="font-size: 14.55px;">JDK7 源码</a> <a href="/tags/JDK8-源码/" style="font-size: 10px;">JDK8 源码</a> <a href="/tags/JMM/" style="font-size: 15.45px;">JMM</a> <a href="/tags/JVM/" style="font-size: 16.36px;">JVM</a> <a href="/tags/Java/" style="font-size: 20px;">Java</a> <a href="/tags/Linux/" style="font-size: 12.73px;">Linux</a> <a href="/tags/MongoDB/" style="font-size: 10px;">MongoDB</a> <a href="/tags/Mongodb/" style="font-size: 10px;">Mongodb</a> <a href="/tags/MyBatis/" style="font-size: 11.82px;">MyBatis</a> <a href="/tags/MySQL/" style="font-size: 10.91px;">MySQL</a> <a href="/tags/Redis/" style="font-size: 10px;">Redis</a> <a href="/tags/Spring/" style="font-size: 12.73px;">Spring</a> <a href="/tags/Think-In-Java/" style="font-size: 10px;">Think In Java</a> <a href="/tags/Tomcat/" style="font-size: 15.45px;">Tomcat</a> <a href="/tags/Ubuntu/" style="font-size: 10px;">Ubuntu</a> <a href="/tags/一致性哈希算法/" style="font-size: 10px;">一致性哈希算法</a> <a href="/tags/书/" style="font-size: 11.82px;">书</a> <a href="/tags/倒排索引/" style="font-size: 10px;">倒排索引</a> <a href="/tags/内存泄漏/" style="font-size: 10px;">内存泄漏</a> <a href="/tags/分支限界算法/" style="font-size: 10.91px;">分支限界算法</a> <a href="/tags/分治法/" style="font-size: 10px;">分治法</a> <a href="/tags/分治算法/" style="font-size: 10px;">分治算法</a> <a href="/tags/分词算法/" style="font-size: 10.91px;">分词算法</a> <a href="/tags/动态规划/" style="font-size: 10px;">动态规划</a> <a href="/tags/动态规划算法/" style="font-size: 10.91px;">动态规划算法</a> <a href="/tags/华为/" style="font-size: 10px;">华为</a> <a href="/tags/回溯算法/" style="font-size: 12.73px;">回溯算法</a> <a href="/tags/多线程/" style="font-size: 10.91px;">多线程</a> <a href="/tags/工具/" style="font-size: 10px;">工具</a> <a href="/tags/并发/" style="font-size: 13.64px;">并发</a> <a href="/tags/开源项目/" style="font-size: 17.27px;">开源项目</a> <a href="/tags/手机游戏/" style="font-size: 10px;">手机游戏</a> <a href="/tags/排序算法/" style="font-size: 10px;">排序算法</a> <a href="/tags/推荐/" style="font-size: 10px;">推荐</a> <a href="/tags/散列表/" style="font-size: 10px;">散列表</a> <a href="/tags/数学/" style="font-size: 10px;">数学</a> <a href="/tags/数据库/" style="font-size: 10.91px;">数据库</a> <a href="/tags/数据结构/" style="font-size: 13.64px;">数据结构</a> <a href="/tags/日语/" style="font-size: 10px;">日语</a> <a href="/tags/最优路径算法/" style="font-size: 10px;">最优路径算法</a> <a href="/tags/机器学习/" style="font-size: 10px;">机器学习</a> <a href="/tags/源码/" style="font-size: 11.82px;">源码</a> <a href="/tags/算法/" style="font-size: 19.09px;">算法</a> <a href="/tags/线程安全/" style="font-size: 10.91px;">线程安全</a> <a href="/tags/编程珠玑/" style="font-size: 11.82px;">编程珠玑</a> <a href="/tags/计算机基础/" style="font-size: 10px;">计算机基础</a> <a href="/tags/设计模式/" style="font-size: 12.73px;">设计模式</a> <a href="/tags/贪心算法/" style="font-size: 11.82px;">贪心算法</a> <a href="/tags/跳表/" style="font-size: 10px;">跳表</a> <a href="/tags/面试/" style="font-size: 10px;">面试</a>
+    </div>
+</div>
+
+    
+    
+        <div class="column-right-shadow is-hidden-widescreen ">
+        
+            
+        
+            
+<div class="card widget">
+    <div class="card-content">
+        <h3 class="menu-label">
+            最新文章
+        </h3>
+        
+        <article class="media">
+            <!-- 
+            <a href="/VIM-Command/" class="media-left">
+                <p class="image is-64x64">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="VIM 命令">
+                </p>
+            </a>
+             -->
+            <div class="media-content">
+                <div class="content">
+                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-12-10T02:31:22.000Z">2018-12-10</time></div>
+                    <a href="/VIM-Command/" class="has-link-black-ter is-size-6">VIM 命令</a>
+                    <p class="is-size-7 is-uppercase">
+                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
+                    </p>
+                </div>
+            </div>
+        </article>
+        
+        <article class="media">
+            <!-- 
+            <a href="/Lock-Control/" class="media-left">
+                <p class="image is-64x64">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="锁粒度的控制">
+                </p>
+            </a>
+             -->
+            <div class="media-content">
+                <div class="content">
+                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-04T04:37:22.000Z">2018-11-04</time></div>
+                    <a href="/Lock-Control/" class="has-link-black-ter is-size-6">锁粒度的控制</a>
+                    <p class="is-size-7 is-uppercase">
+                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
+                    </p>
+                </div>
+            </div>
+        </article>
+        
+        <article class="media">
+            <!-- 
+            <a href="/Temporary-Menory-Table/" class="media-left">
+                <p class="image is-64x64">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="临时表和内存表">
+                </p>
+            </a>
+             -->
+            <div class="media-content">
+                <div class="content">
+                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-04T04:37:22.000Z">2018-11-04</time></div>
+                    <a href="/Temporary-Menory-Table/" class="has-link-black-ter is-size-6">临时表和内存表</a>
+                    <p class="is-size-7 is-uppercase">
+                        <a class="has-link-grey -link" href="/categories/MySQL/">MySQL</a>
+                    </p>
+                </div>
+            </div>
+        </article>
+        
+        <article class="media">
+            <!-- 
+            <a href="/MySQL-Command/" class="media-left">
+                <p class="image is-64x64">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="MySQL基本命令">
+                </p>
+            </a>
+             -->
+            <div class="media-content">
+                <div class="content">
+                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
+                    <a href="/MySQL-Command/" class="has-link-black-ter is-size-6">MySQL基本命令</a>
+                    <p class="is-size-7 is-uppercase">
+                        <a class="has-link-grey -link" href="/categories/MySQL/">MySQL</a>
+                    </p>
+                </div>
+            </div>
+        </article>
+        
+        <article class="media">
+            <!-- 
+            <a href="/Python2ToPython3/" class="media-left">
+                <p class="image is-64x64">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Python2切换Python3">
+                </p>
+            </a>
+             -->
+            <div class="media-content">
+                <div class="content">
+                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
+                    <a href="/Python2ToPython3/" class="has-link-black-ter is-size-6">Python2切换Python3</a>
+                    <p class="is-size-7 is-uppercase">
+                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
+                    </p>
+                </div>
+            </div>
+        </article>
+        
+    </div>
+</div>
+
+        
+            <div class="card widget">
+    <div class="card-content">
+        <div class="menu">
+        <h3 class="menu-label">
+            归档
+        </h3>
+        <ul class="menu-list">
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2018/12/">
+                <span class="level-start">
+                    <span class="level-item">十二月 2018</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">1</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2018/11/">
+                <span class="level-start">
+                    <span class="level-item">十一月 2018</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">7</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2018/01/">
+                <span class="level-start">
+                    <span class="level-item">一月 2018</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">1</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2017/01/">
+                <span class="level-start">
+                    <span class="level-item">一月 2017</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">1</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2016/10/">
+                <span class="level-start">
+                    <span class="level-item">十月 2016</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">9</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2016/09/">
+                <span class="level-start">
+                    <span class="level-item">九月 2016</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">3</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2016/08/">
+                <span class="level-start">
+                    <span class="level-item">八月 2016</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">4</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2016/07/">
+                <span class="level-start">
+                    <span class="level-item">七月 2016</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">7</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2016/06/">
+                <span class="level-start">
+                    <span class="level-item">六月 2016</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">1</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2016/05/">
+                <span class="level-start">
+                    <span class="level-item">五月 2016</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">6</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2016/04/">
+                <span class="level-start">
+                    <span class="level-item">四月 2016</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">1</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2016/03/">
+                <span class="level-start">
+                    <span class="level-item">三月 2016</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">4</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2016/02/">
+                <span class="level-start">
+                    <span class="level-item">二月 2016</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">1</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2015/12/">
+                <span class="level-start">
+                    <span class="level-item">十二月 2015</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">7</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2015/11/">
+                <span class="level-start">
+                    <span class="level-item">十一月 2015</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">3</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2015/10/">
+                <span class="level-start">
+                    <span class="level-item">十月 2015</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">13</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2015/09/">
+                <span class="level-start">
+                    <span class="level-item">九月 2015</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">4</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2015/08/">
+                <span class="level-start">
+                    <span class="level-item">八月 2015</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">6</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2015/07/">
+                <span class="level-start">
+                    <span class="level-item">七月 2015</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">6</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2015/06/">
+                <span class="level-start">
+                    <span class="level-item">六月 2015</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">3</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2015/05/">
+                <span class="level-start">
+                    <span class="level-item">五月 2015</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">2</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2015/04/">
+                <span class="level-start">
+                    <span class="level-item">四月 2015</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">4</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2015/03/">
+                <span class="level-start">
+                    <span class="level-item">三月 2015</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">3</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2015/02/">
+                <span class="level-start">
+                    <span class="level-item">二月 2015</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">4</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2015/01/">
+                <span class="level-start">
+                    <span class="level-item">一月 2015</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">2</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2014/12/">
+                <span class="level-start">
+                    <span class="level-item">十二月 2014</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">1</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2014/11/">
+                <span class="level-start">
+                    <span class="level-item">十一月 2014</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">1</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2014/09/">
+                <span class="level-start">
+                    <span class="level-item">九月 2014</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">1</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2014/03/">
+                <span class="level-start">
+                    <span class="level-item">三月 2014</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">1</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2013/12/">
+                <span class="level-start">
+                    <span class="level-item">十二月 2013</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">1</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2013/11/">
+                <span class="level-start">
+                    <span class="level-item">十一月 2013</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">2</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2013/10/">
+                <span class="level-start">
+                    <span class="level-item">十月 2013</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">1</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2013/08/">
+                <span class="level-start">
+                    <span class="level-item">八月 2013</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">1</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2013/07/">
+                <span class="level-start">
+                    <span class="level-item">七月 2013</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">1</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2013/06/">
+                <span class="level-start">
+                    <span class="level-item">六月 2013</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">1</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2013/04/">
+                <span class="level-start">
+                    <span class="level-item">四月 2013</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">7</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2013/03/">
+                <span class="level-start">
+                    <span class="level-item">三月 2013</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">2</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2013/02/">
+                <span class="level-start">
+                    <span class="level-item">二月 2013</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">3</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2013/01/">
+                <span class="level-start">
+                    <span class="level-item">一月 2013</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">3</span>
+                </span>
+            </a>
+        </li>
+        
+        </ul>
+        </div>
+    </div>
+</div>
+        
+            <div class="card widget">
+    <div class="card-content">
+        <div class="menu">
+            <h3 class="menu-label">
+                标签
+            </h3>
+            <div class="field is-grouped is-grouped-multiline">
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/Android/">
+                        <span class="tag">Android</span>
+                        <span class="tag is-grey">1</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/Centos/">
+                        <span class="tag">Centos</span>
+                        <span class="tag is-grey">3</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/Effect-Java/">
+                        <span class="tag">Effect Java</span>
+                        <span class="tag is-grey">2</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/JDK6-源码/">
+                        <span class="tag">JDK6 源码</span>
+                        <span class="tag is-grey">18</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/JDK7-源码/">
+                        <span class="tag">JDK7 源码</span>
+                        <span class="tag is-grey">6</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/JDK8-源码/">
+                        <span class="tag">JDK8 源码</span>
+                        <span class="tag is-grey">1</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/JMM/">
+                        <span class="tag">JMM</span>
+                        <span class="tag is-grey">7</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/JVM/">
+                        <span class="tag">JVM</span>
+                        <span class="tag is-grey">10</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/Java/">
+                        <span class="tag">Java</span>
+                        <span class="tag is-grey">40</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/Linux/">
+                        <span class="tag">Linux</span>
+                        <span class="tag is-grey">4</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/MongoDB/">
+                        <span class="tag">MongoDB</span>
+                        <span class="tag is-grey">1</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/Mongodb/">
+                        <span class="tag">Mongodb</span>
+                        <span class="tag is-grey">1</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/MyBatis/">
+                        <span class="tag">MyBatis</span>
+                        <span class="tag is-grey">3</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/MySQL/">
+                        <span class="tag">MySQL</span>
+                        <span class="tag is-grey">2</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/Redis/">
+                        <span class="tag">Redis</span>
+                        <span class="tag is-grey">1</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/Spring/">
+                        <span class="tag">Spring</span>
+                        <span class="tag is-grey">4</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/Think-In-Java/">
+                        <span class="tag">Think In Java</span>
+                        <span class="tag is-grey">1</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/Tomcat/">
+                        <span class="tag">Tomcat</span>
+                        <span class="tag is-grey">7</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/Ubuntu/">
+                        <span class="tag">Ubuntu</span>
+                        <span class="tag is-grey">1</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/一致性哈希算法/">
+                        <span class="tag">一致性哈希算法</span>
+                        <span class="tag is-grey">1</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/书/">
+                        <span class="tag">书</span>
+                        <span class="tag is-grey">3</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/倒排索引/">
+                        <span class="tag">倒排索引</span>
+                        <span class="tag is-grey">1</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/内存泄漏/">
+                        <span class="tag">内存泄漏</span>
+                        <span class="tag is-grey">1</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/分支限界算法/">
+                        <span class="tag">分支限界算法</span>
+                        <span class="tag is-grey">2</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/分治法/">
+                        <span class="tag">分治法</span>
+                        <span class="tag is-grey">1</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/分治算法/">
+                        <span class="tag">分治算法</span>
+                        <span class="tag is-grey">1</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/分词算法/">
+                        <span class="tag">分词算法</span>
+                        <span class="tag is-grey">2</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/动态规划/">
+                        <span class="tag">动态规划</span>
+                        <span class="tag is-grey">1</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/动态规划算法/">
+                        <span class="tag">动态规划算法</span>
+                        <span class="tag is-grey">2</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/华为/">
+                        <span class="tag">华为</span>
+                        <span class="tag is-grey">1</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/回溯算法/">
+                        <span class="tag">回溯算法</span>
+                        <span class="tag is-grey">4</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/多线程/">
+                        <span class="tag">多线程</span>
+                        <span class="tag is-grey">2</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/工具/">
+                        <span class="tag">工具</span>
+                        <span class="tag is-grey">1</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/并发/">
+                        <span class="tag">并发</span>
+                        <span class="tag is-grey">5</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/开源项目/">
+                        <span class="tag">开源项目</span>
+                        <span class="tag is-grey">17</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/手机游戏/">
+                        <span class="tag">手机游戏</span>
+                        <span class="tag is-grey">1</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/排序算法/">
+                        <span class="tag">排序算法</span>
+                        <span class="tag is-grey">1</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/推荐/">
+                        <span class="tag">推荐</span>
+                        <span class="tag is-grey">1</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/散列表/">
+                        <span class="tag">散列表</span>
+                        <span class="tag is-grey">1</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/数学/">
+                        <span class="tag">数学</span>
+                        <span class="tag is-grey">1</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/数据库/">
+                        <span class="tag">数据库</span>
+                        <span class="tag is-grey">2</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/数据结构/">
+                        <span class="tag">数据结构</span>
+                        <span class="tag is-grey">5</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/日语/">
+                        <span class="tag">日语</span>
+                        <span class="tag is-grey">1</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/最优路径算法/">
+                        <span class="tag">最优路径算法</span>
+                        <span class="tag is-grey">1</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/机器学习/">
+                        <span class="tag">机器学习</span>
+                        <span class="tag is-grey">1</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/源码/">
+                        <span class="tag">源码</span>
+                        <span class="tag is-grey">3</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/算法/">
+                        <span class="tag">算法</span>
+                        <span class="tag is-grey">26</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/线程安全/">
+                        <span class="tag">线程安全</span>
+                        <span class="tag is-grey">2</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/编程珠玑/">
+                        <span class="tag">编程珠玑</span>
+                        <span class="tag is-grey">3</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/计算机基础/">
+                        <span class="tag">计算机基础</span>
+                        <span class="tag is-grey">1</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/设计模式/">
+                        <span class="tag">设计模式</span>
+                        <span class="tag is-grey">4</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/贪心算法/">
+                        <span class="tag">贪心算法</span>
+                        <span class="tag is-grey">3</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/跳表/">
+                        <span class="tag">跳表</span>
+                        <span class="tag is-grey">1</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/面试/">
+                        <span class="tag">面试</span>
+                        <span class="tag is-grey">1</span>
+                    </a>
+                </div>
+                
+            </div>
+        </div>
+    </div>
+</div>
+        
+        </div>
+    
+</div>
+
+                
+
+
+
+
+<div class="column is-4-tablet is-4-desktop is-3-widescreen is-hidden-touch is-hidden-desktop-only has-order-3 column-right ">
+    
+        
+    
+        
+<div class="card widget">
+    <div class="card-content">
+        <h3 class="menu-label">
+            最新文章
+        </h3>
+        
+        <article class="media">
+            <!-- 
+            <a href="/VIM-Command/" class="media-left">
+                <p class="image is-64x64">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="VIM 命令">
+                </p>
+            </a>
+             -->
+            <div class="media-content">
+                <div class="content">
+                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-12-10T02:31:22.000Z">2018-12-10</time></div>
+                    <a href="/VIM-Command/" class="has-link-black-ter is-size-6">VIM 命令</a>
+                    <p class="is-size-7 is-uppercase">
+                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
+                    </p>
+                </div>
+            </div>
+        </article>
+        
+        <article class="media">
+            <!-- 
+            <a href="/Lock-Control/" class="media-left">
+                <p class="image is-64x64">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="锁粒度的控制">
+                </p>
+            </a>
+             -->
+            <div class="media-content">
+                <div class="content">
+                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-04T04:37:22.000Z">2018-11-04</time></div>
+                    <a href="/Lock-Control/" class="has-link-black-ter is-size-6">锁粒度的控制</a>
+                    <p class="is-size-7 is-uppercase">
+                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
+                    </p>
+                </div>
+            </div>
+        </article>
+        
+        <article class="media">
+            <!-- 
+            <a href="/Temporary-Menory-Table/" class="media-left">
+                <p class="image is-64x64">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="临时表和内存表">
+                </p>
+            </a>
+             -->
+            <div class="media-content">
+                <div class="content">
+                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-04T04:37:22.000Z">2018-11-04</time></div>
+                    <a href="/Temporary-Menory-Table/" class="has-link-black-ter is-size-6">临时表和内存表</a>
+                    <p class="is-size-7 is-uppercase">
+                        <a class="has-link-grey -link" href="/categories/MySQL/">MySQL</a>
+                    </p>
+                </div>
+            </div>
+        </article>
+        
+        <article class="media">
+            <!-- 
+            <a href="/MySQL-Command/" class="media-left">
+                <p class="image is-64x64">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="MySQL基本命令">
+                </p>
+            </a>
+             -->
+            <div class="media-content">
+                <div class="content">
+                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
+                    <a href="/MySQL-Command/" class="has-link-black-ter is-size-6">MySQL基本命令</a>
+                    <p class="is-size-7 is-uppercase">
+                        <a class="has-link-grey -link" href="/categories/MySQL/">MySQL</a>
+                    </p>
+                </div>
+            </div>
+        </article>
+        
+        <article class="media">
+            <!-- 
+            <a href="/Python2ToPython3/" class="media-left">
+                <p class="image is-64x64">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Python2切换Python3">
+                </p>
+            </a>
+             -->
+            <div class="media-content">
+                <div class="content">
+                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
+                    <a href="/Python2ToPython3/" class="has-link-black-ter is-size-6">Python2切换Python3</a>
+                    <p class="is-size-7 is-uppercase">
+                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
+                    </p>
+                </div>
+            </div>
+        </article>
+        
+    </div>
+</div>
+
+    
+        <div class="card widget">
+    <div class="card-content">
+        <div class="menu">
+        <h3 class="menu-label">
+            归档
+        </h3>
+        <ul class="menu-list">
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2018/12/">
+                <span class="level-start">
+                    <span class="level-item">十二月 2018</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">1</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2018/11/">
+                <span class="level-start">
+                    <span class="level-item">十一月 2018</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">7</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2018/01/">
+                <span class="level-start">
+                    <span class="level-item">一月 2018</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">1</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2017/01/">
+                <span class="level-start">
+                    <span class="level-item">一月 2017</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">1</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2016/10/">
+                <span class="level-start">
+                    <span class="level-item">十月 2016</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">9</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2016/09/">
+                <span class="level-start">
+                    <span class="level-item">九月 2016</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">3</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2016/08/">
+                <span class="level-start">
+                    <span class="level-item">八月 2016</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">4</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2016/07/">
+                <span class="level-start">
+                    <span class="level-item">七月 2016</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">7</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2016/06/">
+                <span class="level-start">
+                    <span class="level-item">六月 2016</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">1</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2016/05/">
+                <span class="level-start">
+                    <span class="level-item">五月 2016</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">6</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2016/04/">
+                <span class="level-start">
+                    <span class="level-item">四月 2016</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">1</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2016/03/">
+                <span class="level-start">
+                    <span class="level-item">三月 2016</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">4</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2016/02/">
+                <span class="level-start">
+                    <span class="level-item">二月 2016</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">1</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2015/12/">
+                <span class="level-start">
+                    <span class="level-item">十二月 2015</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">7</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2015/11/">
+                <span class="level-start">
+                    <span class="level-item">十一月 2015</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">3</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2015/10/">
+                <span class="level-start">
+                    <span class="level-item">十月 2015</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">13</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2015/09/">
+                <span class="level-start">
+                    <span class="level-item">九月 2015</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">4</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2015/08/">
+                <span class="level-start">
+                    <span class="level-item">八月 2015</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">6</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2015/07/">
+                <span class="level-start">
+                    <span class="level-item">七月 2015</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">6</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2015/06/">
+                <span class="level-start">
+                    <span class="level-item">六月 2015</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">3</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2015/05/">
+                <span class="level-start">
+                    <span class="level-item">五月 2015</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">2</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2015/04/">
+                <span class="level-start">
+                    <span class="level-item">四月 2015</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">4</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2015/03/">
+                <span class="level-start">
+                    <span class="level-item">三月 2015</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">3</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2015/02/">
+                <span class="level-start">
+                    <span class="level-item">二月 2015</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">4</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2015/01/">
+                <span class="level-start">
+                    <span class="level-item">一月 2015</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">2</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2014/12/">
+                <span class="level-start">
+                    <span class="level-item">十二月 2014</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">1</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2014/11/">
+                <span class="level-start">
+                    <span class="level-item">十一月 2014</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">1</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2014/09/">
+                <span class="level-start">
+                    <span class="level-item">九月 2014</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">1</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2014/03/">
+                <span class="level-start">
+                    <span class="level-item">三月 2014</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">1</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2013/12/">
+                <span class="level-start">
+                    <span class="level-item">十二月 2013</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">1</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2013/11/">
+                <span class="level-start">
+                    <span class="level-item">十一月 2013</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">2</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2013/10/">
+                <span class="level-start">
+                    <span class="level-item">十月 2013</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">1</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2013/08/">
+                <span class="level-start">
+                    <span class="level-item">八月 2013</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">1</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2013/07/">
+                <span class="level-start">
+                    <span class="level-item">七月 2013</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">1</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2013/06/">
+                <span class="level-start">
+                    <span class="level-item">六月 2013</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">1</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2013/04/">
+                <span class="level-start">
+                    <span class="level-item">四月 2013</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">7</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2013/03/">
+                <span class="level-start">
+                    <span class="level-item">三月 2013</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">2</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2013/02/">
+                <span class="level-start">
+                    <span class="level-item">二月 2013</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">3</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2013/01/">
+                <span class="level-start">
+                    <span class="level-item">一月 2013</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">3</span>
+                </span>
+            </a>
+        </li>
+        
+        </ul>
+        </div>
+    </div>
+</div>
+    
+        <div class="card widget">
+    <div class="card-content">
+        <div class="menu">
+            <h3 class="menu-label">
+                标签
+            </h3>
+            <div class="field is-grouped is-grouped-multiline">
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/Android/">
+                        <span class="tag">Android</span>
+                        <span class="tag is-grey">1</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/Centos/">
+                        <span class="tag">Centos</span>
+                        <span class="tag is-grey">3</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/Effect-Java/">
+                        <span class="tag">Effect Java</span>
+                        <span class="tag is-grey">2</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/JDK6-源码/">
+                        <span class="tag">JDK6 源码</span>
+                        <span class="tag is-grey">18</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/JDK7-源码/">
+                        <span class="tag">JDK7 源码</span>
+                        <span class="tag is-grey">6</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/JDK8-源码/">
+                        <span class="tag">JDK8 源码</span>
+                        <span class="tag is-grey">1</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/JMM/">
+                        <span class="tag">JMM</span>
+                        <span class="tag is-grey">7</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/JVM/">
+                        <span class="tag">JVM</span>
+                        <span class="tag is-grey">10</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/Java/">
+                        <span class="tag">Java</span>
+                        <span class="tag is-grey">40</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/Linux/">
+                        <span class="tag">Linux</span>
+                        <span class="tag is-grey">4</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/MongoDB/">
+                        <span class="tag">MongoDB</span>
+                        <span class="tag is-grey">1</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/Mongodb/">
+                        <span class="tag">Mongodb</span>
+                        <span class="tag is-grey">1</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/MyBatis/">
+                        <span class="tag">MyBatis</span>
+                        <span class="tag is-grey">3</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/MySQL/">
+                        <span class="tag">MySQL</span>
+                        <span class="tag is-grey">2</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/Redis/">
+                        <span class="tag">Redis</span>
+                        <span class="tag is-grey">1</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/Spring/">
+                        <span class="tag">Spring</span>
+                        <span class="tag is-grey">4</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/Think-In-Java/">
+                        <span class="tag">Think In Java</span>
+                        <span class="tag is-grey">1</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/Tomcat/">
+                        <span class="tag">Tomcat</span>
+                        <span class="tag is-grey">7</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/Ubuntu/">
+                        <span class="tag">Ubuntu</span>
+                        <span class="tag is-grey">1</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/一致性哈希算法/">
+                        <span class="tag">一致性哈希算法</span>
+                        <span class="tag is-grey">1</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/书/">
+                        <span class="tag">书</span>
+                        <span class="tag is-grey">3</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/倒排索引/">
+                        <span class="tag">倒排索引</span>
+                        <span class="tag is-grey">1</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/内存泄漏/">
+                        <span class="tag">内存泄漏</span>
+                        <span class="tag is-grey">1</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/分支限界算法/">
+                        <span class="tag">分支限界算法</span>
+                        <span class="tag is-grey">2</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/分治法/">
+                        <span class="tag">分治法</span>
+                        <span class="tag is-grey">1</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/分治算法/">
+                        <span class="tag">分治算法</span>
+                        <span class="tag is-grey">1</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/分词算法/">
+                        <span class="tag">分词算法</span>
+                        <span class="tag is-grey">2</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/动态规划/">
+                        <span class="tag">动态规划</span>
+                        <span class="tag is-grey">1</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/动态规划算法/">
+                        <span class="tag">动态规划算法</span>
+                        <span class="tag is-grey">2</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/华为/">
+                        <span class="tag">华为</span>
+                        <span class="tag is-grey">1</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/回溯算法/">
+                        <span class="tag">回溯算法</span>
+                        <span class="tag is-grey">4</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/多线程/">
+                        <span class="tag">多线程</span>
+                        <span class="tag is-grey">2</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/工具/">
+                        <span class="tag">工具</span>
+                        <span class="tag is-grey">1</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/并发/">
+                        <span class="tag">并发</span>
+                        <span class="tag is-grey">5</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/开源项目/">
+                        <span class="tag">开源项目</span>
+                        <span class="tag is-grey">17</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/手机游戏/">
+                        <span class="tag">手机游戏</span>
+                        <span class="tag is-grey">1</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/排序算法/">
+                        <span class="tag">排序算法</span>
+                        <span class="tag is-grey">1</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/推荐/">
+                        <span class="tag">推荐</span>
+                        <span class="tag is-grey">1</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/散列表/">
+                        <span class="tag">散列表</span>
+                        <span class="tag is-grey">1</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/数学/">
+                        <span class="tag">数学</span>
+                        <span class="tag is-grey">1</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/数据库/">
+                        <span class="tag">数据库</span>
+                        <span class="tag is-grey">2</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/数据结构/">
+                        <span class="tag">数据结构</span>
+                        <span class="tag is-grey">5</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/日语/">
+                        <span class="tag">日语</span>
+                        <span class="tag is-grey">1</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/最优路径算法/">
+                        <span class="tag">最优路径算法</span>
+                        <span class="tag is-grey">1</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/机器学习/">
+                        <span class="tag">机器学习</span>
+                        <span class="tag is-grey">1</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/源码/">
+                        <span class="tag">源码</span>
+                        <span class="tag is-grey">3</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/算法/">
+                        <span class="tag">算法</span>
+                        <span class="tag is-grey">26</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/线程安全/">
+                        <span class="tag">线程安全</span>
+                        <span class="tag is-grey">2</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/编程珠玑/">
+                        <span class="tag">编程珠玑</span>
+                        <span class="tag is-grey">3</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/计算机基础/">
+                        <span class="tag">计算机基础</span>
+                        <span class="tag is-grey">1</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/设计模式/">
+                        <span class="tag">设计模式</span>
+                        <span class="tag is-grey">4</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/贪心算法/">
+                        <span class="tag">贪心算法</span>
+                        <span class="tag is-grey">3</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/跳表/">
+                        <span class="tag">跳表</span>
+                        <span class="tag is-grey">1</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/面试/">
+                        <span class="tag">面试</span>
+                        <span class="tag is-grey">1</span>
+                    </a>
+                </div>
+                
+            </div>
+        </div>
+    </div>
+</div>
+    
+    
+</div>
+
+            </div>
+        </div>
+    </section>
+    <footer class="footer">
+    <div class="container">
+        <div class="level">
+            <div class="level-start has-text-centered-mobile">
+                <a class="footer-logo is-block has-mb-6" href="/">
+                
+                    Joe|博客
+                
+                </a>
+                <p class="is-size-7">
+                &copy; 2019 Joe&nbsp;
+                <!-- Powered by <a href="http://hexo.io/" target="_blank">Hexo</a> & <a
+                        href="http://github.com/ppoffice/hexo-theme-icarus" target="_blank">Icarus</a> -->
+                
+                </p>
+            </div>
+            <div class="level-end">
+            
+            </div>
+        </div>
+    </div>
+</footer>
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/moment@2.22.2/min/moment-with-locales.min.js"></script>
+<script>moment.locale("zh-CN");</script>
+
+
+    
+    
+    
+    <script src="/js/animation.js"></script>
+    
+
+    
+    
+    
+    <script src="https://cdn.jsdelivr.net/npm/lightgallery@1.6.8/dist/js/lightgallery.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/justifiedGallery@3.7.0/dist/js/jquery.justifiedGallery.min.js" defer></script>
+    <script src="/js/gallery.js" defer></script>
+    
+
+    
+    
+
+<div id="outdated">
+    <h6>Your browser is out-of-date!</h6>
+    <p>Update your browser to view this website correctly. <a id="btnUpdateBrowser" href="http://outdatedbrowser.com/">Update
+            my browser now </a></p>
+    <p class="last"><a href="#" id="btnCloseUpdateBrowser" title="Close">&times;</a></p>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/outdatedbrowser@1.1.5/outdatedbrowser/outdatedbrowser.min.js" defer></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        outdatedBrowser({
+            bgColor: '#f25648',
+            color: '#ffffff',
+            lowerThan: 'flex'
+        });
+    });
+</script>
+
+
+    
+    
+<script src="https://cdn.jsdelivr.net/npm/mathjax@2.7.5/unpacked/MathJax.js?config=TeX-MML-AM_CHTML" defer></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    MathJax.Hub.Config({
+        'HTML-CSS': {
+            matchFontHeight: false
+        },
+        SVG: {
+            matchFontHeight: false
+        },
+        CommonHTML: {
+            matchFontHeight: false
+        },
+        tex2jax: {
+            inlineMath: [
+                ['$','$'],
+                ['\\(','\\)']
+            ]
+        }
+    });
+});
+</script>
+
+    
+    
+
+<a id="back-to-top" title="回到顶端" href="javascript:;">
+    <i class="fas fa-chevron-up"></i>
+</a>
+<script src="/js/back-to-top.js" defer></script>
+
+
+    
+    
+
+    
+    
+    
+    
+
+    
+    
+    
+    
+    
+    <script src="https://cdn.jsdelivr.net/npm/clipboard@2.0.4/dist/clipboard.min.js" defer></script>
+    <script src="/js/clipboard.js" defer></script>
+    
+
+    
+    
+    
+
+
+<script src="/js/main.js" defer></script>
+
+    
+    <div class="searchbox ins-search">
+    <div class="searchbox-container ins-search-container">
+        <div class="searchbox-input-wrapper">
+            <input type="text" class="searchbox-input ins-search-input" placeholder="想要查找什么...">
+            <span class="searchbox-close ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="searchbox-result-wrapper ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+    (function (window) {
+        var INSIGHT_CONFIG = {
+            TRANSLATION: {
+                POSTS: '文章',
+                PAGES: '页面',
+                CATEGORIES: '分类',
+                TAGS: '标签',
+                UNTITLED: '(无标题)',
+            },
+            CONTENT_URL: '/content.json',
+        };
+        window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+    })(window);
+</script>
+<script src="/js/insight.js" defer></script>
+<link rel="stylesheet" href="/css/search.css">
+<link rel="stylesheet" href="/css/insight.css">
+    
+</body>
+</html>
