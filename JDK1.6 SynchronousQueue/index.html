@@ -1,0 +1,1164 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head><meta name="generator" content="Hexo 3.8.0">
+    <meta charset="utf-8">
+<title>JDK1.6 SynchronousQueue - Joe|博客</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+
+
+    <meta name="description" content="1 介绍 2 源码分析 SynchronousQueue#Transferer SynchronousQueue#TransferStack 伪栈实现 SynchronousQueue#TransferStack#transfer() SynchronousQueue#TransferStack#snode() SynchronousQueue#TransferStack#awaitFulfi">
+<meta name="keywords" content="JDK6 源码">
+<meta property="og:type" content="article">
+<meta property="og:title" content="JDK1.6 SynchronousQueue">
+<meta property="og:url" content="https://joeskye1701.github.io/JDK1.6 SynchronousQueue/index.html">
+<meta property="og:site_name" content="Joe|博客">
+<meta property="og:description" content="1 介绍 2 源码分析 SynchronousQueue#Transferer SynchronousQueue#TransferStack 伪栈实现 SynchronousQueue#TransferStack#transfer() SynchronousQueue#TransferStack#snode() SynchronousQueue#TransferStack#awaitFulfi">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:updated_time" content="2019-03-05T02:17:00.806Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="JDK1.6 SynchronousQueue">
+<meta name="twitter:description" content="1 介绍 2 源码分析 SynchronousQueue#Transferer SynchronousQueue#TransferStack 伪栈实现 SynchronousQueue#TransferStack#transfer() SynchronousQueue#TransferStack#snode() SynchronousQueue#TransferStack#awaitFulfi">
+
+
+
+
+
+<link rel="icon" href="/images/thank-you-kobe.jpg">
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.7.2/css/bulma.css">
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.4.1/css/all.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Ubuntu:400,600|Source+Code+Pro">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@9.12.0/styles/github.css">
+
+
+    
+    
+    
+    <style>body>.footer,body>.navbar,body>.section{opacity:0}</style>
+    
+
+    
+    
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lightgallery@1.6.8/dist/css/lightgallery.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/justifiedGallery@3.7.0/dist/css/justifiedGallery.min.css">
+    
+
+    
+    
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/outdatedbrowser@1.1.5/outdatedbrowser/outdatedbrowser.min.css">
+
+
+    
+    
+    
+    
+
+<link rel="stylesheet" href="/css/back-to-top.css">
+
+
+    
+    
+
+    
+    
+<script>
+var _hmt = _hmt || [];
+(function() {
+    var hm = document.createElement("script");
+    hm.src = "//hm.baidu.com/hm.js?c422b171d3bdb7dbfae47ff3f70f9d30";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+    
+    
+
+    
+    
+<link rel="stylesheet" href="/css/progressbar.css">
+<script src="https://cdn.jsdelivr.net/npm/pace-js@1.0.2/pace.min.js"></script>
+
+    
+    
+    
+
+    
+    
+    
+
+
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="is-3-column">
+    <nav class="navbar navbar-main">
+    <div class="container">
+        <div class="navbar-brand is-flex-center">
+            <a class="navbar-item navbar-logo" href="/">
+            
+                Joe|博客
+            
+            </a>
+        </div>
+        <div class="navbar-menu">
+            
+            <div class="navbar-start">
+                
+                <a class="navbar-item" href="/">主页</a>
+                
+                <a class="navbar-item" href="/archives">归档</a>
+                
+                <a class="navbar-item" href="/categories">分类</a>
+                
+                <a class="navbar-item" href="/tags">标签</a>
+                
+                <a class="navbar-item" href="/about">关于</a>
+                
+            </div>
+            
+            <div class="navbar-end">
+                
+                
+                <a class="navbar-item is-hidden-tablet catalogue" title="目录" href="javascript:;">
+                    <i class="fas fa-list-ul"></i>
+                </a>
+                
+                
+                <a class="navbar-item search" title="搜索" href="javascript:;">
+                    <i class="fas fa-search"></i>
+                </a>
+                
+            </div>
+        </div>
+    </div>
+</nav>
+    
+    <section class="section">
+        <div class="container">
+            <div class="columns">
+                <div class="column is-8-tablet is-8-desktop is-6-widescreen has-order-2 column-main"><div class="card">
+    
+    <div class="card-content article ">
+        
+        <div class="level article-meta is-size-7 is-uppercase is-mobile is-overflow-x-auto">
+            <div class="level-left">
+                <time class="level-item has-text-grey" datetime="2016-09-10T04:37:22.000Z">2016-09-10</time>
+                
+                <div class="level-item">
+                <a class="has-link-grey -link" href="/categories/JDK6-源码/">JDK6 源码</a>
+                </div>
+                
+                
+                <span class="level-item has-text-grey">
+                    
+                    
+                    44 分钟 读完 (大约 6617 个字)
+                </span>
+                
+                
+            </div>
+        </div>
+        
+        <h1 class="title is-size-3 is-size-4-mobile has-text-weight-normal">
+            
+                JDK1.6 SynchronousQueue
+            
+        </h1>
+        <div class="content">
+            <!-- TOC -->
+<ul>
+<li><a href="#1-介绍">1 介绍</a></li>
+<li><a href="#2-源码分析">2 源码分析</a><ul>
+<li><a href="#synchronousqueuetransferer">SynchronousQueue#Transferer</a></li>
+<li><a href="#synchronousqueuetransferstack-伪栈实现">SynchronousQueue#TransferStack 伪栈实现</a></li>
+<li><a href="#synchronousqueuetransferstacktransfer">SynchronousQueue#TransferStack#transfer()</a></li>
+<li><a href="#synchronousqueuetransferstacksnode">SynchronousQueue#TransferStack#snode()</a></li>
+<li><a href="#synchronousqueuetransferstackawaitfulfill">SynchronousQueue#TransferStack#awaitFulfill()</a></li>
+<li><a href="#synchronousqueuetransferstackshouldspin">SynchronousQueue#TransferStack#shouldSpin()</a></li>
+<li><a href="#synchronousqueue自选参数">SynchronousQueue自选参数</a></li>
+<li><a href="#synchronousqueuetransferstackclean">SynchronousQueue#TransferStack#clean()</a></li>
+<li><a href="#synchronousqueuetransferqueue-伪队列">SynchronousQueue#TransferQueue 伪队列</a></li>
+<li><a href="#synchronousqueuetransferqueuetransfer">SynchronousQueue#TransferQueue#transfer()</a></li>
+<li><a href="#synchronousqueuetransferqueueadvancehead">SynchronousQueue#TransferQueue#advanceHead()</a></li>
+<li><a href="#synchronousqueuetransferqueueadvancetail">SynchronousQueue#TransferQueue#advanceTail()</a></li>
+<li><a href="#synchronousqueuetransferqueueawaitfulfill">SynchronousQueue#TransferQueue#awaitFulfill()</a></li>
+<li><a href="#synchronousqueuetransferqueueclean">SynchronousQueue#TransferQueue#clean()</a></li>
+<li><a href="#synchronousqueue">SynchronousQueue</a></li>
+<li><a href="#synchronousqueue-序列化">SynchronousQueue 序列化</a></li>
+</ul>
+</li>
+<li><a href="#总结">总结</a></li>
+</ul>
+<!-- /TOC -->
+<h1 id="1-介绍"><a href="#1-介绍" class="headerlink" title="1 介绍"></a>1 介绍</h1><ul>
+<li>SynchronousQueue是一种特殊的阻塞队列，它本身没有容量，只有当一个线程从队列取数据的同时，另一个线程才能放一个数据到队列中，反之亦然。存取过程相当于一个线程把数据(安全的)交给另一个线程的过程。</li>
+<li>SynchronousQueue也支持公平和非公平模式。</li>
+</ul>
+<a id="more"></a>
+<h1 id="2-源码分析"><a href="#2-源码分析" class="headerlink" title="2 源码分析"></a>2 源码分析</h1><p>SynchronousQueue内部采用伪栈和伪队列来实现，分别对应非公平模式和公平模式。</p>
+<h2 id="SynchronousQueue-Transferer"><a href="#SynchronousQueue-Transferer" class="headerlink" title="SynchronousQueue#Transferer"></a>SynchronousQueue#Transferer</h2><figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment"> * Shared internal API for dual stacks and queues.</span></span><br><span class="line"><span class="hljs-comment"> */</span></span><br><span class="line"><span class="hljs-comment">// 1</span></span><br><span class="line"><span class="hljs-keyword">static</span> <span class="hljs-keyword">abstract</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Transferer</span> </span>&#123;</span><br><span class="line">    <span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment">     * Performs a put or take.</span></span><br><span class="line"><span class="hljs-comment">     *</span></span><br><span class="line"><span class="hljs-comment">     * <span class="hljs-doctag">@param</span> e if non-null, the item to be handed to a consumer;</span></span><br><span class="line"><span class="hljs-comment">     *          if null, requests that transfer return an item</span></span><br><span class="line"><span class="hljs-comment">     *          offered by producer.</span></span><br><span class="line"><span class="hljs-comment">     // 2</span></span><br><span class="line"><span class="hljs-comment">     * <span class="hljs-doctag">@param</span> timed if this operation should timeout</span></span><br><span class="line"><span class="hljs-comment">     * <span class="hljs-doctag">@param</span> nanos the timeout, in nanoseconds</span></span><br><span class="line"><span class="hljs-comment">     * <span class="hljs-doctag">@return</span> if non-null, the item provided or received; if null,</span></span><br><span class="line"><span class="hljs-comment">     *         the operation failed due to timeout or interrupt --</span></span><br><span class="line"><span class="hljs-comment">     *         the caller can distinguish which of these occurred</span></span><br><span class="line"><span class="hljs-comment">     *         by checking Thread.interrupted.</span></span><br><span class="line"><span class="hljs-comment">     */</span></span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">abstract</span> Object <span class="hljs-title">transfer</span><span class="hljs-params">(Object e, <span class="hljs-keyword">boolean</span> timed, <span class="hljs-keyword">long</span> nanos)</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>伪栈和伪队列的公共基类。<br>标注代码分析</p>
+<ol>
+<li>转移数据的方法，用来实现put或者take。</li>
+<li>如果不为null，相当于将一个数据交给消费者；如果为null，相当于从一个生产者接收一个消费者交出的数据。 </li>
+</ol>
+<h2 id="SynchronousQueue-TransferStack-伪栈实现"><a href="#SynchronousQueue-TransferStack-伪栈实现" class="headerlink" title="SynchronousQueue#TransferStack 伪栈实现"></a>SynchronousQueue#TransferStack 伪栈实现</h2><figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-comment">/** Dual stack */</span></span><br><span class="line">   <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">TransferStack</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">Transferer</span> </span>&#123;</span><br><span class="line">       <span class="hljs-comment">/*</span></span><br><span class="line"><span class="hljs-comment">        * This extends Scherer-Scott dual stack algorithm, differing,</span></span><br><span class="line"><span class="hljs-comment">        * among other ways, by using "covering" nodes rather than</span></span><br><span class="line"><span class="hljs-comment">        * bit-marked pointers: Fulfilling operations push on marker</span></span><br><span class="line"><span class="hljs-comment">        * nodes (with FULFILLING bit set in mode) to reserve a spot</span></span><br><span class="line"><span class="hljs-comment">        * to match a waiting node.</span></span><br><span class="line"><span class="hljs-comment">        */</span></span><br><span class="line"></span><br><span class="line">       <span class="hljs-comment">/* Modes for SNodes, ORed together in node fields */</span></span><br><span class="line">       <span class="hljs-comment">/** Node represents an unfulfilled consumer */</span></span><br><span class="line">       <span class="hljs-comment">// 1</span></span><br><span class="line">       <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">int</span> REQUEST    = <span class="hljs-number">0</span>;</span><br><span class="line">       <span class="hljs-comment">/** Node represents an unfulfilled producer */</span></span><br><span class="line">       <span class="hljs-comment">// 2</span></span><br><span class="line">       <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">int</span> DATA       = <span class="hljs-number">1</span>;</span><br><span class="line">       <span class="hljs-comment">/** Node is fulfilling another unfulfilled DATA or REQUEST */</span></span><br><span class="line">       <span class="hljs-comment">// 3</span></span><br><span class="line">       <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">int</span> FULFILLING = <span class="hljs-number">2</span>;</span><br><span class="line"></span><br><span class="line">       <span class="hljs-comment">/** Return true if m has fulfilling bit set */</span></span><br><span class="line">       <span class="hljs-comment">// 4</span></span><br><span class="line">       <span class="hljs-function"><span class="hljs-keyword">static</span> <span class="hljs-keyword">boolean</span> <span class="hljs-title">isFulfilling</span><span class="hljs-params">(<span class="hljs-keyword">int</span> m)</span> </span>&#123; <span class="hljs-keyword">return</span> (m &amp; FULFILLING) != <span class="hljs-number">0</span>; &#125;</span><br><span class="line"></span><br><span class="line">       <span class="hljs-comment">/** Node class for TransferStacks. */</span></span><br><span class="line">       <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">SNode</span> </span>&#123;</span><br><span class="line">           <span class="hljs-comment">// 5</span></span><br><span class="line">           <span class="hljs-keyword">volatile</span> SNode next;        <span class="hljs-comment">// next node in stack</span></span><br><span class="line">           <span class="hljs-comment">// 6</span></span><br><span class="line">           <span class="hljs-keyword">volatile</span> SNode match;       <span class="hljs-comment">// the node matched to this</span></span><br><span class="line">           <span class="hljs-keyword">volatile</span> Thread waiter;     <span class="hljs-comment">// to control park/unpark</span></span><br><span class="line">           Object item;                <span class="hljs-comment">// data; or null for REQUESTs</span></span><br><span class="line">           <span class="hljs-keyword">int</span> mode;</span><br><span class="line">           <span class="hljs-comment">// Note: item and mode fields don't need to be volatile</span></span><br><span class="line">           <span class="hljs-comment">// since they are always written before, and read after,</span></span><br><span class="line">           <span class="hljs-comment">// other volatile/atomic operations.</span></span><br><span class="line">           <span class="hljs-comment">// 7</span></span><br><span class="line">           SNode(Object item) &#123;</span><br><span class="line">               <span class="hljs-keyword">this</span>.item = item;</span><br><span class="line">           &#125;</span><br><span class="line"></span><br><span class="line">           <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> AtomicReferenceFieldUpdater&lt;SNode, SNode&gt;</span><br><span class="line">               nextUpdater = AtomicReferenceFieldUpdater.newUpdater</span><br><span class="line">               (SNode.class, SNode.class, <span class="hljs-string">"next"</span>);</span><br><span class="line"></span><br><span class="line">           <span class="hljs-function"><span class="hljs-keyword">boolean</span> <span class="hljs-title">casNext</span><span class="hljs-params">(SNode cmp, SNode val)</span> </span>&#123;</span><br><span class="line">               <span class="hljs-keyword">return</span> (cmp == next &amp;&amp;</span><br><span class="line">                       nextUpdater.compareAndSet(<span class="hljs-keyword">this</span>, cmp, val));</span><br><span class="line">           &#125;</span><br><span class="line"></span><br><span class="line">           <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> AtomicReferenceFieldUpdater&lt;SNode, SNode&gt;</span><br><span class="line">               matchUpdater = AtomicReferenceFieldUpdater.newUpdater</span><br><span class="line">               (SNode.class, SNode.class, <span class="hljs-string">"match"</span>);</span><br><span class="line"></span><br><span class="line">           <span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment">            * Tries to match node s to this node, if so, waking up thread.</span></span><br><span class="line"><span class="hljs-comment">            * Fulfillers call tryMatch to identify their waiters.</span></span><br><span class="line"><span class="hljs-comment">            * Waiters block until they have been matched.</span></span><br><span class="line"><span class="hljs-comment">            *</span></span><br><span class="line"><span class="hljs-comment">            * <span class="hljs-doctag">@param</span> s the node to match</span></span><br><span class="line"><span class="hljs-comment">            * <span class="hljs-doctag">@return</span> true if successfully matched to s</span></span><br><span class="line"><span class="hljs-comment">            */</span></span><br><span class="line">            <span class="hljs-comment">// 8</span></span><br><span class="line">           <span class="hljs-function"><span class="hljs-keyword">boolean</span> <span class="hljs-title">tryMatch</span><span class="hljs-params">(SNode s)</span> </span>&#123;</span><br><span class="line">               <span class="hljs-keyword">if</span> (match == <span class="hljs-keyword">null</span> &amp;&amp;</span><br><span class="line">                   matchUpdater.compareAndSet(<span class="hljs-keyword">this</span>, <span class="hljs-keyword">null</span>, s)) &#123;</span><br><span class="line">                   <span class="hljs-comment">// 9</span></span><br><span class="line">                   Thread w = waiter;</span><br><span class="line">                   <span class="hljs-keyword">if</span> (w != <span class="hljs-keyword">null</span>) &#123;    <span class="hljs-comment">// waiters need at most one unpark</span></span><br><span class="line">                       waiter = <span class="hljs-keyword">null</span>;</span><br><span class="line">                       LockSupport.unpark(w);</span><br><span class="line">                   &#125;</span><br><span class="line">                   <span class="hljs-keyword">return</span> <span class="hljs-keyword">true</span>;</span><br><span class="line">               &#125;</span><br><span class="line">               <span class="hljs-comment">// 10</span></span><br><span class="line">               <span class="hljs-keyword">return</span> match == s;</span><br><span class="line">           &#125;</span><br><span class="line"></span><br><span class="line">           <span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment">            * Tries to cancel a wait by matching node to itself.</span></span><br><span class="line"><span class="hljs-comment">            */</span></span><br><span class="line">           <span class="hljs-comment">// 11</span></span><br><span class="line">           <span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">tryCancel</span><span class="hljs-params">()</span> </span>&#123;</span><br><span class="line">               matchUpdater.compareAndSet(<span class="hljs-keyword">this</span>, <span class="hljs-keyword">null</span>, <span class="hljs-keyword">this</span>);</span><br><span class="line">           &#125;</span><br><span class="line"></span><br><span class="line">           <span class="hljs-function"><span class="hljs-keyword">boolean</span> <span class="hljs-title">isCancelled</span><span class="hljs-params">()</span> </span>&#123;</span><br><span class="line">               <span class="hljs-keyword">return</span> match == <span class="hljs-keyword">this</span>;</span><br><span class="line">           &#125;</span><br><span class="line">       &#125;</span><br><span class="line"></span><br><span class="line">       <span class="hljs-comment">/** The head (top) of the stack */</span></span><br><span class="line">       <span class="hljs-keyword">volatile</span> SNode head;</span><br><span class="line"></span><br><span class="line">       <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> AtomicReferenceFieldUpdater&lt;TransferStack, SNode&gt;</span><br><span class="line">           headUpdater = AtomicReferenceFieldUpdater.newUpdater</span><br><span class="line">           (TransferStack.class,  SNode.class, <span class="hljs-string">"head"</span>);</span><br><span class="line"></span><br><span class="line">       <span class="hljs-function"><span class="hljs-keyword">boolean</span> <span class="hljs-title">casHead</span><span class="hljs-params">(SNode h, SNode nh)</span> </span>&#123;</span><br><span class="line">           <span class="hljs-keyword">return</span> h == head &amp;&amp; headUpdater.compareAndSet(<span class="hljs-keyword">this</span>, h, nh);</span><br><span class="line">       &#125;</span><br><span class="line">       ....</span><br></pre></td></tr></table></figure>
+<p>TransferStack是伪栈实现。<br>标注代码分析  </p>
+<ol>
+<li>一个没有得到数据的消费者。</li>
+<li>一个没有交出数据的生产者。</li>
+<li>匹配另一个生产者或者消费者。</li>
+<li>判断是否包含正在匹配(FULFILLING)的标记。</li>
+<li>栈中的下一个节点。</li>
+<li>和当前节点完成匹配的节点。</li>
+<li>item和mode不需要volatile修饰；是因为它们在其他的volatile/atomic操作之前写，之后读。（HB关系）</li>
+<li>尝试匹配节点s和当前节点，如果匹配成功，唤醒等待线程。(向消费者传递数据或向生产者获取数据)调用tryMatch()来确定它们的等待线程，然后唤醒这个等待线程。</li>
+<li>如果当前节点的match为空，那么CAS设置s为match，然后唤醒waiter。</li>
+<li>如果match不为null，或者CAS设置match失败，那么比较match和s是否为相同对象。如果相同，说明已经完成匹配，匹配成功。 </li>
+<li>尝试取消当前节点(有线程等待)，通过将match设置为自身。</li>
+</ol>
+<h2 id="SynchronousQueue-TransferStack-transfer"><a href="#SynchronousQueue-TransferStack-transfer" class="headerlink" title="SynchronousQueue#TransferStack#transfer()"></a>SynchronousQueue#TransferStack#transfer()</h2><figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment">  * Puts or takes an item.</span></span><br><span class="line"><span class="hljs-comment">  */</span></span><br><span class="line"> <span class="hljs-function">Object <span class="hljs-title">transfer</span><span class="hljs-params">(Object e, <span class="hljs-keyword">boolean</span> timed, <span class="hljs-keyword">long</span> nanos)</span> </span>&#123;</span><br><span class="line">     <span class="hljs-comment">/*</span></span><br><span class="line"><span class="hljs-comment">      * Basic algorithm is to loop trying one of three actions:</span></span><br><span class="line"><span class="hljs-comment">      *</span></span><br><span class="line"><span class="hljs-comment">      * 1. If apparently empty or already containing nodes of same</span></span><br><span class="line"><span class="hljs-comment">      *    mode, try to push node on stack and wait for a match,</span></span><br><span class="line"><span class="hljs-comment">      *    returning it, or null if cancelled.</span></span><br><span class="line"><span class="hljs-comment">      *</span></span><br><span class="line"><span class="hljs-comment">      * 2. If apparently containing node of complementary mode,</span></span><br><span class="line"><span class="hljs-comment">      *    try to push a fulfilling node on to stack, match</span></span><br><span class="line"><span class="hljs-comment">      *    with corresponding waiting node, pop both from</span></span><br><span class="line"><span class="hljs-comment">      *    stack, and return matched item. The matching or</span></span><br><span class="line"><span class="hljs-comment">      *    unlinking might not actually be necessary because of</span></span><br><span class="line"><span class="hljs-comment">      *    other threads performing action 3:</span></span><br><span class="line"><span class="hljs-comment">      *</span></span><br><span class="line"><span class="hljs-comment">      * 3. If top of stack already holds another fulfilling node,</span></span><br><span class="line"><span class="hljs-comment">      *    help it out by doing its match and/or pop</span></span><br><span class="line"><span class="hljs-comment">      *    operations, and then continue. The code for helping</span></span><br><span class="line"><span class="hljs-comment">      *    is essentially the same as for fulfilling, except</span></span><br><span class="line"><span class="hljs-comment">      *    that it doesn't return the item.</span></span><br><span class="line"><span class="hljs-comment">      */</span></span><br><span class="line">     <span class="hljs-comment">// 1</span></span><br><span class="line">     SNode s = <span class="hljs-keyword">null</span>; <span class="hljs-comment">// constructed/reused as needed</span></span><br><span class="line">     <span class="hljs-keyword">int</span> mode = (e == <span class="hljs-keyword">null</span>)? REQUEST : DATA;</span><br><span class="line"></span><br><span class="line">     <span class="hljs-keyword">for</span> (;;) &#123;</span><br><span class="line">         SNode h = head;</span><br><span class="line">         <span class="hljs-comment">// 2</span></span><br><span class="line">         <span class="hljs-keyword">if</span> (h == <span class="hljs-keyword">null</span> || h.mode == mode) &#123;  <span class="hljs-comment">// empty or same-mode</span></span><br><span class="line">             <span class="hljs-comment">// 3</span></span><br><span class="line">             <span class="hljs-keyword">if</span> (timed &amp;&amp; nanos &lt;= <span class="hljs-number">0</span>) &#123;      <span class="hljs-comment">// can't wait</span></span><br><span class="line">                 <span class="hljs-keyword">if</span> (h != <span class="hljs-keyword">null</span> &amp;&amp; h.isCancelled())</span><br><span class="line">                     <span class="hljs-comment">// 4</span></span><br><span class="line">                     casHead(h, h.next);     <span class="hljs-comment">// pop cancelled node</span></span><br><span class="line">                 <span class="hljs-keyword">else</span></span><br><span class="line">                     <span class="hljs-keyword">return</span> <span class="hljs-keyword">null</span>;</span><br><span class="line">             &#125; <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (casHead(h, s = snode(s, e, h, mode))) &#123;<span class="hljs-comment">// 5</span></span><br><span class="line">                 <span class="hljs-comment">// 6</span></span><br><span class="line">                 SNode m = awaitFulfill(s, timed, nanos);</span><br><span class="line">                 <span class="hljs-comment">// 7</span></span><br><span class="line">                 <span class="hljs-keyword">if</span> (m == s) &#123;               <span class="hljs-comment">// wait was cancelled</span></span><br><span class="line">                     <span class="hljs-comment">// 8</span></span><br><span class="line">                     clean(s);</span><br><span class="line">                     <span class="hljs-keyword">return</span> <span class="hljs-keyword">null</span>;</span><br><span class="line">                 &#125;</span><br><span class="line">                 <span class="hljs-comment">// 9</span></span><br><span class="line">                 <span class="hljs-keyword">if</span> ((h = head) != <span class="hljs-keyword">null</span> &amp;&amp; h.next == s)</span><br><span class="line">                     <span class="hljs-comment">// 10</span></span><br><span class="line">                     casHead(h, s.next);     <span class="hljs-comment">// help s's fulfiller</span></span><br><span class="line">                 <span class="hljs-keyword">return</span> mode == REQUEST? m.item : s.item;</span><br><span class="line">             &#125;</span><br><span class="line">         &#125; <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (!isFulfilling(h.mode)) &#123; <span class="hljs-comment">// try to fulfill</span></span><br><span class="line">             <span class="hljs-comment">// 11</span></span><br><span class="line">             <span class="hljs-comment">// 12</span></span><br><span class="line">             <span class="hljs-keyword">if</span> (h.isCancelled())            <span class="hljs-comment">// already cancelled</span></span><br><span class="line">                 <span class="hljs-comment">// 13</span></span><br><span class="line">                 casHead(h, h.next);         <span class="hljs-comment">// pop and retry</span></span><br><span class="line">             <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (casHead(h, s=snode(s, e, h, FULFILLING|mode))) &#123;<span class="hljs-comment">// 14</span></span><br><span class="line">                 <span class="hljs-keyword">for</span> (;;) &#123; <span class="hljs-comment">// loop until matched or waiters disappear</span></span><br><span class="line">                     <span class="hljs-comment">// 15</span></span><br><span class="line">                     SNode m = s.next;       <span class="hljs-comment">// m is s's match</span></span><br><span class="line">                     <span class="hljs-comment">// 16</span></span><br><span class="line">                     <span class="hljs-keyword">if</span> (m == <span class="hljs-keyword">null</span>) &#123;        <span class="hljs-comment">// all waiters are gone</span></span><br><span class="line">                         <span class="hljs-comment">// 17</span></span><br><span class="line">                         casHead(s, <span class="hljs-keyword">null</span>);   <span class="hljs-comment">// pop fulfill node</span></span><br><span class="line">                         <span class="hljs-comment">// 18</span></span><br><span class="line">                         s = <span class="hljs-keyword">null</span>;           <span class="hljs-comment">// use new node next time</span></span><br><span class="line">                         <span class="hljs-keyword">break</span>;              <span class="hljs-comment">// restart main loop</span></span><br><span class="line">                     &#125;</span><br><span class="line">                     <span class="hljs-comment">// 19</span></span><br><span class="line">                     SNode mn = m.next;</span><br><span class="line">                     <span class="hljs-comment">// 20</span></span><br><span class="line">                     <span class="hljs-keyword">if</span> (m.tryMatch(s)) &#123;</span><br><span class="line">                         <span class="hljs-comment">// 21</span></span><br><span class="line">                         casHead(s, mn);     <span class="hljs-comment">// pop both s and m</span></span><br><span class="line">                         <span class="hljs-keyword">return</span> (mode == REQUEST)? m.item : s.item;</span><br><span class="line">                     &#125; <span class="hljs-keyword">else</span>                  <span class="hljs-comment">// lost match</span></span><br><span class="line">                         <span class="hljs-comment">// 22</span></span><br><span class="line">                         <span class="hljs-comment">// 23</span></span><br><span class="line">                         s.casNext(m, mn);   <span class="hljs-comment">// help unlink</span></span><br><span class="line">                 &#125;</span><br><span class="line">             &#125;</span><br><span class="line">         &#125; <span class="hljs-keyword">else</span> &#123; <span class="hljs-comment">// 24                    // help a fulfiller</span></span><br><span class="line">             <span class="hljs-comment">// 25</span></span><br><span class="line">             SNode m = h.next;               <span class="hljs-comment">// m is h's match</span></span><br><span class="line">             <span class="hljs-comment">// 26</span></span><br><span class="line">             <span class="hljs-keyword">if</span> (m == <span class="hljs-keyword">null</span>)                  <span class="hljs-comment">// waiter is gone</span></span><br><span class="line">                 casHead(h, <span class="hljs-keyword">null</span>);           <span class="hljs-comment">// pop fulfilling node</span></span><br><span class="line">             <span class="hljs-keyword">else</span> &#123;</span><br><span class="line">                 <span class="hljs-comment">// 27</span></span><br><span class="line">                 SNode mn = m.next;</span><br><span class="line">                 <span class="hljs-comment">// 28</span></span><br><span class="line">                 <span class="hljs-keyword">if</span> (m.tryMatch(h))          <span class="hljs-comment">// help match</span></span><br><span class="line">                     <span class="hljs-comment">// 29</span></span><br><span class="line">                     casHead(h, mn);         <span class="hljs-comment">// pop both h and m</span></span><br><span class="line">                 <span class="hljs-keyword">else</span>  <span class="hljs-comment">//30                  // lost match</span></span><br><span class="line">                     <span class="hljs-comment">// 31</span></span><br><span class="line">                     h.casNext(m, mn);       <span class="hljs-comment">// help unlink</span></span><br><span class="line">             &#125;</span><br><span class="line">         &#125;</span><br><span class="line">     &#125;</span><br><span class="line"> &#125;</span><br></pre></td></tr></table></figure>
+<p>标注代码分析</p>
+<ol>
+<li>基本算法是在一个无限循环中尝试下面三种情况里面的一种： </li>
+</ol>
+<ul>
+<li>如果当前栈为空或者包含与给定节点模式相同的节点，尝试将节点压入栈内，并等待一个匹配节点，最后返回匹配节点或者null(如果被取消)。</li>
+<li>如果当前栈包含于给定节点模式互补的节点，尝试将这个节点打上FULFILLING标记，然后压入栈中，和相应的节点进行匹配，然后将两个节点(当前节点和互补节点)弹出栈，并返回匹配节点的数据。匹配和删除动作不是必须要做的，因为其他线程会执行动作3。</li>
+<li>如果栈顶已经存在一个FULFILLING(正在满足其他节点)的节点，帮助这个节点完成匹配和移除(出栈)的操作。然后继续执行(主循环)。这部分代码基本和动作2的代码一样，只是不会返回节点的数据。 </li>
+</ul>
+<ol start="2">
+<li>head为null或者head和e的mode相同。</li>
+<li>超时。</li>
+<li>如果h不为null且被取消，弹出h。</li>
+<li>创建一个SNode，赋给s，将原本的head节点做为其next节点，并尝试将其设置为新的head。</li>
+<li>等待其他线程来满足当前线程。</li>
+<li>awaitFulfill方法返回后，判断下是否被取消。</li>
+<li>如果取消，清理一下s节点。  </li>
+<li>因为上面已经将s设置为head，如果满足这个条件说明有其他节点t插入到s前面，变成了head，而且这个t就是和s匹配的节点，他们已经完成匹配。</li>
+<li>将s的next节点设置为head。相当于把s和t一起移除了。</li>
+<li>如果栈中存在头节点，且和当前节点不是相同模式，那么说明它们是一对儿对等的节点，尝试用当前节点s来满足h节点。</li>
+<li>如果h节点已经被取消。</li>
+<li>将h节点弹出，并将h节点的next节点设置为栈的head。</li>
+<li>尝试将当前节点打上”正在匹配”的标记，并设置为head。</li>
+<li>s是当前节点，m是s的next节点，它们是正在匹配的两个节点。</li>
+<li>如果m为空，可能其他节点把m匹配走了。</li>
+<li>将s弹出。</li>
+<li>将s置空，下轮循环的时候还会新建。  </li>
+<li>获取m的next节点，如果s和m匹配成功，mn就得补上head的位置了。</li>
+<li>尝试匹配一下，匹配成功的话会把m上等待的线程唤醒。</li>
+<li>如果匹配成功，把s和m弹出。</li>
+<li>没匹配成功的话，说明m可能被其他节点满足了。</li>
+<li>说明m已经被其他节点匹配了，那就把m移除掉。</li>
+<li>说明栈顶的h正在匹配过程中。</li>
+<li>m是h的配对儿，h正在和m匹配。</li>
+<li>如果m为空，其他节点把m匹配走了。</li>
+<li>获取m的next节点，如果m和h匹配成功，mn就得补上head的位置了。</li>
+<li>匹配一下m和h。</li>
+<li>匹配成功的话，把h和m弹出。</li>
+<li>没匹配成功的话，说明m可能被其他节点满足了。</li>
+<li>没成功的话，说明m已经被其他节点匹配了，那就把m移除掉。</li>
+</ol>
+<h2 id="SynchronousQueue-TransferStack-snode"><a href="#SynchronousQueue-TransferStack-snode" class="headerlink" title="SynchronousQueue#TransferStack#snode()"></a>SynchronousQueue#TransferStack#snode()</h2><figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment"> * Creates or resets fields of a node. Called only from transfer</span></span><br><span class="line"><span class="hljs-comment"> * where the node to push on stack is lazily created and</span></span><br><span class="line"><span class="hljs-comment"> * reused when possible to help reduce intervals between reads</span></span><br><span class="line"><span class="hljs-comment"> * and CASes of head and to avoid surges of garbage when CASes</span></span><br><span class="line"><span class="hljs-comment"> * to push nodes fail due to contention.</span></span><br><span class="line"><span class="hljs-comment"> */</span></span><br><span class="line"><span class="hljs-function"><span class="hljs-keyword">static</span> SNode <span class="hljs-title">snode</span><span class="hljs-params">(SNode s, Object e, SNode next, <span class="hljs-keyword">int</span> mode)</span> </span>&#123;</span><br><span class="line">    <span class="hljs-keyword">if</span> (s == <span class="hljs-keyword">null</span>) s = <span class="hljs-keyword">new</span> SNode(e);</span><br><span class="line">    s.mode = mode;</span><br><span class="line">    s.next = next;</span><br><span class="line">    <span class="hljs-keyword">return</span> s;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="SynchronousQueue-TransferStack-awaitFulfill"><a href="#SynchronousQueue-TransferStack-awaitFulfill" class="headerlink" title="SynchronousQueue#TransferStack#awaitFulfill()"></a>SynchronousQueue#TransferStack#awaitFulfill()</h2><figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment"> * Spins/blocks until node s is matched by a fulfill operation.</span></span><br><span class="line"><span class="hljs-comment"> *</span></span><br><span class="line"><span class="hljs-comment"> * <span class="hljs-doctag">@param</span> s the waiting node</span></span><br><span class="line"><span class="hljs-comment"> * <span class="hljs-doctag">@param</span> timed true if timed wait</span></span><br><span class="line"><span class="hljs-comment"> * <span class="hljs-doctag">@param</span> nanos timeout value</span></span><br><span class="line"><span class="hljs-comment"> * <span class="hljs-doctag">@return</span> matched node, or s if cancelled</span></span><br><span class="line"><span class="hljs-comment"> */</span></span><br><span class="line"> <span class="hljs-comment">// 1</span></span><br><span class="line"><span class="hljs-function">SNode <span class="hljs-title">awaitFulfill</span><span class="hljs-params">(SNode s, <span class="hljs-keyword">boolean</span> timed, <span class="hljs-keyword">long</span> nanos)</span> </span>&#123;</span><br><span class="line">    <span class="hljs-comment">/*</span></span><br><span class="line"><span class="hljs-comment">     * When a node/thread is about to block, it sets its waiter</span></span><br><span class="line"><span class="hljs-comment">     * field and then rechecks state at least one more time</span></span><br><span class="line"><span class="hljs-comment">     * before actually parking, thus covering race vs</span></span><br><span class="line"><span class="hljs-comment">     * fulfiller noticing that waiter is non-null so should be</span></span><br><span class="line"><span class="hljs-comment">     * woken.</span></span><br><span class="line"><span class="hljs-comment">     *</span></span><br><span class="line"><span class="hljs-comment">     * When invoked by nodes that appear at the point of call</span></span><br><span class="line"><span class="hljs-comment">     * to be at the head of the stack, calls to park are</span></span><br><span class="line"><span class="hljs-comment">     * preceded by spins to avoid blocking when producers and</span></span><br><span class="line"><span class="hljs-comment">     * consumers are arriving very close in time.  This can</span></span><br><span class="line"><span class="hljs-comment">     * happen enough to bother only on multiprocessors.</span></span><br><span class="line"><span class="hljs-comment">     *</span></span><br><span class="line"><span class="hljs-comment">     * The order of checks for returning out of main loop</span></span><br><span class="line"><span class="hljs-comment">     * reflects fact that interrupts have precedence over</span></span><br><span class="line"><span class="hljs-comment">     * normal returns, which have precedence over</span></span><br><span class="line"><span class="hljs-comment">     * timeouts. (So, on timeout, one last check for match is</span></span><br><span class="line"><span class="hljs-comment">     * done before giving up.) Except that calls from untimed</span></span><br><span class="line"><span class="hljs-comment">     * SynchronousQueue.&#123;poll/offer&#125; don't check interrupts</span></span><br><span class="line"><span class="hljs-comment">     * and don't wait at all, so are trapped in transfer</span></span><br><span class="line"><span class="hljs-comment">     * method rather than calling awaitFulfill.</span></span><br><span class="line"><span class="hljs-comment">     */</span></span><br><span class="line">    <span class="hljs-keyword">long</span> lastTime = (timed)? System.nanoTime() : <span class="hljs-number">0</span>;</span><br><span class="line">    Thread w = Thread.currentThread();</span><br><span class="line">    SNode h = head;</span><br><span class="line">    <span class="hljs-keyword">int</span> spins = (shouldSpin(s)?</span><br><span class="line">                 (timed? maxTimedSpins : maxUntimedSpins) : <span class="hljs-number">0</span>);</span><br><span class="line">    <span class="hljs-keyword">for</span> (;;) &#123;</span><br><span class="line">        <span class="hljs-keyword">if</span> (w.isInterrupted())</span><br><span class="line">            <span class="hljs-comment">// 2</span></span><br><span class="line">            s.tryCancel();</span><br><span class="line">        SNode m = s.match;</span><br><span class="line">        <span class="hljs-keyword">if</span> (m != <span class="hljs-keyword">null</span>)</span><br><span class="line">            <span class="hljs-comment">// 3</span></span><br><span class="line">            <span class="hljs-keyword">return</span> m;</span><br><span class="line">        <span class="hljs-keyword">if</span> (timed) &#123;</span><br><span class="line">            <span class="hljs-keyword">long</span> now = System.nanoTime();</span><br><span class="line">            nanos -= now - lastTime;</span><br><span class="line">            lastTime = now;</span><br><span class="line">            <span class="hljs-keyword">if</span> (nanos &lt;= <span class="hljs-number">0</span>) &#123;</span><br><span class="line">                <span class="hljs-comment">// 4</span></span><br><span class="line">                s.tryCancel();</span><br><span class="line">                <span class="hljs-keyword">continue</span>;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="hljs-keyword">if</span> (spins &gt; <span class="hljs-number">0</span>)</span><br><span class="line">            <span class="hljs-comment">// 5</span></span><br><span class="line">            spins = shouldSpin(s)? (spins-<span class="hljs-number">1</span>) : <span class="hljs-number">0</span>;</span><br><span class="line">        <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (s.waiter == <span class="hljs-keyword">null</span>)</span><br><span class="line">            <span class="hljs-comment">// 6</span></span><br><span class="line">            s.waiter = w; <span class="hljs-comment">// establish waiter so can park next iter</span></span><br><span class="line">        <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (!timed)</span><br><span class="line">            LockSupport.park(<span class="hljs-keyword">this</span>);</span><br><span class="line">        <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (nanos &gt; spinForTimeoutThreshold)</span><br><span class="line">            <span class="hljs-comment">// 7</span></span><br><span class="line">            LockSupport.parkNanos(<span class="hljs-keyword">this</span>, nanos);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>标注代码分析</p>
+<ol>
+<li>自旋/阻塞直到节点被匹配。</li>
+<li>如果当前线程被中断了，那么取消当前节点。</li>
+<li>如果已经匹配成功，就返回匹配的节点。</li>
+<li>如果超时，也取消当前节点。</li>
+<li>自旋控制，每次循环都检测是否满足自旋条件，满足的话，自旋值就减去1，然后进入下次循环(一直减到0)</li>
+<li>第一次循环时，会将当前线程设置到s上。</li>
+<li>有超时条件下，会检测超时时间是否大于超时阀值(这应该是一个经验值)，大于就阻塞，小于就自旋。</li>
+</ol>
+<p>在s节点真正阻塞之前，将当前线程设置到s上面，然后检查中断状态(不少于一次)，以确保后续和s匹配的节点来<br>唤醒当前线程。<br>当执行此方法时，如果执行节点恰好在栈顶，阻塞之前会做一些自旋，为的是如果有生产者或消费者马上到来，就不需要执行节点阻塞了。这种优化在多核下是有意义的。</p>
+<h2 id="SynchronousQueue-TransferStack-shouldSpin"><a href="#SynchronousQueue-TransferStack-shouldSpin" class="headerlink" title="SynchronousQueue#TransferStack#shouldSpin()"></a>SynchronousQueue#TransferStack#shouldSpin()</h2><figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment"> * Returns true if node s is at head or there is an active</span></span><br><span class="line"><span class="hljs-comment"> * fulfiller.</span></span><br><span class="line"><span class="hljs-comment"> */</span></span><br><span class="line"><span class="hljs-comment">// 1</span></span><br><span class="line"><span class="hljs-function"><span class="hljs-keyword">boolean</span> <span class="hljs-title">shouldSpin</span><span class="hljs-params">(SNode s)</span> </span>&#123;</span><br><span class="line">    SNode h = head;</span><br><span class="line">    <span class="hljs-keyword">return</span> (h == s || h == <span class="hljs-keyword">null</span> || isFulfilling(h.mode));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>标注代码分析</p>
+<ol>
+<li>如果s节点就是当前栈中头节点，或者头节点正在匹配过程中，那么可以自旋一下。</li>
+</ol>
+<h2 id="SynchronousQueue自选参数"><a href="#SynchronousQueue自选参数" class="headerlink" title="SynchronousQueue自选参数"></a>SynchronousQueue自选参数</h2><figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-comment">/** The number of CPUs, for spin control */</span></span><br><span class="line">   <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">int</span> NCPUS = Runtime.getRuntime().availableProcessors();</span><br><span class="line"></span><br><span class="line">   <span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment">    * The number of times to spin before blocking in timed waits.</span></span><br><span class="line"><span class="hljs-comment">    * The value is empirically derived -- it works well across a</span></span><br><span class="line"><span class="hljs-comment">    * variety of processors and OSes. Empirically, the best value</span></span><br><span class="line"><span class="hljs-comment">    * seems not to vary with number of CPUs (beyond 2) so is just</span></span><br><span class="line"><span class="hljs-comment">    * a constant.</span></span><br><span class="line"><span class="hljs-comment">    */</span></span><br><span class="line">   <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">int</span> maxTimedSpins = (NCPUS &lt; <span class="hljs-number">2</span>)? <span class="hljs-number">0</span> : <span class="hljs-number">32</span>;</span><br><span class="line"></span><br><span class="line">   <span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment">    * The number of times to spin before blocking in untimed waits.</span></span><br><span class="line"><span class="hljs-comment">    * This is greater than timed value because untimed waits spin</span></span><br><span class="line"><span class="hljs-comment">    * faster since they don't need to check times on each spin.</span></span><br><span class="line"><span class="hljs-comment">    */</span></span><br><span class="line">   <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">int</span> maxUntimedSpins = maxTimedSpins * <span class="hljs-number">16</span>;</span><br><span class="line"></span><br><span class="line">   <span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment">    * The number of nanoseconds for which it is faster to spin</span></span><br><span class="line"><span class="hljs-comment">    * rather than to use timed park. A rough estimate suffices.</span></span><br><span class="line"><span class="hljs-comment">    */</span></span><br><span class="line">   <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">long</span> spinForTimeoutThreshold = <span class="hljs-number">1000L</span>;</span><br></pre></td></tr></table></figure>
+<h2 id="SynchronousQueue-TransferStack-clean"><a href="#SynchronousQueue-TransferStack-clean" class="headerlink" title="SynchronousQueue#TransferStack#clean()"></a>SynchronousQueue#TransferStack#clean()</h2><figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment"> * Unlinks s from the stack.</span></span><br><span class="line"><span class="hljs-comment"> */</span></span><br><span class="line"><span class="hljs-comment">// 1</span></span><br><span class="line"><span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">clean</span><span class="hljs-params">(SNode s)</span> </span>&#123;</span><br><span class="line">    s.item = <span class="hljs-keyword">null</span>;   <span class="hljs-comment">// forget item</span></span><br><span class="line">    s.waiter = <span class="hljs-keyword">null</span>; <span class="hljs-comment">// forget thread</span></span><br><span class="line"></span><br><span class="line">    <span class="hljs-comment">/*</span></span><br><span class="line"><span class="hljs-comment">     * At worst we may need to traverse entire stack to unlink</span></span><br><span class="line"><span class="hljs-comment">     * s. If there are multiple concurrent calls to clean, we</span></span><br><span class="line"><span class="hljs-comment">     * might not see s if another thread has already removed</span></span><br><span class="line"><span class="hljs-comment">     * it. But we can stop when we see any node known to</span></span><br><span class="line"><span class="hljs-comment">     * follow s. We use s.next unless it too is cancelled, in</span></span><br><span class="line"><span class="hljs-comment">     * which case we try the node one past. We don't check any</span></span><br><span class="line"><span class="hljs-comment">     * further because we don't want to doubly traverse just to</span></span><br><span class="line"><span class="hljs-comment">     * find sentinel.</span></span><br><span class="line"><span class="hljs-comment">     */</span></span><br><span class="line"></span><br><span class="line">    SNode past = s.next;</span><br><span class="line">    <span class="hljs-keyword">if</span> (past != <span class="hljs-keyword">null</span> &amp;&amp; past.isCancelled())</span><br><span class="line">        past = past.next;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-comment">// Absorb cancelled nodes at head</span></span><br><span class="line">    <span class="hljs-comment">// 2</span></span><br><span class="line">    SNode p;</span><br><span class="line">    <span class="hljs-keyword">while</span> ((p = head) != <span class="hljs-keyword">null</span> &amp;&amp; p != past &amp;&amp; p.isCancelled())</span><br><span class="line">        casHead(p, p.next);</span><br><span class="line"></span><br><span class="line">    <span class="hljs-comment">// Unsplice embedded nodes</span></span><br><span class="line">    <span class="hljs-comment">// 3</span></span><br><span class="line">    <span class="hljs-keyword">while</span> (p != <span class="hljs-keyword">null</span> &amp;&amp; p != past) &#123;</span><br><span class="line">        SNode n = p.next;</span><br><span class="line">        <span class="hljs-keyword">if</span> (n != <span class="hljs-keyword">null</span> &amp;&amp; n.isCancelled())</span><br><span class="line">            p.casNext(n, n.next);</span><br><span class="line">        <span class="hljs-keyword">else</span></span><br><span class="line">            p = n;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>标注代码分析</p>
+<ol>
+<li>当s节点被取消时，才会调用这个方法。</li>
+<li>将从栈顶节点开始到past的连续的取消节点移除。</li>
+<li>如果p本身未取消(上面的while碰到一个未取消的节点就会退出，但这个节点和past节点之间可能还有取消节点)，再把p到past之间的取消节点都移除。  </li>
+</ol>
+<h2 id="SynchronousQueue-TransferQueue-伪队列"><a href="#SynchronousQueue-TransferQueue-伪队列" class="headerlink" title="SynchronousQueue#TransferQueue 伪队列"></a>SynchronousQueue#TransferQueue 伪队列</h2><figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-comment">/** Dual Queue */</span></span><br><span class="line">    <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">TransferQueue</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">Transferer</span> </span>&#123;</span><br><span class="line">        <span class="hljs-comment">/*</span></span><br><span class="line"><span class="hljs-comment">         * This extends Scherer-Scott dual queue algorithm, differing,</span></span><br><span class="line"><span class="hljs-comment">         * among other ways, by using modes within nodes rather than</span></span><br><span class="line"><span class="hljs-comment">         * marked pointers. The algorithm is a little simpler than</span></span><br><span class="line"><span class="hljs-comment">         * that for stacks because fulfillers do not need explicit</span></span><br><span class="line"><span class="hljs-comment">         * nodes, and matching is done by CAS'ing QNode.item field</span></span><br><span class="line"><span class="hljs-comment">         * from non-null to null (for put) or vice versa (for take).</span></span><br><span class="line"><span class="hljs-comment">         */</span></span><br><span class="line"></span><br><span class="line">        <span class="hljs-comment">/** Node class for TransferQueue. */</span></span><br><span class="line">        <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">QNode</span> </span>&#123;</span><br><span class="line">            <span class="hljs-keyword">volatile</span> QNode next;          <span class="hljs-comment">// next node in queue</span></span><br><span class="line">            <span class="hljs-keyword">volatile</span> Object item;         <span class="hljs-comment">// CAS'ed to or from null</span></span><br><span class="line">            <span class="hljs-keyword">volatile</span> Thread waiter;       <span class="hljs-comment">// to control park/unpark</span></span><br><span class="line">            <span class="hljs-keyword">final</span> <span class="hljs-keyword">boolean</span> isData;</span><br><span class="line"></span><br><span class="line">            QNode(Object item, <span class="hljs-keyword">boolean</span> isData) &#123;</span><br><span class="line">                <span class="hljs-keyword">this</span>.item = item;</span><br><span class="line">                <span class="hljs-keyword">this</span>.isData = isData;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> AtomicReferenceFieldUpdater&lt;QNode, QNode&gt;</span><br><span class="line">                nextUpdater = AtomicReferenceFieldUpdater.newUpdater</span><br><span class="line">                (QNode.class, QNode.class, <span class="hljs-string">"next"</span>);</span><br><span class="line"></span><br><span class="line">            <span class="hljs-function"><span class="hljs-keyword">boolean</span> <span class="hljs-title">casNext</span><span class="hljs-params">(QNode cmp, QNode val)</span> </span>&#123;</span><br><span class="line">                <span class="hljs-keyword">return</span> (next == cmp &amp;&amp;</span><br><span class="line">                        nextUpdater.compareAndSet(<span class="hljs-keyword">this</span>, cmp, val));</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> AtomicReferenceFieldUpdater&lt;QNode, Object&gt;</span><br><span class="line">                itemUpdater = AtomicReferenceFieldUpdater.newUpdater</span><br><span class="line">                (QNode.class, Object.class, <span class="hljs-string">"item"</span>);</span><br><span class="line"></span><br><span class="line">            <span class="hljs-function"><span class="hljs-keyword">boolean</span> <span class="hljs-title">casItem</span><span class="hljs-params">(Object cmp, Object val)</span> </span>&#123;</span><br><span class="line">                <span class="hljs-keyword">return</span> (item == cmp &amp;&amp;</span><br><span class="line">                        itemUpdater.compareAndSet(<span class="hljs-keyword">this</span>, cmp, val));</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment">             * Tries to cancel by CAS'ing ref to this as item.</span></span><br><span class="line"><span class="hljs-comment">             */</span></span><br><span class="line">            <span class="hljs-comment">// 1</span></span><br><span class="line">            <span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">tryCancel</span><span class="hljs-params">(Object cmp)</span> </span>&#123;</span><br><span class="line">                itemUpdater.compareAndSet(<span class="hljs-keyword">this</span>, cmp, <span class="hljs-keyword">this</span>);</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="hljs-function"><span class="hljs-keyword">boolean</span> <span class="hljs-title">isCancelled</span><span class="hljs-params">()</span> </span>&#123;</span><br><span class="line">                <span class="hljs-keyword">return</span> item == <span class="hljs-keyword">this</span>;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment">             * Returns true if this node is known to be off the queue</span></span><br><span class="line"><span class="hljs-comment">             * because its next pointer has been forgotten due to</span></span><br><span class="line"><span class="hljs-comment">             * an advanceHead operation.</span></span><br><span class="line"><span class="hljs-comment">             */</span></span><br><span class="line">            <span class="hljs-comment">// 2</span></span><br><span class="line">            <span class="hljs-function"><span class="hljs-keyword">boolean</span> <span class="hljs-title">isOffList</span><span class="hljs-params">()</span> </span>&#123;</span><br><span class="line">                <span class="hljs-keyword">return</span> next == <span class="hljs-keyword">this</span>;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="hljs-comment">/** Head of queue */</span></span><br><span class="line">        <span class="hljs-comment">// 3</span></span><br><span class="line">        <span class="hljs-keyword">transient</span> <span class="hljs-keyword">volatile</span> QNode head;</span><br><span class="line">        <span class="hljs-comment">/** Tail of queue */</span></span><br><span class="line">        <span class="hljs-comment">// 4</span></span><br><span class="line">        <span class="hljs-keyword">transient</span> <span class="hljs-keyword">volatile</span> QNode tail;</span><br><span class="line">        <span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment">         * Reference to a cancelled node that might not yet have been</span></span><br><span class="line"><span class="hljs-comment">         * unlinked from queue because it was the last inserted node</span></span><br><span class="line"><span class="hljs-comment">         * when it cancelled.</span></span><br><span class="line"><span class="hljs-comment">         */</span></span><br><span class="line">        <span class="hljs-comment">// 5</span></span><br><span class="line">        <span class="hljs-keyword">transient</span> <span class="hljs-keyword">volatile</span> QNode cleanMe;</span><br><span class="line"></span><br><span class="line">        TransferQueue() &#123;</span><br><span class="line">            <span class="hljs-comment">// 6</span></span><br><span class="line">            QNode h = <span class="hljs-keyword">new</span> QNode(<span class="hljs-keyword">null</span>, <span class="hljs-keyword">false</span>); <span class="hljs-comment">// initialize to dummy node.</span></span><br><span class="line">            head = h;</span><br><span class="line">            tail = h;</span><br><span class="line">        &#125;</span><br></pre></td></tr></table></figure>
+<p>标注代码分析</p>
+<ol>
+<li>尝试取消节点。取消就是将节点的item域指向自身。</li>
+<li>判断节点是否离开了队列。</li>
+<li>队列头节点。</li>
+<li>队列尾节点。</li>
+<li>指向一个被取消的节点，如果取消这个节点时，它是最后一个进入队列的节点，那么这个节点可能还没有离开队列。</li>
+<li>初始化一个哨兵节点。</li>
+</ol>
+<h2 id="SynchronousQueue-TransferQueue-transfer"><a href="#SynchronousQueue-TransferQueue-transfer" class="headerlink" title="SynchronousQueue#TransferQueue#transfer()"></a>SynchronousQueue#TransferQueue#transfer()</h2><figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment">         * Puts or takes an item.</span></span><br><span class="line"><span class="hljs-comment">         */</span></span><br><span class="line">        <span class="hljs-function">Object <span class="hljs-title">transfer</span><span class="hljs-params">(Object e, <span class="hljs-keyword">boolean</span> timed, <span class="hljs-keyword">long</span> nanos)</span> </span>&#123;</span><br><span class="line">            <span class="hljs-comment">/* Basic algorithm is to loop trying to take either of</span></span><br><span class="line"><span class="hljs-comment">             * two actions:</span></span><br><span class="line"><span class="hljs-comment">             *</span></span><br><span class="line"><span class="hljs-comment">             * 1. If queue apparently empty or holding same-mode nodes,</span></span><br><span class="line"><span class="hljs-comment">             *    try to add node to queue of waiters, wait to be</span></span><br><span class="line"><span class="hljs-comment">             *    fulfilled (or cancelled) and return matching item.</span></span><br><span class="line"><span class="hljs-comment">             *</span></span><br><span class="line"><span class="hljs-comment">             * 2. If queue apparently contains waiting items, and this</span></span><br><span class="line"><span class="hljs-comment">             *    call is of complementary mode, try to fulfill by CAS'ing</span></span><br><span class="line"><span class="hljs-comment">             *    item field of waiting node and dequeuing it, and then</span></span><br><span class="line"><span class="hljs-comment">             *    returning matching item.</span></span><br><span class="line"><span class="hljs-comment">             *</span></span><br><span class="line"><span class="hljs-comment">             * In each case, along the way, check for and try to help</span></span><br><span class="line"><span class="hljs-comment">             * advance head and tail on behalf of other stalled/slow</span></span><br><span class="line"><span class="hljs-comment">             * threads.</span></span><br><span class="line"><span class="hljs-comment">             *</span></span><br><span class="line"><span class="hljs-comment">             * The loop starts off with a null check guarding against</span></span><br><span class="line"><span class="hljs-comment">             * seeing uninitialized head or tail values. This never</span></span><br><span class="line"><span class="hljs-comment">             * happens in current SynchronousQueue, but could if</span></span><br><span class="line"><span class="hljs-comment">             * callers held non-volatile/final ref to the</span></span><br><span class="line"><span class="hljs-comment">             * transferer. The check is here anyway because it places</span></span><br><span class="line"><span class="hljs-comment">             * null checks at top of loop, which is usually faster</span></span><br><span class="line"><span class="hljs-comment">             * than having them implicitly interspersed.</span></span><br><span class="line"><span class="hljs-comment">             */</span></span><br><span class="line">            QNode s = <span class="hljs-keyword">null</span>; <span class="hljs-comment">// constructed/reused as needed</span></span><br><span class="line">            <span class="hljs-keyword">boolean</span> isData = (e != <span class="hljs-keyword">null</span>);</span><br><span class="line"></span><br><span class="line">            <span class="hljs-keyword">for</span> (;;) &#123;</span><br><span class="line">                QNode t = tail;</span><br><span class="line">                QNode h = head;</span><br><span class="line">                <span class="hljs-comment">// 1</span></span><br><span class="line">                <span class="hljs-keyword">if</span> (t == <span class="hljs-keyword">null</span> || h == <span class="hljs-keyword">null</span>)         <span class="hljs-comment">// saw uninitialized value</span></span><br><span class="line">                    <span class="hljs-keyword">continue</span>;                       <span class="hljs-comment">// spin</span></span><br><span class="line">                <span class="hljs-comment">// 2</span></span><br><span class="line">                <span class="hljs-keyword">if</span> (h == t || t.isData == isData) &#123; <span class="hljs-comment">// empty or same-mode</span></span><br><span class="line">                    QNode tn = t.next;</span><br><span class="line">                    <span class="hljs-comment">// 3</span></span><br><span class="line">                    <span class="hljs-keyword">if</span> (t != tail)                  <span class="hljs-comment">// inconsistent read</span></span><br><span class="line">                        <span class="hljs-keyword">continue</span>;</span><br><span class="line">                    <span class="hljs-comment">// 4</span></span><br><span class="line">                    <span class="hljs-keyword">if</span> (tn != <span class="hljs-keyword">null</span>) &#123;               <span class="hljs-comment">// lagging tail</span></span><br><span class="line">                        <span class="hljs-comment">// 5</span></span><br><span class="line">                        advanceTail(t, tn);</span><br><span class="line">                        <span class="hljs-keyword">continue</span>;</span><br><span class="line">                    &#125;</span><br><span class="line">                    <span class="hljs-comment">// 6</span></span><br><span class="line">                    <span class="hljs-keyword">if</span> (timed &amp;&amp; nanos &lt;= <span class="hljs-number">0</span>)        <span class="hljs-comment">// can't wait</span></span><br><span class="line">                        <span class="hljs-keyword">return</span> <span class="hljs-keyword">null</span>;</span><br><span class="line">                    <span class="hljs-keyword">if</span> (s == <span class="hljs-keyword">null</span>)</span><br><span class="line">                        <span class="hljs-comment">// 7</span></span><br><span class="line">                        s = <span class="hljs-keyword">new</span> QNode(e, isData);</span><br><span class="line">                    <span class="hljs-comment">// 8</span></span><br><span class="line">                    <span class="hljs-keyword">if</span> (!t.casNext(<span class="hljs-keyword">null</span>, s))        <span class="hljs-comment">// failed to link in</span></span><br><span class="line">                        <span class="hljs-keyword">continue</span>;</span><br><span class="line">                    <span class="hljs-comment">// 9</span></span><br><span class="line">                    advanceTail(t, s);              <span class="hljs-comment">// swing tail and wait</span></span><br><span class="line">                    <span class="hljs-comment">// 10</span></span><br><span class="line">                    Object x = awaitFulfill(s, e, timed, nanos);</span><br><span class="line">                    <span class="hljs-comment">// 11</span></span><br><span class="line">                    <span class="hljs-keyword">if</span> (x == s) &#123;                   <span class="hljs-comment">// wait was cancelled</span></span><br><span class="line">                        <span class="hljs-comment">// 12</span></span><br><span class="line">                        clean(t, s);</span><br><span class="line">                        <span class="hljs-keyword">return</span> <span class="hljs-keyword">null</span>;</span><br><span class="line">                    &#125;</span><br><span class="line">                    <span class="hljs-comment">// 13</span></span><br><span class="line">                    <span class="hljs-keyword">if</span> (!s.isOffList()) &#123;           <span class="hljs-comment">// not already unlinked</span></span><br><span class="line">                        <span class="hljs-comment">// 14</span></span><br><span class="line">                        advanceHead(t, s);          <span class="hljs-comment">// unlink if head</span></span><br><span class="line">                        <span class="hljs-keyword">if</span> (x != <span class="hljs-keyword">null</span>)              <span class="hljs-comment">// and forget fields</span></span><br><span class="line">                            s.item = s;</span><br><span class="line">                        s.waiter = <span class="hljs-keyword">null</span>;</span><br><span class="line">                    &#125;</span><br><span class="line">                    <span class="hljs-keyword">return</span> (x != <span class="hljs-keyword">null</span>)? x : e;</span><br><span class="line"></span><br><span class="line">                &#125; <span class="hljs-keyword">else</span> &#123;                            <span class="hljs-comment">// complementary-mode</span></span><br><span class="line">                    <span class="hljs-comment">// 15</span></span><br><span class="line">                    QNode m = h.next;               <span class="hljs-comment">// node to fulfill</span></span><br><span class="line">                    <span class="hljs-comment">// 16</span></span><br><span class="line">                    <span class="hljs-keyword">if</span> (t != tail || m == <span class="hljs-keyword">null</span> || h != head)</span><br><span class="line">                        <span class="hljs-keyword">continue</span>;                   <span class="hljs-comment">// inconsistent read</span></span><br><span class="line"></span><br><span class="line">                    Object x = m.item;</span><br><span class="line">                    <span class="hljs-comment">// 17</span></span><br><span class="line">                    <span class="hljs-keyword">if</span> (isData == (x != <span class="hljs-keyword">null</span>) ||    <span class="hljs-comment">// m already fulfilled</span></span><br><span class="line">                        x == m ||                   <span class="hljs-comment">// m cancelled</span></span><br><span class="line">                        !m.casItem(x, e)) &#123;         <span class="hljs-comment">// lost CAS</span></span><br><span class="line">                        <span class="hljs-comment">// 18</span></span><br><span class="line">                        advanceHead(h, m);          <span class="hljs-comment">// dequeue and retry</span></span><br><span class="line">                        <span class="hljs-keyword">continue</span>;</span><br><span class="line">                    &#125;</span><br><span class="line">                    <span class="hljs-comment">// 19</span></span><br><span class="line">                    advanceHead(h, m);              <span class="hljs-comment">// successfully fulfilled</span></span><br><span class="line">                    <span class="hljs-comment">// 20</span></span><br><span class="line">                    LockSupport.unpark(m.waiter);</span><br><span class="line">                    <span class="hljs-keyword">return</span> (x != <span class="hljs-keyword">null</span>)? x : e;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br></pre></td></tr></table></figure>
+<p>标注代码分析</p>
+<ol>
+<li>如果看到未初始化的头尾节点。</li>
+<li>队列为空或者当前节点和队列中节点模式相同。</li>
+<li>读取到不一致的结果，说明同时有其他线程修改了tail。  </li>
+<li>说明其他线程已经添加了新节点tn，但还没将其设置为tail。</li>
+<li>当前线程帮忙推进尾节点，就是尝试将tn设置为尾节点。</li>
+<li>超时。</li>
+<li>初始化s。</li>
+<li>尝试将当前节点s拼接到t后面。</li>
+<li>尝试将s设置为队列尾节点。</li>
+<li>然后等着被匹配。</li>
+<li>如果被取消。</li>
+<li>清理s节点。</li>
+<li>如果s节点还没有离开队列。</li>
+<li>尝试将s设置为头节点，移除t。</li>
+<li>找到能匹配的节点。</li>
+<li>读取到不一致的结果，进入下一轮循环。</li>
+<li>如果m已经被匹配；或者m被取消；如果尝试将数据e设置到m上失败。</li>
+<li>将h出队，m设置为头结点，然后重试。</li>
+<li>成功匹配，推进头节点。</li>
+<li>唤醒m上的等待线程。</li>
+</ol>
+<p>基本算法是在一个无限循环中尝试下面两种动作里面的一种： </p>
+<ul>
+<li>如果队列为空，或者包含相同模式(存或者取)的节点。 尝试将节点加入等待的队列，直到被匹配(或被取消)， 同时返回匹配节点的数据。 </li>
+<li>如果队列中包含等待的节点，并且当前节点和这个等待节点能相互匹配，那么尝试匹配等待节点并将这个节点出队，然后返回匹配节点的数据。 </li>
+</ul>
+<p>在每个动作里面，都会检测并帮助其他线程来完成节点推进。在循环开始的时候会做一个非空检测，以避免当前线程看到未初始化的头尾节点。这种情况在当前SynchronousQueue中永远不会发生，但如果调用者持有一个非volatile/final域的话，就有可能会发生。在循环开始的时间做这个非空检测要比在内部(分支里)做性能好一些。  </p>
+<h2 id="SynchronousQueue-TransferQueue-advanceHead"><a href="#SynchronousQueue-TransferQueue-advanceHead" class="headerlink" title="SynchronousQueue#TransferQueue#advanceHead()"></a>SynchronousQueue#TransferQueue#advanceHead()</h2><figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment"> * Tries to cas nh as new head; if successful, unlink</span></span><br><span class="line"><span class="hljs-comment"> * old head's next node to avoid garbage retention.</span></span><br><span class="line"><span class="hljs-comment"> */</span></span><br><span class="line"><span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">advanceHead</span><span class="hljs-params">(QNode h, QNode nh)</span> </span>&#123;</span><br><span class="line">    <span class="hljs-keyword">if</span> (h == head &amp;&amp; headUpdater.compareAndSet(<span class="hljs-keyword">this</span>, h, nh))</span><br><span class="line">        h.next = h; <span class="hljs-comment">// forget old next</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="SynchronousQueue-TransferQueue-advanceTail"><a href="#SynchronousQueue-TransferQueue-advanceTail" class="headerlink" title="SynchronousQueue#TransferQueue#advanceTail()"></a>SynchronousQueue#TransferQueue#advanceTail()</h2><figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment">         * Tries to cas nt as new tail.</span></span><br><span class="line"><span class="hljs-comment">         */</span></span><br><span class="line">        <span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">advanceTail</span><span class="hljs-params">(QNode t, QNode nt)</span> </span>&#123;</span><br><span class="line">            <span class="hljs-keyword">if</span> (tail == t)</span><br><span class="line">                tailUpdater.compareAndSet(<span class="hljs-keyword">this</span>, t, nt);</span><br><span class="line">        &#125;</span><br></pre></td></tr></table></figure>
+<h2 id="SynchronousQueue-TransferQueue-awaitFulfill"><a href="#SynchronousQueue-TransferQueue-awaitFulfill" class="headerlink" title="SynchronousQueue#TransferQueue#awaitFulfill()"></a>SynchronousQueue#TransferQueue#awaitFulfill()</h2><figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment">        * Spins/blocks until node s is fulfilled.</span></span><br><span class="line"><span class="hljs-comment">        *</span></span><br><span class="line"><span class="hljs-comment">        * <span class="hljs-doctag">@param</span> s the waiting node</span></span><br><span class="line"><span class="hljs-comment">        * <span class="hljs-doctag">@param</span> e the comparison value for checking match</span></span><br><span class="line"><span class="hljs-comment">        * <span class="hljs-doctag">@param</span> timed true if timed wait</span></span><br><span class="line"><span class="hljs-comment">        * <span class="hljs-doctag">@param</span> nanos timeout value</span></span><br><span class="line"><span class="hljs-comment">        * <span class="hljs-doctag">@return</span> matched item, or s if cancelled</span></span><br><span class="line"><span class="hljs-comment">        */</span></span><br><span class="line">       <span class="hljs-function">Object <span class="hljs-title">awaitFulfill</span><span class="hljs-params">(QNode s, Object e, <span class="hljs-keyword">boolean</span> timed, <span class="hljs-keyword">long</span> nanos)</span> </span>&#123;</span><br><span class="line">           <span class="hljs-comment">/* Same idea as TransferStack.awaitFulfill */</span></span><br><span class="line">           <span class="hljs-keyword">long</span> lastTime = (timed)? System.nanoTime() : <span class="hljs-number">0</span>;</span><br><span class="line">           Thread w = Thread.currentThread();</span><br><span class="line">           <span class="hljs-keyword">int</span> spins = ((head.next == s) ?</span><br><span class="line">                        (timed? maxTimedSpins : maxUntimedSpins) : <span class="hljs-number">0</span>);</span><br><span class="line">           <span class="hljs-keyword">for</span> (;;) &#123;</span><br><span class="line">               <span class="hljs-keyword">if</span> (w.isInterrupted())</span><br><span class="line">                   s.tryCancel(e);</span><br><span class="line">               Object x = s.item;</span><br><span class="line">               <span class="hljs-keyword">if</span> (x != e)</span><br><span class="line">                   <span class="hljs-keyword">return</span> x;</span><br><span class="line">               <span class="hljs-keyword">if</span> (timed) &#123;</span><br><span class="line">                   <span class="hljs-keyword">long</span> now = System.nanoTime();</span><br><span class="line">                   nanos -= now - lastTime;</span><br><span class="line">                   lastTime = now;</span><br><span class="line">                   <span class="hljs-keyword">if</span> (nanos &lt;= <span class="hljs-number">0</span>) &#123;</span><br><span class="line">                       s.tryCancel(e);</span><br><span class="line">                       <span class="hljs-keyword">continue</span>;</span><br><span class="line">                   &#125;</span><br><span class="line">               &#125;</span><br><span class="line">               <span class="hljs-keyword">if</span> (spins &gt; <span class="hljs-number">0</span>)</span><br><span class="line">                   --spins;</span><br><span class="line">               <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (s.waiter == <span class="hljs-keyword">null</span>)</span><br><span class="line">                   s.waiter = w;</span><br><span class="line">               <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (!timed)</span><br><span class="line">                   LockSupport.park(<span class="hljs-keyword">this</span>);</span><br><span class="line">               <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (nanos &gt; spinForTimeoutThreshold)</span><br><span class="line">                   LockSupport.parkNanos(<span class="hljs-keyword">this</span>, nanos);</span><br><span class="line">           &#125;</span><br><span class="line">       &#125;</span><br></pre></td></tr></table></figure>
+<h2 id="SynchronousQueue-TransferQueue-clean"><a href="#SynchronousQueue-TransferQueue-clean" class="headerlink" title="SynchronousQueue#TransferQueue#clean()"></a>SynchronousQueue#TransferQueue#clean()</h2><figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br></pre></td><td class="code"><pre><span class="line">      <span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment">       * Gets rid of cancelled node s with original predecessor pred.</span></span><br><span class="line"><span class="hljs-comment">       */</span></span><br><span class="line">      <span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">clean</span><span class="hljs-params">(QNode pred, QNode s)</span> </span>&#123;</span><br><span class="line">          s.waiter = <span class="hljs-keyword">null</span>; <span class="hljs-comment">// forget thread</span></span><br><span class="line">          <span class="hljs-comment">/*</span></span><br><span class="line"><span class="hljs-comment">           * At any given time, exactly one node on list cannot be</span></span><br><span class="line"><span class="hljs-comment">           * deleted -- the last inserted node. To accommodate this,</span></span><br><span class="line"><span class="hljs-comment">           * if we cannot delete s, we save its predecessor as</span></span><br><span class="line"><span class="hljs-comment">           * "cleanMe", deleting the previously saved version</span></span><br><span class="line"><span class="hljs-comment">           * first. At least one of node s or the node previously</span></span><br><span class="line"><span class="hljs-comment">           * saved can always be deleted, so this always terminates.</span></span><br><span class="line"><span class="hljs-comment">           */</span></span><br><span class="line">          <span class="hljs-comment">// 1</span></span><br><span class="line">          <span class="hljs-keyword">while</span> (pred.next == s) &#123; <span class="hljs-comment">// Return early if already unlinked</span></span><br><span class="line">              QNode h = head;</span><br><span class="line">              QNode hn = h.next;   <span class="hljs-comment">// Absorb cancelled first node as head</span></span><br><span class="line">              <span class="hljs-keyword">if</span> (hn != <span class="hljs-keyword">null</span> &amp;&amp; hn.isCancelled()) &#123;</span><br><span class="line">                  <span class="hljs-comment">// 2</span></span><br><span class="line">                  advanceHead(h, hn);</span><br><span class="line">                  <span class="hljs-keyword">continue</span>;</span><br><span class="line">              &#125;</span><br><span class="line">QNode t = tail;      <span class="hljs-comment">// Ensure consistent read for tail</span></span><br><span class="line">              <span class="hljs-comment">// 3</span></span><br><span class="line">              <span class="hljs-keyword">if</span> (t == h)</span><br><span class="line">                  <span class="hljs-keyword">return</span>;</span><br><span class="line">QNode tn = t.next;</span><br><span class="line">      <span class="hljs-comment">// 4</span></span><br><span class="line"><span class="hljs-keyword">if</span> (t != tail)</span><br><span class="line">                  <span class="hljs-keyword">continue</span>;</span><br><span class="line">              <span class="hljs-keyword">if</span> (tn != <span class="hljs-keyword">null</span>) &#123;</span><br><span class="line">                  <span class="hljs-comment">// 5</span></span><br><span class="line">                  advanceTail(t, tn);</span><br><span class="line">                  <span class="hljs-keyword">continue</span>;</span><br><span class="line">              &#125;</span><br><span class="line">              <span class="hljs-comment">// 6</span></span><br><span class="line">              <span class="hljs-keyword">if</span> (s != t) &#123;        <span class="hljs-comment">// If not tail, try to unsplice</span></span><br><span class="line">                  QNode sn = s.next;</span><br><span class="line">                  <span class="hljs-comment">// 7</span></span><br><span class="line">                  <span class="hljs-keyword">if</span> (sn == s || pred.casNext(s, sn))</span><br><span class="line">                      <span class="hljs-keyword">return</span>;</span><br><span class="line">              &#125;</span><br><span class="line">              <span class="hljs-comment">// 8</span></span><br><span class="line">              QNode dp = cleanMe;</span><br><span class="line">              <span class="hljs-comment">// 9</span></span><br><span class="line">              <span class="hljs-keyword">if</span> (dp != <span class="hljs-keyword">null</span>) &#123;    <span class="hljs-comment">// Try unlinking previous cancelled node</span></span><br><span class="line">                  QNode d = dp.next;</span><br><span class="line">                  QNode dn;</span><br><span class="line">                  <span class="hljs-keyword">if</span> (d == <span class="hljs-keyword">null</span> ||               <span class="hljs-comment">// d is gone or</span></span><br><span class="line">                      d == dp ||                 <span class="hljs-comment">// d is off list or</span></span><br><span class="line">                      !d.isCancelled() ||        <span class="hljs-comment">// d not cancelled or</span></span><br><span class="line">                      (d != t &amp;&amp;                 <span class="hljs-comment">// d not tail and</span></span><br><span class="line">                       (dn = d.next) != <span class="hljs-keyword">null</span> &amp;&amp;  <span class="hljs-comment">//   has successor</span></span><br><span class="line">                       dn != d &amp;&amp;                <span class="hljs-comment">//   that is on list</span></span><br><span class="line">                       dp.casNext(d, dn)))<span class="hljs-comment">// 10       // d unspliced</span></span><br><span class="line">                      casCleanMe(dp, <span class="hljs-keyword">null</span>);</span><br><span class="line">                  <span class="hljs-comment">// 11</span></span><br><span class="line">                  <span class="hljs-keyword">if</span> (dp == pred)</span><br><span class="line">                      <span class="hljs-keyword">return</span>;      <span class="hljs-comment">// s is already saved node</span></span><br><span class="line">              &#125; <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (casCleanMe(<span class="hljs-keyword">null</span>, pred))</span><br><span class="line">                  <span class="hljs-comment">// 12</span></span><br><span class="line">                  <span class="hljs-keyword">return</span>;          <span class="hljs-comment">// Postpone cleaning s</span></span><br><span class="line">          &#125;</span><br><span class="line">      &#125;</span><br></pre></td></tr></table></figure>
+<p>标注代码分析</p>
+<ol>
+<li>在任意给定的时间点，能删除的节点一定是最后入队的节点。为了满足这个条件，如果当前无法删除s，就将其前驱节点保存为”cleanMe”，先删除之前保存的版本。至少节点s和之前保存的节点里面有一个能被删除，所以方法一定会结束。 </li>
+<li>如果head节点的next节点被取消，那么推进一下head节点。  </li>
+<li>如果队列为空。</li>
+<li>出现不一致读，重试。</li>
+<li>帮助推进尾节点。</li>
+<li>如果s不是尾节点，移除s。</li>
+<li>如果s已经被移除退出循环，否则尝试断开s。</li>
+<li>下面要做的事情大体就是：如果s是位节点，那么不会马上删除s，而是将s的前驱节点设置为cleanMe，下次清理其他取消节点的时候会顺便把s移除。</li>
+<li>如果dp不为null，说明是前一个被取消节点，将其移除。</li>
+<li>把之前标记为cleanMe节点的next节点d移除。</li>
+<li>说明s的前驱已经是cleanMe了(后续会被删掉)。</li>
+<li>如果当前cleanMe为null，那么将s前驱节点设置为cleanMe，并退出。</li>
+</ol>
+<h2 id="SynchronousQueue"><a href="#SynchronousQueue" class="headerlink" title="SynchronousQueue"></a>SynchronousQueue</h2><figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment">     * The transferer. Set only in constructor, but cannot be declared</span></span><br><span class="line"><span class="hljs-comment">     * as final without further complicating serialization.  Since</span></span><br><span class="line"><span class="hljs-comment">     * this is accessed only at most once per public method, there</span></span><br><span class="line"><span class="hljs-comment">     * isn't a noticeable performance penalty for using volatile</span></span><br><span class="line"><span class="hljs-comment">     * instead of final here.</span></span><br><span class="line"><span class="hljs-comment">     */</span></span><br><span class="line">    <span class="hljs-keyword">private</span> <span class="hljs-keyword">transient</span> <span class="hljs-keyword">volatile</span> Transferer transferer;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment">     * Creates a &lt;tt&gt;SynchronousQueue&lt;/tt&gt; with nonfair access policy.</span></span><br><span class="line"><span class="hljs-comment">     */</span></span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-title">SynchronousQueue</span><span class="hljs-params">()</span> </span>&#123;</span><br><span class="line">        <span class="hljs-keyword">this</span>(<span class="hljs-keyword">false</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment">     * Creates a &lt;tt&gt;SynchronousQueue&lt;/tt&gt; with the specified fairness policy.</span></span><br><span class="line"><span class="hljs-comment">     *</span></span><br><span class="line"><span class="hljs-comment">     * <span class="hljs-doctag">@param</span> fair if true, waiting threads contend in FIFO order for</span></span><br><span class="line"><span class="hljs-comment">     *        access; otherwise the order is unspecified.</span></span><br><span class="line"><span class="hljs-comment">     */</span></span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-title">SynchronousQueue</span><span class="hljs-params">(<span class="hljs-keyword">boolean</span> fair)</span> </span>&#123;</span><br><span class="line">        transferer = (fair)? <span class="hljs-keyword">new</span> TransferQueue() : <span class="hljs-keyword">new</span> TransferStack();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment">     * Adds the specified element to this queue, waiting if necessary for</span></span><br><span class="line"><span class="hljs-comment">     * another thread to receive it.</span></span><br><span class="line"><span class="hljs-comment">     *</span></span><br><span class="line"><span class="hljs-comment">     * <span class="hljs-doctag">@throws</span> InterruptedException &#123;<span class="hljs-doctag">@inheritDoc</span>&#125;</span></span><br><span class="line"><span class="hljs-comment">     * <span class="hljs-doctag">@throws</span> NullPointerException &#123;<span class="hljs-doctag">@inheritDoc</span>&#125;</span></span><br><span class="line"><span class="hljs-comment">     */</span></span><br><span class="line">     <span class="hljs-comment">// 1</span></span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">put</span><span class="hljs-params">(E o)</span> <span class="hljs-keyword">throws</span> InterruptedException </span>&#123;</span><br><span class="line">        <span class="hljs-keyword">if</span> (o == <span class="hljs-keyword">null</span>) <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> NullPointerException();</span><br><span class="line">        <span class="hljs-keyword">if</span> (transferer.transfer(o, <span class="hljs-keyword">false</span>, <span class="hljs-number">0</span>) == <span class="hljs-keyword">null</span>) &#123;</span><br><span class="line">	    Thread.interrupted();</span><br><span class="line">            <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> InterruptedException();</span><br><span class="line">	&#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment">     * Inserts the specified element into this queue, waiting if necessary</span></span><br><span class="line"><span class="hljs-comment">     * up to the specified wait time for another thread to receive it.</span></span><br><span class="line"><span class="hljs-comment">     *</span></span><br><span class="line"><span class="hljs-comment">     * <span class="hljs-doctag">@return</span> &lt;tt&gt;true&lt;/tt&gt; if successful, or &lt;tt&gt;false&lt;/tt&gt; if the</span></span><br><span class="line"><span class="hljs-comment">     *         specified waiting time elapses before a consumer appears.</span></span><br><span class="line"><span class="hljs-comment">     * <span class="hljs-doctag">@throws</span> InterruptedException &#123;<span class="hljs-doctag">@inheritDoc</span>&#125;</span></span><br><span class="line"><span class="hljs-comment">     * <span class="hljs-doctag">@throws</span> NullPointerException &#123;<span class="hljs-doctag">@inheritDoc</span>&#125;</span></span><br><span class="line"><span class="hljs-comment">     */</span></span><br><span class="line">     <span class="hljs-comment">// 2</span></span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">boolean</span> <span class="hljs-title">offer</span><span class="hljs-params">(E o, <span class="hljs-keyword">long</span> timeout, TimeUnit unit)</span></span></span><br><span class="line"><span class="hljs-function">        <span class="hljs-keyword">throws</span> InterruptedException </span>&#123;</span><br><span class="line">        <span class="hljs-keyword">if</span> (o == <span class="hljs-keyword">null</span>) <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> NullPointerException();</span><br><span class="line">        <span class="hljs-keyword">if</span> (transferer.transfer(o, <span class="hljs-keyword">true</span>, unit.toNanos(timeout)) != <span class="hljs-keyword">null</span>)</span><br><span class="line">            <span class="hljs-keyword">return</span> <span class="hljs-keyword">true</span>;</span><br><span class="line">        <span class="hljs-keyword">if</span> (!Thread.interrupted())</span><br><span class="line">            <span class="hljs-keyword">return</span> <span class="hljs-keyword">false</span>;</span><br><span class="line">        <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> InterruptedException();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment">     * Inserts the specified element into this queue, if another thread is</span></span><br><span class="line"><span class="hljs-comment">     * waiting to receive it.</span></span><br><span class="line"><span class="hljs-comment">     *</span></span><br><span class="line"><span class="hljs-comment">     * <span class="hljs-doctag">@param</span> e the element to add</span></span><br><span class="line"><span class="hljs-comment">     * <span class="hljs-doctag">@return</span> &lt;tt&gt;true&lt;/tt&gt; if the element was added to this queue, else</span></span><br><span class="line"><span class="hljs-comment">     *         &lt;tt&gt;false&lt;/tt&gt;</span></span><br><span class="line"><span class="hljs-comment">     * <span class="hljs-doctag">@throws</span> NullPointerException if the specified element is null</span></span><br><span class="line"><span class="hljs-comment">     */</span></span><br><span class="line">     <span class="hljs-comment">// 3</span></span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">boolean</span> <span class="hljs-title">offer</span><span class="hljs-params">(E e)</span> </span>&#123;</span><br><span class="line">        <span class="hljs-keyword">if</span> (e == <span class="hljs-keyword">null</span>) <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> NullPointerException();</span><br><span class="line">        <span class="hljs-keyword">return</span> transferer.transfer(e, <span class="hljs-keyword">true</span>, <span class="hljs-number">0</span>) != <span class="hljs-keyword">null</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment">     * Retrieves and removes the head of this queue, waiting if necessary</span></span><br><span class="line"><span class="hljs-comment">     * for another thread to insert it.</span></span><br><span class="line"><span class="hljs-comment">     *</span></span><br><span class="line"><span class="hljs-comment">     * <span class="hljs-doctag">@return</span> the head of this queue</span></span><br><span class="line"><span class="hljs-comment">     * <span class="hljs-doctag">@throws</span> InterruptedException &#123;<span class="hljs-doctag">@inheritDoc</span>&#125;</span></span><br><span class="line"><span class="hljs-comment">     */</span></span><br><span class="line">     <span class="hljs-comment">// 4</span></span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">public</span> E <span class="hljs-title">take</span><span class="hljs-params">()</span> <span class="hljs-keyword">throws</span> InterruptedException </span>&#123;</span><br><span class="line">        Object e = transferer.transfer(<span class="hljs-keyword">null</span>, <span class="hljs-keyword">false</span>, <span class="hljs-number">0</span>);</span><br><span class="line">        <span class="hljs-keyword">if</span> (e != <span class="hljs-keyword">null</span>)</span><br><span class="line">            <span class="hljs-keyword">return</span> (E)e;</span><br><span class="line">	Thread.interrupted();</span><br><span class="line">        <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> InterruptedException();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment">     * Retrieves and removes the head of this queue, waiting</span></span><br><span class="line"><span class="hljs-comment">     * if necessary up to the specified wait time, for another thread</span></span><br><span class="line"><span class="hljs-comment">     * to insert it.</span></span><br><span class="line"><span class="hljs-comment">     *</span></span><br><span class="line"><span class="hljs-comment">     * <span class="hljs-doctag">@return</span> the head of this queue, or &lt;tt&gt;null&lt;/tt&gt; if the</span></span><br><span class="line"><span class="hljs-comment">     *         specified waiting time elapses before an element is present.</span></span><br><span class="line"><span class="hljs-comment">     * <span class="hljs-doctag">@throws</span> InterruptedException &#123;<span class="hljs-doctag">@inheritDoc</span>&#125;</span></span><br><span class="line"><span class="hljs-comment">     */</span></span><br><span class="line">     <span class="hljs-comment">// 5</span></span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">public</span> E <span class="hljs-title">poll</span><span class="hljs-params">(<span class="hljs-keyword">long</span> timeout, TimeUnit unit)</span> <span class="hljs-keyword">throws</span> InterruptedException </span>&#123;</span><br><span class="line">        Object e = transferer.transfer(<span class="hljs-keyword">null</span>, <span class="hljs-keyword">true</span>, unit.toNanos(timeout));</span><br><span class="line">        <span class="hljs-keyword">if</span> (e != <span class="hljs-keyword">null</span> || !Thread.interrupted())</span><br><span class="line">            <span class="hljs-keyword">return</span> (E)e;</span><br><span class="line">        <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> InterruptedException();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment">     * Retrieves and removes the head of this queue, if another thread</span></span><br><span class="line"><span class="hljs-comment">     * is currently making an element available.</span></span><br><span class="line"><span class="hljs-comment">     *</span></span><br><span class="line"><span class="hljs-comment">     * <span class="hljs-doctag">@return</span> the head of this queue, or &lt;tt&gt;null&lt;/tt&gt; if no</span></span><br><span class="line"><span class="hljs-comment">     *         element is available.</span></span><br><span class="line"><span class="hljs-comment">     */</span></span><br><span class="line">     <span class="hljs-comment">// 6</span></span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">public</span> E <span class="hljs-title">poll</span><span class="hljs-params">()</span> </span>&#123;</span><br><span class="line">        <span class="hljs-keyword">return</span> (E)transferer.transfer(<span class="hljs-keyword">null</span>, <span class="hljs-keyword">true</span>, <span class="hljs-number">0</span>);</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>标注代码分析</p>
+<ol>
+<li>添加一个数据到队列，等到其他线程接收这个数据。</li>
+<li>添加一个数据到队列，等到其他线程接收这个数据或者超时。</li>
+<li>添加一个数据到队列，如果有其他线程正等待接收这个数据且接收成功，返回true；否则返回false。这个方法不阻塞。</li>
+<li>获取并移除队列前端的数据，如果队列中没有数据，就等待其他线程添加一个数据。</li>
+<li>获取并移除队列前端的数据，如果队列中没有数据，就等待其他线程添加一个数据或者超时。</li>
+<li>如果其他线程正在添加数据到队列，那么尝试获取并移除这个数据。这个方法不阻塞。</li>
+</ol>
+<h2 id="SynchronousQueue-序列化"><a href="#SynchronousQueue-序列化" class="headerlink" title="SynchronousQueue 序列化"></a>SynchronousQueue 序列化</h2><p>序列化比较特别，因为transferer域本身不需要序列化，但需要记住transferer是内部伪栈和伪队列。<br><figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-comment">/*</span></span><br><span class="line"><span class="hljs-comment">     * To cope with serialization strategy in the 1.5 version of</span></span><br><span class="line"><span class="hljs-comment">     * SynchronousQueue, we declare some unused classes and fields</span></span><br><span class="line"><span class="hljs-comment">     * that exist solely to enable serializability across versions.</span></span><br><span class="line"><span class="hljs-comment">     * These fields are never used, so are initialized only if this</span></span><br><span class="line"><span class="hljs-comment">     * object is ever serialized or deserialized.</span></span><br><span class="line"><span class="hljs-comment">     */</span></span><br><span class="line"></span><br><span class="line">    <span class="hljs-keyword">static</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">WaitQueue</span> <span class="hljs-keyword">implements</span> <span class="hljs-title">java</span>.<span class="hljs-title">io</span>.<span class="hljs-title">Serializable</span> </span>&#123; &#125;</span><br><span class="line">    <span class="hljs-keyword">static</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">LifoWaitQueue</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">WaitQueue</span> </span>&#123;</span><br><span class="line">        <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">long</span> serialVersionUID = -<span class="hljs-number">3633113410248163686L</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="hljs-keyword">static</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">FifoWaitQueue</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">WaitQueue</span> </span>&#123;</span><br><span class="line">        <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">long</span> serialVersionUID = -<span class="hljs-number">3623113410248163686L</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="hljs-keyword">private</span> ReentrantLock qlock;</span><br><span class="line">    <span class="hljs-keyword">private</span> WaitQueue waitingProducers;</span><br><span class="line">    <span class="hljs-keyword">private</span> WaitQueue waitingConsumers;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment">     * Save the state to a stream (that is, serialize it).</span></span><br><span class="line"><span class="hljs-comment">     *</span></span><br><span class="line"><span class="hljs-comment">     * <span class="hljs-doctag">@param</span> s the stream</span></span><br><span class="line"><span class="hljs-comment">     */</span></span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">private</span> <span class="hljs-keyword">void</span> <span class="hljs-title">writeObject</span><span class="hljs-params">(java.io.ObjectOutputStream s)</span></span></span><br><span class="line"><span class="hljs-function">        <span class="hljs-keyword">throws</span> java.io.IOException </span>&#123;</span><br><span class="line">        <span class="hljs-comment">// 1</span></span><br><span class="line">        <span class="hljs-keyword">boolean</span> fair = transferer <span class="hljs-keyword">instanceof</span> TransferQueue;</span><br><span class="line">        <span class="hljs-keyword">if</span> (fair) &#123;</span><br><span class="line">            qlock = <span class="hljs-keyword">new</span> ReentrantLock(<span class="hljs-keyword">true</span>);</span><br><span class="line">            waitingProducers = <span class="hljs-keyword">new</span> FifoWaitQueue();</span><br><span class="line">            waitingConsumers = <span class="hljs-keyword">new</span> FifoWaitQueue();</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="hljs-keyword">else</span> &#123;</span><br><span class="line">            qlock = <span class="hljs-keyword">new</span> ReentrantLock();</span><br><span class="line">            waitingProducers = <span class="hljs-keyword">new</span> LifoWaitQueue();</span><br><span class="line">            waitingConsumers = <span class="hljs-keyword">new</span> LifoWaitQueue();</span><br><span class="line">        &#125;</span><br><span class="line">        s.defaultWriteObject();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">private</span> <span class="hljs-keyword">void</span> <span class="hljs-title">readObject</span><span class="hljs-params">(<span class="hljs-keyword">final</span> java.io.ObjectInputStream s)</span></span></span><br><span class="line"><span class="hljs-function">        <span class="hljs-keyword">throws</span> java.io.IOException, ClassNotFoundException </span>&#123;</span><br><span class="line">        s.defaultReadObject();</span><br><span class="line">        <span class="hljs-keyword">if</span> (waitingProducers <span class="hljs-keyword">instanceof</span> FifoWaitQueue)</span><br><span class="line">            transferer = <span class="hljs-keyword">new</span> TransferQueue();</span><br><span class="line">        <span class="hljs-keyword">else</span></span><br><span class="line">            transferer = <span class="hljs-keyword">new</span> TransferStack();</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure></p>
+<p>标注代码分析</p>
+<ol>
+<li>序列化时根据TransferQueue类型来创建WaitQueue实例。</li>
+</ol>
+<h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><p>伪栈的结构下，新来的线程会作为栈顶节点或者优先和栈顶的等待节点进行匹配，并不是公平的；但伪队列的结构下，新来的线程会在队尾，或者和队头的等待节点(最前到的)进行匹配，能够保证一定的公平性。</p>
+
+        </div>
+        
+        <div class="level is-size-7 is-uppercase">
+            <div class="level-start">
+                <div class="level-item">
+                    <span class="is-size-6 has-text-grey has-mr-7">#</span>
+                    <a class="has-link-grey -link" href="/tags/JDK6-源码/">JDK6 源码</a>
+                </div>
+            </div>
+        </div>
+        
+        
+        
+        <div class="social-share"></div>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/social-share.js@1.0.16/dist/css/share.min.css">
+<script src="https://cdn.jsdelivr.net/npm/social-share.js@1.0.16/dist/js/social-share.min.js"></script>
+        
+    </div>
+</div>
+
+
+
+<div class="card">
+    <div class="card-content">
+        <h3 class="menu-label has-text-centered">喜欢这篇文章？打赏一下作者吧</h3>
+        <div class="buttons is-centered">
+            
+                
+<a class="button is-info donate">
+    <span class="icon is-small">
+        <i class="fab fa-alipay"></i>
+    </span>
+    <span>支付宝</span>
+    <div class="qrcode"><img src="/images/alipaycode.jpg" alt="支付宝"></div>
+</a>
+
+                
+                
+<a class="button is-success donate">
+    <span class="icon is-small">
+        <i class="fab fa-weixin"></i>
+    </span>
+    <span>微信</span>
+    <div class="qrcode"><img src="/images/wxcode.png" alt="微信"></div>
+</a>
+
+                
+        </div>
+    </div>
+</div>
+
+
+
+<div class="card card-transparent">
+    <div class="level post-navigation is-flex-wrap is-mobile">
+        
+        <div class="level-start">
+            <a class="level level-item has-link-grey  article-nav-prev" href="/hello-world/">
+                <i class="level-item fas fa-chevron-left"></i>
+                <span class="level-item">Hello World</span>
+            </a>
+        </div>
+        
+        
+    </div>
+</div>
+
+
+
+<div class="card">
+    <div class="card-content">
+        <h3 class="title is-5 has-text-weight-normal">评论</h3>
+        
+<div id="comment-container"></div>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gitalk@1.4.1/dist/gitalk.css">
+<script src="https://cdn.jsdelivr.net/npm/gitalk@1.4.1/dist/gitalk.min.js"></script>
+<script>
+    var gitalk = new Gitalk({
+        clientID: 'a70be08270bc7c083f83',
+        clientSecret: '1b08252e3cf4b0c29b5f52f431ad9a54eef0a74a',
+        id: 'ceecf982bbd2ce4be1def19f1158bffe',
+        repo: 'joeskye1701.github.io',
+        owner: 'joeskye1701',
+        admin: "joeskye1701"
+    })
+    gitalk.render('comment-container')
+</script>
+
+    </div>
+</div>
+</div>
+                
+
+
+
+
+<div class="column is-4-tablet is-4-desktop is-3-widescreen  has-order-1 column-left ">
+    
+        
+<div class="card widget">
+    <div class="card-content">
+        <nav class="level">
+            <div class="level-item has-text-centered">
+                <div>
+                    
+                        <img class="image is-128x128 has-mb-6" src="/images/thank-you-kobe.jpg" alt="Joe">
+                    
+                    
+                    <p class="is-size-4 is-block">
+                        Joe
+                    </p>
+                    
+                    
+                    <p class="is-size-6 is-block">
+                        Developer &amp; Designer
+                    </p>
+                    
+                    
+                    <p class="is-size-6 is-flex is-flex-center has-text-grey">
+                        <i class="fas fa-map-marker-alt has-mr-7"></i>
+                        <span>Shenzhen, China</span>
+                    </p>
+                    
+                </div>
+            </div>
+        </nav>
+        <nav class="level is-mobile">
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        文章
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        2
+                    </p>
+                </div>
+            </div>
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        分类
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        1
+                    </p>
+                </div>
+            </div>
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        标签
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        1
+                    </p>
+                </div>
+            </div>
+        </nav>
+        <div class="level">
+            <a class="level-item button is-link is-rounded" href="https://github.com/joeskye1701">
+                关注我</a>
+        </div>
+        
+        
+        <div class="level is-mobile">
+            
+            <a class="level-item button is-white is-marginless" target="_blank" title="Github" href="https://github.com/joeskye1701">
+                
+                <i class="fab fa-github"></i>
+                
+            </a>
+            
+        </div>
+        
+    </div>
+</div>
+    
+        
+
+<div class="card widget">
+    <div class="card-content">
+        <div class="menu">
+        <h3 class="menu-label">
+            链接
+        </h3>
+        <ul class="menu-list">
+        
+            <li>
+                <a class="level is-mobile" href="http://wss.xxyseo.cn/" target="_blank">
+                    <span class="level-left">
+                        <span class="level-item">西乡大佬</span>
+                    </span>
+                    <span class="level-right">
+                        <span class="level-item tag">wss.xxyseo.cn</span>
+                    </span>
+                </a>
+            </li>
+        
+        </ul>
+        </div>
+    </div>
+</div>
+
+
+    
+        
+<div class="card widget">
+    <div class="card-content">
+        <div class="menu">
+            <h3 class="menu-label">
+                分类
+            </h3>
+            <ul class="menu-list">
+            <li>
+        <a class="level is-marginless" href="/categories/JDK6-源码/">
+            <span class="level-start">
+                <span class="level-item">JDK6 源码</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">1</span>
+            </span>
+        </a></li>
+            </ul>
+        </div>
+    </div>
+</div>
+    
+        
+<div class="card widget">
+    <div class="card-content">
+        <h3 class="menu-label">
+            标签云
+        </h3>
+        <a href="/tags/JDK6-源码/" style="font-size: 10px;">JDK6 源码</a>
+    </div>
+</div>
+
+    
+    
+        <div class="column-right-shadow is-hidden-widescreen ">
+        
+            
+<div class="card widget" id="toc">
+    <div class="card-content">
+        <div class="menu">
+            <h3 class="menu-label">
+                目录
+            </h3>
+            <ul class="menu-list"><li>
+        <a class="is-flex" href="#1-介绍">
+        <span class="has-mr-6">1</span>
+        <span>1 介绍</span>
+        </a></li><li>
+        <a class="is-flex" href="#2-源码分析">
+        <span class="has-mr-6">2</span>
+        <span>2 源码分析</span>
+        </a><ul class="menu-list"><li>
+        <a class="is-flex" href="#SynchronousQueue-Transferer">
+        <span class="has-mr-6">2.1</span>
+        <span>SynchronousQueue#Transferer</span>
+        </a></li><li>
+        <a class="is-flex" href="#SynchronousQueue-TransferStack-伪栈实现">
+        <span class="has-mr-6">2.2</span>
+        <span>SynchronousQueue#TransferStack 伪栈实现</span>
+        </a></li><li>
+        <a class="is-flex" href="#SynchronousQueue-TransferStack-transfer">
+        <span class="has-mr-6">2.3</span>
+        <span>SynchronousQueue#TransferStack#transfer()</span>
+        </a></li><li>
+        <a class="is-flex" href="#SynchronousQueue-TransferStack-snode">
+        <span class="has-mr-6">2.4</span>
+        <span>SynchronousQueue#TransferStack#snode()</span>
+        </a></li><li>
+        <a class="is-flex" href="#SynchronousQueue-TransferStack-awaitFulfill">
+        <span class="has-mr-6">2.5</span>
+        <span>SynchronousQueue#TransferStack#awaitFulfill()</span>
+        </a></li><li>
+        <a class="is-flex" href="#SynchronousQueue-TransferStack-shouldSpin">
+        <span class="has-mr-6">2.6</span>
+        <span>SynchronousQueue#TransferStack#shouldSpin()</span>
+        </a></li><li>
+        <a class="is-flex" href="#SynchronousQueue自选参数">
+        <span class="has-mr-6">2.7</span>
+        <span>SynchronousQueue自选参数</span>
+        </a></li><li>
+        <a class="is-flex" href="#SynchronousQueue-TransferStack-clean">
+        <span class="has-mr-6">2.8</span>
+        <span>SynchronousQueue#TransferStack#clean()</span>
+        </a></li><li>
+        <a class="is-flex" href="#SynchronousQueue-TransferQueue-伪队列">
+        <span class="has-mr-6">2.9</span>
+        <span>SynchronousQueue#TransferQueue 伪队列</span>
+        </a></li><li>
+        <a class="is-flex" href="#SynchronousQueue-TransferQueue-transfer">
+        <span class="has-mr-6">2.10</span>
+        <span>SynchronousQueue#TransferQueue#transfer()</span>
+        </a></li><li>
+        <a class="is-flex" href="#SynchronousQueue-TransferQueue-advanceHead">
+        <span class="has-mr-6">2.11</span>
+        <span>SynchronousQueue#TransferQueue#advanceHead()</span>
+        </a></li><li>
+        <a class="is-flex" href="#SynchronousQueue-TransferQueue-advanceTail">
+        <span class="has-mr-6">2.12</span>
+        <span>SynchronousQueue#TransferQueue#advanceTail()</span>
+        </a></li><li>
+        <a class="is-flex" href="#SynchronousQueue-TransferQueue-awaitFulfill">
+        <span class="has-mr-6">2.13</span>
+        <span>SynchronousQueue#TransferQueue#awaitFulfill()</span>
+        </a></li><li>
+        <a class="is-flex" href="#SynchronousQueue-TransferQueue-clean">
+        <span class="has-mr-6">2.14</span>
+        <span>SynchronousQueue#TransferQueue#clean()</span>
+        </a></li><li>
+        <a class="is-flex" href="#SynchronousQueue">
+        <span class="has-mr-6">2.15</span>
+        <span>SynchronousQueue</span>
+        </a></li><li>
+        <a class="is-flex" href="#SynchronousQueue-序列化">
+        <span class="has-mr-6">2.16</span>
+        <span>SynchronousQueue 序列化</span>
+        </a></li></ul></li><li>
+        <a class="is-flex" href="#总结">
+        <span class="has-mr-6">3</span>
+        <span>总结</span>
+        </a></li></ul>
+        </div>
+    </div>
+</div>
+
+        
+            
+<div class="card widget">
+    <div class="card-content">
+        <h3 class="menu-label">
+            最新文章
+        </h3>
+        
+        <article class="media">
+            <!-- 
+            <a href="/hello-world/" class="media-left">
+                <p class="image is-64x64">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Hello World">
+                </p>
+            </a>
+             -->
+            <div class="media-content">
+                <div class="content">
+                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2019-03-03T07:37:03.175Z">2019-03-03</time></div>
+                    <a href="/hello-world/" class="has-link-black-ter is-size-6">Hello World</a>
+                    <p class="is-size-7 is-uppercase">
+                        
+                    </p>
+                </div>
+            </div>
+        </article>
+        
+        <article class="media">
+            <!-- 
+            <a href="/JDK1.6 SynchronousQueue/" class="media-left">
+                <p class="image is-64x64">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="JDK1.6 SynchronousQueue">
+                </p>
+            </a>
+             -->
+            <div class="media-content">
+                <div class="content">
+                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2016-09-10T04:37:22.000Z">2016-09-10</time></div>
+                    <a href="/JDK1.6 SynchronousQueue/" class="has-link-black-ter is-size-6">JDK1.6 SynchronousQueue</a>
+                    <p class="is-size-7 is-uppercase">
+                        <a class="has-link-grey -link" href="/categories/JDK6-源码/">JDK6 源码</a>
+                    </p>
+                </div>
+            </div>
+        </article>
+        
+    </div>
+</div>
+
+        
+            <div class="card widget">
+    <div class="card-content">
+        <div class="menu">
+        <h3 class="menu-label">
+            归档
+        </h3>
+        <ul class="menu-list">
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2019/03/">
+                <span class="level-start">
+                    <span class="level-item">三月 2019</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">1</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2016/09/">
+                <span class="level-start">
+                    <span class="level-item">九月 2016</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">1</span>
+                </span>
+            </a>
+        </li>
+        
+        </ul>
+        </div>
+    </div>
+</div>
+        
+            <div class="card widget">
+    <div class="card-content">
+        <div class="menu">
+            <h3 class="menu-label">
+                标签
+            </h3>
+            <div class="field is-grouped is-grouped-multiline">
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/JDK6-源码/">
+                        <span class="tag">JDK6 源码</span>
+                        <span class="tag is-grey">1</span>
+                    </a>
+                </div>
+                
+            </div>
+        </div>
+    </div>
+</div>
+        
+        </div>
+    
+</div>
+
+                
+
+
+
+
+<div class="column is-4-tablet is-4-desktop is-3-widescreen is-hidden-touch is-hidden-desktop-only has-order-3 column-right ">
+    
+        
+<div class="card widget" id="toc">
+    <div class="card-content">
+        <div class="menu">
+            <h3 class="menu-label">
+                目录
+            </h3>
+            <ul class="menu-list"><li>
+        <a class="is-flex" href="#1-介绍">
+        <span class="has-mr-6">1</span>
+        <span>1 介绍</span>
+        </a></li><li>
+        <a class="is-flex" href="#2-源码分析">
+        <span class="has-mr-6">2</span>
+        <span>2 源码分析</span>
+        </a><ul class="menu-list"><li>
+        <a class="is-flex" href="#SynchronousQueue-Transferer">
+        <span class="has-mr-6">2.1</span>
+        <span>SynchronousQueue#Transferer</span>
+        </a></li><li>
+        <a class="is-flex" href="#SynchronousQueue-TransferStack-伪栈实现">
+        <span class="has-mr-6">2.2</span>
+        <span>SynchronousQueue#TransferStack 伪栈实现</span>
+        </a></li><li>
+        <a class="is-flex" href="#SynchronousQueue-TransferStack-transfer">
+        <span class="has-mr-6">2.3</span>
+        <span>SynchronousQueue#TransferStack#transfer()</span>
+        </a></li><li>
+        <a class="is-flex" href="#SynchronousQueue-TransferStack-snode">
+        <span class="has-mr-6">2.4</span>
+        <span>SynchronousQueue#TransferStack#snode()</span>
+        </a></li><li>
+        <a class="is-flex" href="#SynchronousQueue-TransferStack-awaitFulfill">
+        <span class="has-mr-6">2.5</span>
+        <span>SynchronousQueue#TransferStack#awaitFulfill()</span>
+        </a></li><li>
+        <a class="is-flex" href="#SynchronousQueue-TransferStack-shouldSpin">
+        <span class="has-mr-6">2.6</span>
+        <span>SynchronousQueue#TransferStack#shouldSpin()</span>
+        </a></li><li>
+        <a class="is-flex" href="#SynchronousQueue自选参数">
+        <span class="has-mr-6">2.7</span>
+        <span>SynchronousQueue自选参数</span>
+        </a></li><li>
+        <a class="is-flex" href="#SynchronousQueue-TransferStack-clean">
+        <span class="has-mr-6">2.8</span>
+        <span>SynchronousQueue#TransferStack#clean()</span>
+        </a></li><li>
+        <a class="is-flex" href="#SynchronousQueue-TransferQueue-伪队列">
+        <span class="has-mr-6">2.9</span>
+        <span>SynchronousQueue#TransferQueue 伪队列</span>
+        </a></li><li>
+        <a class="is-flex" href="#SynchronousQueue-TransferQueue-transfer">
+        <span class="has-mr-6">2.10</span>
+        <span>SynchronousQueue#TransferQueue#transfer()</span>
+        </a></li><li>
+        <a class="is-flex" href="#SynchronousQueue-TransferQueue-advanceHead">
+        <span class="has-mr-6">2.11</span>
+        <span>SynchronousQueue#TransferQueue#advanceHead()</span>
+        </a></li><li>
+        <a class="is-flex" href="#SynchronousQueue-TransferQueue-advanceTail">
+        <span class="has-mr-6">2.12</span>
+        <span>SynchronousQueue#TransferQueue#advanceTail()</span>
+        </a></li><li>
+        <a class="is-flex" href="#SynchronousQueue-TransferQueue-awaitFulfill">
+        <span class="has-mr-6">2.13</span>
+        <span>SynchronousQueue#TransferQueue#awaitFulfill()</span>
+        </a></li><li>
+        <a class="is-flex" href="#SynchronousQueue-TransferQueue-clean">
+        <span class="has-mr-6">2.14</span>
+        <span>SynchronousQueue#TransferQueue#clean()</span>
+        </a></li><li>
+        <a class="is-flex" href="#SynchronousQueue">
+        <span class="has-mr-6">2.15</span>
+        <span>SynchronousQueue</span>
+        </a></li><li>
+        <a class="is-flex" href="#SynchronousQueue-序列化">
+        <span class="has-mr-6">2.16</span>
+        <span>SynchronousQueue 序列化</span>
+        </a></li></ul></li><li>
+        <a class="is-flex" href="#总结">
+        <span class="has-mr-6">3</span>
+        <span>总结</span>
+        </a></li></ul>
+        </div>
+    </div>
+</div>
+
+    
+        
+<div class="card widget">
+    <div class="card-content">
+        <h3 class="menu-label">
+            最新文章
+        </h3>
+        
+        <article class="media">
+            <!-- 
+            <a href="/hello-world/" class="media-left">
+                <p class="image is-64x64">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Hello World">
+                </p>
+            </a>
+             -->
+            <div class="media-content">
+                <div class="content">
+                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2019-03-03T07:37:03.175Z">2019-03-03</time></div>
+                    <a href="/hello-world/" class="has-link-black-ter is-size-6">Hello World</a>
+                    <p class="is-size-7 is-uppercase">
+                        
+                    </p>
+                </div>
+            </div>
+        </article>
+        
+        <article class="media">
+            <!-- 
+            <a href="/JDK1.6 SynchronousQueue/" class="media-left">
+                <p class="image is-64x64">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="JDK1.6 SynchronousQueue">
+                </p>
+            </a>
+             -->
+            <div class="media-content">
+                <div class="content">
+                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2016-09-10T04:37:22.000Z">2016-09-10</time></div>
+                    <a href="/JDK1.6 SynchronousQueue/" class="has-link-black-ter is-size-6">JDK1.6 SynchronousQueue</a>
+                    <p class="is-size-7 is-uppercase">
+                        <a class="has-link-grey -link" href="/categories/JDK6-源码/">JDK6 源码</a>
+                    </p>
+                </div>
+            </div>
+        </article>
+        
+    </div>
+</div>
+
+    
+        <div class="card widget">
+    <div class="card-content">
+        <div class="menu">
+        <h3 class="menu-label">
+            归档
+        </h3>
+        <ul class="menu-list">
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2019/03/">
+                <span class="level-start">
+                    <span class="level-item">三月 2019</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">1</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2016/09/">
+                <span class="level-start">
+                    <span class="level-item">九月 2016</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">1</span>
+                </span>
+            </a>
+        </li>
+        
+        </ul>
+        </div>
+    </div>
+</div>
+    
+        <div class="card widget">
+    <div class="card-content">
+        <div class="menu">
+            <h3 class="menu-label">
+                标签
+            </h3>
+            <div class="field is-grouped is-grouped-multiline">
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/JDK6-源码/">
+                        <span class="tag">JDK6 源码</span>
+                        <span class="tag is-grey">1</span>
+                    </a>
+                </div>
+                
+            </div>
+        </div>
+    </div>
+</div>
+    
+    
+</div>
+
+            </div>
+        </div>
+    </section>
+    <footer class="footer">
+    <div class="container">
+        <div class="level">
+            <div class="level-start has-text-centered-mobile">
+                <a class="footer-logo is-block has-mb-6" href="/">
+                
+                    Joe|博客
+                
+                </a>
+                <p class="is-size-7">
+                &copy; 2019 Joe&nbsp;
+                <!-- Powered by <a href="http://hexo.io/" target="_blank">Hexo</a> & <a
+                        href="http://github.com/ppoffice/hexo-theme-icarus" target="_blank">Icarus</a> -->
+                
+                </p>
+            </div>
+            <div class="level-end">
+            
+            </div>
+        </div>
+    </div>
+</footer>
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/moment@2.22.2/min/moment-with-locales.min.js"></script>
+<script>moment.locale("zh-CN");</script>
+
+
+    
+    
+    
+    <script src="/js/animation.js"></script>
+    
+
+    
+    
+    
+    <script src="https://cdn.jsdelivr.net/npm/lightgallery@1.6.8/dist/js/lightgallery.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/justifiedGallery@3.7.0/dist/js/jquery.justifiedGallery.min.js" defer></script>
+    <script src="/js/gallery.js" defer></script>
+    
+
+    
+    
+
+<div id="outdated">
+    <h6>Your browser is out-of-date!</h6>
+    <p>Update your browser to view this website correctly. <a id="btnUpdateBrowser" href="http://outdatedbrowser.com/">Update
+            my browser now </a></p>
+    <p class="last"><a href="#" id="btnCloseUpdateBrowser" title="Close">&times;</a></p>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/outdatedbrowser@1.1.5/outdatedbrowser/outdatedbrowser.min.js" defer></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        outdatedBrowser({
+            bgColor: '#f25648',
+            color: '#ffffff',
+            lowerThan: 'flex'
+        });
+    });
+</script>
+
+
+    
+    
+<script src="https://cdn.jsdelivr.net/npm/mathjax@2.7.5/unpacked/MathJax.js?config=TeX-MML-AM_CHTML" defer></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    MathJax.Hub.Config({
+        'HTML-CSS': {
+            matchFontHeight: false
+        },
+        SVG: {
+            matchFontHeight: false
+        },
+        CommonHTML: {
+            matchFontHeight: false
+        },
+        tex2jax: {
+            inlineMath: [
+                ['$','$'],
+                ['\\(','\\)']
+            ]
+        }
+    });
+});
+</script>
+
+    
+    
+
+<a id="back-to-top" title="回到顶端" href="javascript:;">
+    <i class="fas fa-chevron-up"></i>
+</a>
+<script src="/js/back-to-top.js" defer></script>
+
+
+    
+    
+
+    
+    
+    
+    
+
+    
+    
+    
+    
+    
+    <script src="https://cdn.jsdelivr.net/npm/clipboard@2.0.4/dist/clipboard.min.js" defer></script>
+    <script src="/js/clipboard.js" defer></script>
+    
+
+    
+    
+    
+
+
+<script src="/js/main.js" defer></script>
+
+    
+    <div class="searchbox ins-search">
+    <div class="searchbox-container ins-search-container">
+        <div class="searchbox-input-wrapper">
+            <input type="text" class="searchbox-input ins-search-input" placeholder="想要查找什么...">
+            <span class="searchbox-close ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="searchbox-result-wrapper ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+    (function (window) {
+        var INSIGHT_CONFIG = {
+            TRANSLATION: {
+                POSTS: '文章',
+                PAGES: '页面',
+                CATEGORIES: '分类',
+                TAGS: '标签',
+                UNTITLED: '(无标题)',
+            },
+            CONTENT_URL: '/content.json',
+        };
+        window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+    })(window);
+</script>
+<script src="/js/insight.js" defer></script>
+<link rel="stylesheet" href="/css/search.css">
+<link rel="stylesheet" href="/css/insight.css">
+    
+</body>
+</html>
