@@ -15,7 +15,7 @@
 <meta property="og:site_name" content="Joe|博客">
 <meta property="og:description" content="1 功能简介 2 源码分析 WaitNode 2.1 分析源码 2.1.1 创建任务 FutureTask   2.1.2 执行任务 run() set() finishCompletion()。 setException() handlePossibleCancellationInterrupt() 总结run() runAndReset()   2.1.3 获取结果 get() await">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:updated_time" content="2018-10-23T04:21:34.175Z">
+<meta property="og:updated_time" content="2019-03-06T19:32:42.459Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="JDK1.7 FutureTask">
 <meta name="twitter:description" content="1 功能简介 2 源码分析 WaitNode 2.1 分析源码 2.1.1 创建任务 FutureTask   2.1.2 执行任务 run() set() finishCompletion()。 setException() handlePossibleCancellationInterrupt() 总结run() runAndReset()   2.1.3 获取结果 get() await">
@@ -123,6 +123,10 @@ var _hmt = _hmt || [];
             <div class="navbar-end">
                 
                 
+                <a class="navbar-item is-hidden-tablet catalogue" title="目录" href="javascript:;">
+                    <i class="fas fa-list-ul"></i>
+                </a>
+                
                 
                 <a class="navbar-item search" title="搜索" href="javascript:;">
                     <i class="fas fa-search"></i>
@@ -152,7 +156,7 @@ var _hmt = _hmt || [];
                 <span class="level-item has-text-grey">
                     
                     
-                    24 分钟 读完 (大约 3572 个字)
+                    24 分钟 读完 (大约 3622 个字)
                 </span>
                 
                 
@@ -167,40 +171,40 @@ var _hmt = _hmt || [];
         <div class="content">
             <!-- TOC -->
 <ul>
-<li><a href="#1-功能简介">1 功能简介</a></li>
-<li><a href="#2-源码分析">2 源码分析</a><ul>
+<li><a href="#1-%E5%8A%9F%E8%83%BD%E7%AE%80%E4%BB%8B">1 功能简介</a></li>
+<li><a href="#2-%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90">2 源码分析</a><ul>
 <li><a href="#waitnode">WaitNode</a></li>
-<li><a href="#21-分析源码">2.1 分析源码</a><ul>
-<li><a href="#211-创建任务">2.1.1 创建任务</a><ul>
+<li><a href="#21-%E5%88%86%E6%9E%90%E6%BA%90%E7%A0%81">2.1 分析源码</a><ul>
+<li><a href="#211-%E5%88%9B%E5%BB%BA%E4%BB%BB%E5%8A%A1">2.1.1 创建任务</a><ul>
 <li><a href="#futuretask">FutureTask</a></li>
 </ul>
 </li>
-<li><a href="#212-执行任务">2.1.2 执行任务</a><ul>
+<li><a href="#212-%E6%89%A7%E8%A1%8C%E4%BB%BB%E5%8A%A1">2.1.2 执行任务</a><ul>
 <li><a href="#run">run()</a></li>
 <li><a href="#set">set()</a></li>
 <li><a href="#finishcompletion">finishCompletion()。</a></li>
 <li><a href="#setexception">setException()</a></li>
 <li><a href="#handlepossiblecancellationinterrupt">handlePossibleCancellationInterrupt()</a></li>
-<li><a href="#总结run">总结run()</a></li>
+<li><a href="#%E6%80%BB%E7%BB%93run">总结run()</a></li>
 <li><a href="#runandreset">runAndReset()</a></li>
 </ul>
 </li>
-<li><a href="#213-获取结果">2.1.3 获取结果</a><ul>
+<li><a href="#213-%E8%8E%B7%E5%8F%96%E7%BB%93%E6%9E%9C">2.1.3 获取结果</a><ul>
 <li><a href="#get">get()</a></li>
 <li><a href="#awaitdone">awaitDone()</a></li>
 <li><a href="#removewaiter">removeWaiter()</a></li>
 <li><a href="#getreport">get()#report</a></li>
 <li><a href="#getlong-timeout-timeunit-unit">get(long timeout, TimeUnit unit)</a></li>
-<li><a href="#总结get">总结get()</a></li>
+<li><a href="#%E6%80%BB%E7%BB%93get">总结get()</a></li>
 <li><a href="#cancel">cancel()</a></li>
 </ul>
 </li>
-<li><a href="#查看任务状态">查看任务状态</a></li>
+<li><a href="#%E6%9F%A5%E7%9C%8B%E4%BB%BB%E5%8A%A1%E7%8A%B6%E6%80%81">查看任务状态</a></li>
 </ul>
 </li>
 </ul>
 </li>
-<li><a href="#jdk17和jdk16的区别">JDK1.7和JDK1.6的区别</a></li>
+<li><a href="#jdk17%E5%92%8Cjdk16%E7%9A%84%E5%8C%BA%E5%88%AB">JDK1.7和JDK1.6的区别</a></li>
 </ul>
 <!-- /TOC -->
 <h1 id="1-功能简介"><a href="#1-功能简介" class="headerlink" title="1 功能简介"></a>1 功能简介</h1><ul>
@@ -782,6 +786,53 @@ var _hmt = _hmt || [];
         <div class="column-right-shadow is-hidden-widescreen ">
         
             
+<div class="card widget" id="toc">
+    <div class="card-content">
+        <div class="menu">
+            <h3 class="menu-label">
+                目录
+            </h3>
+            <ul class="menu-list"><li>
+        <a class="is-flex" href="#1-功能简介">
+        <span class="has-mr-6">1</span>
+        <span>1 功能简介</span>
+        </a></li><li>
+        <a class="is-flex" href="#2-源码分析">
+        <span class="has-mr-6">2</span>
+        <span>2 源码分析</span>
+        </a><ul class="menu-list"><li>
+        <a class="is-flex" href="#WaitNode">
+        <span class="has-mr-6">2.1</span>
+        <span>WaitNode</span>
+        </a></li><li>
+        <a class="is-flex" href="#2-1-分析源码">
+        <span class="has-mr-6">2.2</span>
+        <span>2.1 分析源码</span>
+        </a><ul class="menu-list"><li>
+        <a class="is-flex" href="#2-1-1-创建任务">
+        <span class="has-mr-6">2.2.1</span>
+        <span>2.1.1 创建任务</span>
+        </a></li><li>
+        <a class="is-flex" href="#2-1-2-执行任务">
+        <span class="has-mr-6">2.2.2</span>
+        <span>2.1.2 执行任务</span>
+        </a></li><li>
+        <a class="is-flex" href="#2-1-3-获取结果">
+        <span class="has-mr-6">2.2.3</span>
+        <span>2.1.3 获取结果</span>
+        </a></li><li>
+        <a class="is-flex" href="#查看任务状态">
+        <span class="has-mr-6">2.2.4</span>
+        <span>查看任务状态</span>
+        </a></li></ul></li></ul></li><li>
+        <a class="is-flex" href="#JDK1-7和JDK1-6的区别">
+        <span class="has-mr-6">3</span>
+        <span>JDK1.7和JDK1.6的区别</span>
+        </a></li></ul>
+        </div>
+    </div>
+</div>
+
         
             
 <div class="card widget">
@@ -849,18 +900,18 @@ var _hmt = _hmt || [];
         
         <article class="media">
             <!-- 
-            <a href="/Python2ToPython3/" class="media-left">
+            <a href="/MySQL-Command/" class="media-left">
                 <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Python2切换Python3">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="MySQL基本命令">
                 </p>
             </a>
              -->
             <div class="media-content">
                 <div class="content">
                     <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
-                    <a href="/Python2ToPython3/" class="has-link-black-ter is-size-6">Python2切换Python3</a>
+                    <a href="/MySQL-Command/" class="has-link-black-ter is-size-6">MySQL基本命令</a>
                     <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
+                        <a class="has-link-grey -link" href="/categories/MySQL/">MySQL</a>
                     </p>
                 </div>
             </div>
@@ -868,18 +919,18 @@ var _hmt = _hmt || [];
         
         <article class="media">
             <!-- 
-            <a href="/SDCard-Read-Write/" class="media-left">
+            <a href="/Centos-Line/" class="media-left">
                 <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="SDCard文件读写权限">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Centos命令行图形界面切换">
                 </p>
             </a>
              -->
             <div class="media-content">
                 <div class="content">
                     <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
-                    <a href="/SDCard-Read-Write/" class="has-link-black-ter is-size-6">SDCard文件读写权限</a>
+                    <a href="/Centos-Line/" class="has-link-black-ter is-size-6">Centos命令行图形界面切换</a>
                     <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Android/">Android</a>
+                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
                     </p>
                 </div>
             </div>
@@ -1734,6 +1785,53 @@ var _hmt = _hmt || [];
 <div class="column is-4-tablet is-4-desktop is-3-widescreen is-hidden-touch is-hidden-desktop-only has-order-3 column-right ">
     
         
+<div class="card widget" id="toc">
+    <div class="card-content">
+        <div class="menu">
+            <h3 class="menu-label">
+                目录
+            </h3>
+            <ul class="menu-list"><li>
+        <a class="is-flex" href="#1-功能简介">
+        <span class="has-mr-6">1</span>
+        <span>1 功能简介</span>
+        </a></li><li>
+        <a class="is-flex" href="#2-源码分析">
+        <span class="has-mr-6">2</span>
+        <span>2 源码分析</span>
+        </a><ul class="menu-list"><li>
+        <a class="is-flex" href="#WaitNode">
+        <span class="has-mr-6">2.1</span>
+        <span>WaitNode</span>
+        </a></li><li>
+        <a class="is-flex" href="#2-1-分析源码">
+        <span class="has-mr-6">2.2</span>
+        <span>2.1 分析源码</span>
+        </a><ul class="menu-list"><li>
+        <a class="is-flex" href="#2-1-1-创建任务">
+        <span class="has-mr-6">2.2.1</span>
+        <span>2.1.1 创建任务</span>
+        </a></li><li>
+        <a class="is-flex" href="#2-1-2-执行任务">
+        <span class="has-mr-6">2.2.2</span>
+        <span>2.1.2 执行任务</span>
+        </a></li><li>
+        <a class="is-flex" href="#2-1-3-获取结果">
+        <span class="has-mr-6">2.2.3</span>
+        <span>2.1.3 获取结果</span>
+        </a></li><li>
+        <a class="is-flex" href="#查看任务状态">
+        <span class="has-mr-6">2.2.4</span>
+        <span>查看任务状态</span>
+        </a></li></ul></li></ul></li><li>
+        <a class="is-flex" href="#JDK1-7和JDK1-6的区别">
+        <span class="has-mr-6">3</span>
+        <span>JDK1.7和JDK1.6的区别</span>
+        </a></li></ul>
+        </div>
+    </div>
+</div>
+
     
         
 <div class="card widget">
@@ -1801,18 +1899,18 @@ var _hmt = _hmt || [];
         
         <article class="media">
             <!-- 
-            <a href="/Python2ToPython3/" class="media-left">
+            <a href="/MySQL-Command/" class="media-left">
                 <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Python2切换Python3">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="MySQL基本命令">
                 </p>
             </a>
              -->
             <div class="media-content">
                 <div class="content">
                     <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
-                    <a href="/Python2ToPython3/" class="has-link-black-ter is-size-6">Python2切换Python3</a>
+                    <a href="/MySQL-Command/" class="has-link-black-ter is-size-6">MySQL基本命令</a>
                     <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
+                        <a class="has-link-grey -link" href="/categories/MySQL/">MySQL</a>
                     </p>
                 </div>
             </div>
@@ -1820,18 +1918,18 @@ var _hmt = _hmt || [];
         
         <article class="media">
             <!-- 
-            <a href="/SDCard-Read-Write/" class="media-left">
+            <a href="/Centos-Line/" class="media-left">
                 <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="SDCard文件读写权限">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Centos命令行图形界面切换">
                 </p>
             </a>
              -->
             <div class="media-content">
                 <div class="content">
                     <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
-                    <a href="/SDCard-Read-Write/" class="has-link-black-ter is-size-6">SDCard文件读写权限</a>
+                    <a href="/Centos-Line/" class="has-link-black-ter is-size-6">Centos命令行图形界面切换</a>
                     <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Android/">Android</a>
+                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
                     </p>
                 </div>
             </div>

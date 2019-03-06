@@ -15,7 +15,7 @@
 <meta property="og:site_name" content="Joe|博客">
 <meta property="og:description" content="1 ForkJoinPool属性 2 ForkJoinWorkerThread属性 3 ForkJoinTask属性 4 非ForkJoin任务的执行过程 4.1 例 4.2 ForkJoinPool ForkJoinPool ForkJoinPool默认的工作线程工厂 ForkJoinPool#submit() ForkJoinTask#adapt() ForkJoinTask#Adapte">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:updated_time" content="2018-10-22T00:36:11.101Z">
+<meta property="og:updated_time" content="2019-03-06T19:42:46.772Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="非Fork&#x2F;Join源码分析">
 <meta name="twitter:description" content="1 ForkJoinPool属性 2 ForkJoinWorkerThread属性 3 ForkJoinTask属性 4 非ForkJoin任务的执行过程 4.1 例 4.2 ForkJoinPool ForkJoinPool ForkJoinPool默认的工作线程工厂 ForkJoinPool#submit() ForkJoinTask#adapt() ForkJoinTask#Adapte">
@@ -123,6 +123,10 @@ var _hmt = _hmt || [];
             <div class="navbar-end">
                 
                 
+                <a class="navbar-item is-hidden-tablet catalogue" title="目录" href="javascript:;">
+                    <i class="fas fa-list-ul"></i>
+                </a>
+                
                 
                 <a class="navbar-item search" title="搜索" href="javascript:;">
                     <i class="fas fa-search"></i>
@@ -152,7 +156,7 @@ var _hmt = _hmt || [];
                 <span class="level-item has-text-grey">
                     
                     
-                    2 小时 读完 (大约 13529 个字)
+                    2 小时 读完 (大约 13621 个字)
                 </span>
                 
                 
@@ -167,14 +171,14 @@ var _hmt = _hmt || [];
         <div class="content">
             <!-- TOC -->
 <ul>
-<li><a href="#1-forkjoinpool属性">1 ForkJoinPool属性</a></li>
-<li><a href="#2-forkjoinworkerthread属性">2 ForkJoinWorkerThread属性</a></li>
-<li><a href="#3-forkjointask属性">3 ForkJoinTask属性</a></li>
-<li><a href="#4-非forkjoin任务的执行过程">4 非ForkJoin任务的执行过程</a><ul>
-<li><a href="#41-例">4.1 例</a></li>
+<li><a href="#1-forkjoinpool%E5%B1%9E%E6%80%A7">1 ForkJoinPool属性</a></li>
+<li><a href="#2-forkjoinworkerthread%E5%B1%9E%E6%80%A7">2 ForkJoinWorkerThread属性</a></li>
+<li><a href="#3-forkjointask%E5%B1%9E%E6%80%A7">3 ForkJoinTask属性</a></li>
+<li><a href="#4-%E9%9D%9Eforkjoin%E4%BB%BB%E5%8A%A1%E7%9A%84%E6%89%A7%E8%A1%8C%E8%BF%87%E7%A8%8B">4 非ForkJoin任务的执行过程</a><ul>
+<li><a href="#41-%E4%BE%8B">4.1 例</a></li>
 <li><a href="#42-forkjoinpool">4.2 ForkJoinPool</a><ul>
 <li><a href="#forkjoinpool">ForkJoinPool</a></li>
-<li><a href="#forkjoinpool默认的工作线程工厂">ForkJoinPool默认的工作线程工厂</a></li>
+<li><a href="#forkjoinpool%E9%BB%98%E8%AE%A4%E7%9A%84%E5%B7%A5%E4%BD%9C%E7%BA%BF%E7%A8%8B%E5%B7%A5%E5%8E%82">ForkJoinPool默认的工作线程工厂</a></li>
 <li><a href="#forkjoinpoolsubmit">ForkJoinPool#submit()</a></li>
 <li><a href="#forkjointaskadapt">ForkJoinTask#adapt()</a></li>
 <li><a href="#forkjointaskadaptedcallable">ForkJoinTask#AdaptedCallable()</a></li>
@@ -187,9 +191,9 @@ var _hmt = _hmt || [];
 <li><a href="#forkjoinpoolgrowsubmissionqueue">ForkJoinPool#growSubmissionQueue()</a></li>
 <li><a href="#forkjoinpoolsignalwork">ForkJoinPool#signalWork()</a><ul>
 <li><a href="#signalwork">signalWork</a><ul>
-<li><a href="#标注0">标注0</a></li>
-<li><a href="#e0前代码">e&gt;=0前代码</a></li>
-<li><a href="#e0代码">e&gt;=0代码</a></li>
+<li><a href="#%E6%A0%87%E6%B3%A80">标注0</a></li>
+<li><a href="#e0%E5%89%8D%E4%BB%A3%E7%A0%81">e&gt;=0前代码</a></li>
+<li><a href="#e0%E4%BB%A3%E7%A0%81">e&gt;=0代码</a></li>
 </ul>
 </li>
 </ul>
@@ -217,38 +221,38 @@ var _hmt = _hmt || [];
 <li><a href="#recursivetaskcompute">RecursiveTask#compute()</a></li>
 <li><a href="#forkjointasksetcompletion">ForkJoinTask#setCompletion()</a></li>
 <li><a href="#forkjointasksetexceptionalcompletion">ForkJoinTask#setExceptionalCompletion()</a><ul>
-<li><a href="#这里为什么会有一个异常表呢">这里为什么会有一个异常表呢？</a></li>
-<li><a href="#异常表的结构是怎么样的呢">异常表的结构是怎么样的呢？</a></li>
+<li><a href="#%E8%BF%99%E9%87%8C%E4%B8%BA%E4%BB%80%E4%B9%88%E4%BC%9A%E6%9C%89%E4%B8%80%E4%B8%AA%E5%BC%82%E5%B8%B8%E8%A1%A8%E5%91%A2">这里为什么会有一个异常表呢？</a></li>
+<li><a href="#%E5%BC%82%E5%B8%B8%E8%A1%A8%E7%9A%84%E7%BB%93%E6%9E%84%E6%98%AF%E6%80%8E%E4%B9%88%E6%A0%B7%E7%9A%84%E5%91%A2">异常表的结构是怎么样的呢？</a></li>
 </ul>
 </li>
 <li><a href="#exception-table">Exception table</a></li>
 <li><a href="#forkjoinpooltryawaitwork">ForkJoinPool#tryAwaitWork()</a></li>
 <li><a href="#forkjoinpoolidleawaitwork">ForkJoinPool#idleAwaitWork()</a></li>
-<li><a href="#forkjoinworkerthreadontermination">ForkJoinWorkerThread#onTermination()</a></li>
+<li><a href="#forkjoinworkerthreadontermination-1">ForkJoinWorkerThread#onTermination()</a></li>
 <li><a href="#forkjoinworkerthreadcanceltasks">ForkJoinWorkerThread#cancelTasks()</a></li>
 <li><a href="#forkjointaskcancel">ForkJoinTask#cancel()</a></li>
 <li><a href="#forkjoinpoolderegisterworker">ForkJoinPool#deregisterWorker()</a></li>
 <li><a href="#forkjoinpooltryterminate">ForkJoinPool#tryTerminate()</a><ul>
-<li><a href="#参数为false">参数为<code>false</code></a></li>
-<li><a href="#参数为true">参数为<code>true</code></a></li>
+<li><a href="#%E5%8F%82%E6%95%B0%E4%B8%BAfalse">参数为<code>false</code></a></li>
+<li><a href="#%E5%8F%82%E6%95%B0%E4%B8%BAtrue">参数为<code>true</code></a></li>
 </ul>
 </li>
 <li><a href="#forkjoinpoolstartterminating">ForkJoinPool#startTerminating()</a><ul>
-<li><a href="#startterminating流程">startTerminating流程</a></li>
+<li><a href="#startterminating%E6%B5%81%E7%A8%8B">startTerminating流程</a></li>
 </ul>
 </li>
 <li><a href="#forkjoinpoolcancelsubmissions">ForkJoinPool#cancelSubmissions()</a></li>
 <li><a href="#forkjoinpoolpollsubmission">ForkJoinPool#pollSubmission()</a></li>
 <li><a href="#forkjoinpoolterminatewaiters">ForkJoinPool#terminateWaiters()</a></li>
 <li><a href="#forkjoinpooltryreleasewaiter">ForkJoinPool#tryReleaseWaiter()</a></li>
-<li><a href="#forkjoinworkerthreadexectask">ForkJoinWorkerThread#execTask()</a></li>
+<li><a href="#forkjoinworkerthreadexectask-1">ForkJoinWorkerThread#execTask()</a></li>
 <li><a href="#forkjoinworkerthreadpoptask">ForkJoinWorkerThread#popTask()</a></li>
 <li><a href="#forkjoinworkerthreadlocallydeqtask">ForkJoinWorkerThread#locallyDeqTask()</a></li>
 </ul>
 </li>
 </ul>
 </li>
-<li><a href="#5-总结">5 总结</a></li>
+<li><a href="#5-%E6%80%BB%E7%BB%93">5 总结</a></li>
 </ul>
 <!-- /TOC -->
 <h1 id="1-ForkJoinPool属性"><a href="#1-ForkJoinPool属性" class="headerlink" title="1 ForkJoinPool属性"></a>1 ForkJoinPool属性</h1><p>部分参数<br><figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment">     * Main pool control -- a long packed with:</span></span><br><span class="line"><span class="hljs-comment">     * AC: Number of active running workers minus target parallelism (16 bits)</span></span><br><span class="line"><span class="hljs-comment">     * TC: Number of total workers minus target parallelism (16bits)</span></span><br><span class="line"><span class="hljs-comment">     * ST: true if pool is terminating (1 bit)</span></span><br><span class="line"><span class="hljs-comment">     * EC: the wait count of top waiting thread (15 bits)</span></span><br><span class="line"><span class="hljs-comment">     * ID: ~poolIndex of top of Treiber stack of waiting threads (16 bits)</span></span><br><span class="line"><span class="hljs-comment">     *</span></span><br><span class="line"><span class="hljs-comment">     * When convenient, we can extract the upper 32 bits of counts and</span></span><br><span class="line"><span class="hljs-comment">     * the lower 32 bits of queue state, u = (int)(ctl &gt;&gt;&gt; 32) and e =</span></span><br><span class="line"><span class="hljs-comment">     * (int)ctl.  The ec field is never accessed alone, but always</span></span><br><span class="line"><span class="hljs-comment">     * together with id and st. The offsets of counts by the target</span></span><br><span class="line"><span class="hljs-comment">     * parallelism and the positionings of fields makes it possible to</span></span><br><span class="line"><span class="hljs-comment">     * perform the most common checks via sign tests of fields: When</span></span><br><span class="line"><span class="hljs-comment">     * ac is negative, there are not enough active workers, when tc is</span></span><br><span class="line"><span class="hljs-comment">     * negative, there are not enough total workers, when id is</span></span><br><span class="line"><span class="hljs-comment">     * negative, there is at least one waiting worker, and when e is</span></span><br><span class="line"><span class="hljs-comment">     * negative, the pool is terminating.  To deal with these possibly</span></span><br><span class="line"><span class="hljs-comment">     * negative fields, we use casts in and out of "short" and/or</span></span><br><span class="line"><span class="hljs-comment">     * signed shifts to maintain signedness.</span></span><br><span class="line"><span class="hljs-comment">     */</span></span><br><span class="line">    <span class="hljs-keyword">volatile</span> <span class="hljs-keyword">long</span> ctl;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-comment">// bit positions/shifts for fields</span></span><br><span class="line">    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">int</span>  AC_SHIFT   = <span class="hljs-number">48</span>;</span><br><span class="line">    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">int</span>  TC_SHIFT   = <span class="hljs-number">32</span>;</span><br><span class="line">    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">int</span>  ST_SHIFT   = <span class="hljs-number">31</span>;</span><br><span class="line">    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">int</span>  EC_SHIFT   = <span class="hljs-number">16</span>;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-comment">// bounds</span></span><br><span class="line">    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">int</span>  MAX_ID     = <span class="hljs-number">0x7fff</span>;  <span class="hljs-comment">// max poolIndex</span></span><br><span class="line">    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">int</span>  SMASK      = <span class="hljs-number">0xffff</span>;  <span class="hljs-comment">// mask short bits</span></span><br><span class="line">    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">int</span>  SHORT_SIGN = <span class="hljs-number">1</span> &lt;&lt; <span class="hljs-number">15</span>;</span><br><span class="line">    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">int</span>  INT_SIGN   = <span class="hljs-number">1</span> &lt;&lt; <span class="hljs-number">31</span>;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-comment">// masks</span></span><br><span class="line">    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">long</span> STOP_BIT   = <span class="hljs-number">0x0001L</span> &lt;&lt; ST_SHIFT;</span><br><span class="line">    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">long</span> AC_MASK    = ((<span class="hljs-keyword">long</span>)SMASK) &lt;&lt; AC_SHIFT;</span><br><span class="line">    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">long</span> TC_MASK    = ((<span class="hljs-keyword">long</span>)SMASK) &lt;&lt; TC_SHIFT;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-comment">// units for incrementing and decrementing</span></span><br><span class="line">    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">long</span> TC_UNIT    = <span class="hljs-number">1L</span> &lt;&lt; TC_SHIFT;</span><br><span class="line">    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">long</span> AC_UNIT    = <span class="hljs-number">1L</span> &lt;&lt; AC_SHIFT;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-comment">// masks and units for dealing with u = (int)(ctl &gt;&gt;&gt; 32)</span></span><br><span class="line">    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">int</span>  UAC_SHIFT  = AC_SHIFT - <span class="hljs-number">32</span>;</span><br><span class="line">    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">int</span>  UTC_SHIFT  = TC_SHIFT - <span class="hljs-number">32</span>;</span><br><span class="line">    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">int</span>  UAC_MASK   = SMASK &lt;&lt; UAC_SHIFT;</span><br><span class="line">    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">int</span>  UTC_MASK   = SMASK &lt;&lt; UTC_SHIFT;</span><br><span class="line">    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">int</span>  UAC_UNIT   = <span class="hljs-number">1</span> &lt;&lt; UAC_SHIFT;</span><br><span class="line">    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">int</span>  UTC_UNIT   = <span class="hljs-number">1</span> &lt;&lt; UTC_SHIFT;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-comment">// masks and units for dealing with e = (int)ctl</span></span><br><span class="line">    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">int</span>  E_MASK     = <span class="hljs-number">0x7fffffff</span>; <span class="hljs-comment">// no STOP_BIT</span></span><br><span class="line">    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">int</span>  EC_UNIT    = <span class="hljs-number">1</span> &lt;&lt; EC_SHIFT;</span><br></pre></td></tr></table></figure></p>
@@ -1031,6 +1035,217 @@ var _hmt = _hmt || [];
         <div class="column-right-shadow is-hidden-widescreen ">
         
             
+<div class="card widget" id="toc">
+    <div class="card-content">
+        <div class="menu">
+            <h3 class="menu-label">
+                目录
+            </h3>
+            <ul class="menu-list"><li>
+        <a class="is-flex" href="#1-ForkJoinPool属性">
+        <span class="has-mr-6">1</span>
+        <span>1 ForkJoinPool属性</span>
+        </a></li><li>
+        <a class="is-flex" href="#2-ForkJoinWorkerThread属性">
+        <span class="has-mr-6">2</span>
+        <span>2 ForkJoinWorkerThread属性</span>
+        </a></li><li>
+        <a class="is-flex" href="#3-ForkJoinTask属性">
+        <span class="has-mr-6">3</span>
+        <span>3 ForkJoinTask属性</span>
+        </a></li><li>
+        <a class="is-flex" href="#4-非ForkJoin任务的执行过程">
+        <span class="has-mr-6">4</span>
+        <span>4 非ForkJoin任务的执行过程</span>
+        </a><ul class="menu-list"><li>
+        <a class="is-flex" href="#4-1-例">
+        <span class="has-mr-6">4.1</span>
+        <span>4.1 例</span>
+        </a></li><li>
+        <a class="is-flex" href="#4-2-ForkJoinPool">
+        <span class="has-mr-6">4.2</span>
+        <span>4.2 ForkJoinPool</span>
+        </a><ul class="menu-list"><li>
+        <a class="is-flex" href="#ForkJoinPool">
+        <span class="has-mr-6">4.2.1</span>
+        <span>ForkJoinPool</span>
+        </a></li><li>
+        <a class="is-flex" href="#ForkJoinPool默认的工作线程工厂">
+        <span class="has-mr-6">4.2.2</span>
+        <span>ForkJoinPool默认的工作线程工厂</span>
+        </a></li><li>
+        <a class="is-flex" href="#ForkJoinPool-submit">
+        <span class="has-mr-6">4.2.3</span>
+        <span>ForkJoinPool#submit()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ForkJoinTask-adapt">
+        <span class="has-mr-6">4.2.4</span>
+        <span>ForkJoinTask#adapt()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ForkJoinTask-AdaptedCallable">
+        <span class="has-mr-6">4.2.5</span>
+        <span>ForkJoinTask#AdaptedCallable()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ForkJoinTask-AdaptedRunnable">
+        <span class="has-mr-6">4.2.6</span>
+        <span>ForkJoinTask#AdaptedRunnable()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ForkJoinPool-forkOrSubmit">
+        <span class="has-mr-6">4.2.7</span>
+        <span>ForkJoinPool#forkOrSubmit()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ForkJoinPool-addSubmission">
+        <span class="has-mr-6">4.2.8</span>
+        <span>ForkJoinPool#addSubmission()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ForkJoinPool-growSubmissionQueue">
+        <span class="has-mr-6">4.2.9</span>
+        <span>ForkJoinPool#growSubmissionQueue()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ForkJoinPool-signalWork">
+        <span class="has-mr-6">4.2.10</span>
+        <span>ForkJoinPool#signalWork()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ForkJoinPool-addWorker">
+        <span class="has-mr-6">4.2.11</span>
+        <span>ForkJoinPool#addWorker()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ForkJoinPool-ForkJoinWorkerThreadFactory-newThread">
+        <span class="has-mr-6">4.2.12</span>
+        <span>ForkJoinPool#ForkJoinWorkerThreadFactory#newThread()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ForkJoinPool-nextWorkerName">
+        <span class="has-mr-6">4.2.13</span>
+        <span>ForkJoinPool#nextWorkerName()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ForkJoinPool-registerWorker">
+        <span class="has-mr-6">4.2.14</span>
+        <span>ForkJoinPool#registerWorker()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ForkJoinWorkerThread-run">
+        <span class="has-mr-6">4.2.15</span>
+        <span>ForkJoinWorkerThread#run()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ForkJoinWorkerThread-onStart">
+        <span class="has-mr-6">4.2.16</span>
+        <span>ForkJoinWorkerThread#onStart()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ForkJoinWorkerThread-onTermination">
+        <span class="has-mr-6">4.2.17</span>
+        <span>ForkJoinWorkerThread#onTermination()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ForkJoinPool-work">
+        <span class="has-mr-6">4.2.18</span>
+        <span>ForkJoinPool#work</span>
+        </a></li><li>
+        <a class="is-flex" href="#ForkJoinPool-scan">
+        <span class="has-mr-6">4.2.19</span>
+        <span>ForkJoinPool#scan()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ForkJoinWorkerThread-execTask">
+        <span class="has-mr-6">4.2.20</span>
+        <span>ForkJoinWorkerThread#execTask()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ForJoinTask-doExec">
+        <span class="has-mr-6">4.2.21</span>
+        <span>ForJoinTask#doExec()</span>
+        </a></li><li>
+        <a class="is-flex" href="#RecursiveAction-exec">
+        <span class="has-mr-6">4.2.22</span>
+        <span>RecursiveAction#exec()</span>
+        </a></li><li>
+        <a class="is-flex" href="#RecursiveAction-compute">
+        <span class="has-mr-6">4.2.23</span>
+        <span>RecursiveAction#compute()</span>
+        </a></li><li>
+        <a class="is-flex" href="#RecursiveTask-exec">
+        <span class="has-mr-6">4.2.24</span>
+        <span>RecursiveTask#exec()</span>
+        </a></li><li>
+        <a class="is-flex" href="#RecursiveTask-compute">
+        <span class="has-mr-6">4.2.25</span>
+        <span>RecursiveTask#compute()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ForkJoinTask-setCompletion">
+        <span class="has-mr-6">4.2.26</span>
+        <span>ForkJoinTask#setCompletion()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ForkJoinTask-setExceptionalCompletion">
+        <span class="has-mr-6">4.2.27</span>
+        <span>ForkJoinTask#setExceptionalCompletion()</span>
+        </a></li><li>
+        <a class="is-flex" href="#Exception-table">
+        <span class="has-mr-6">4.2.28</span>
+        <span>Exception table</span>
+        </a></li><li>
+        <a class="is-flex" href="#ForkJoinPool-tryAwaitWork">
+        <span class="has-mr-6">4.2.29</span>
+        <span>ForkJoinPool#tryAwaitWork()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ForkJoinPool-idleAwaitWork">
+        <span class="has-mr-6">4.2.30</span>
+        <span>ForkJoinPool#idleAwaitWork()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ForkJoinWorkerThread-onTermination-1">
+        <span class="has-mr-6">4.2.31</span>
+        <span>ForkJoinWorkerThread#onTermination()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ForkJoinWorkerThread-cancelTasks">
+        <span class="has-mr-6">4.2.32</span>
+        <span>ForkJoinWorkerThread#cancelTasks()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ForkJoinTask-cancel">
+        <span class="has-mr-6">4.2.33</span>
+        <span>ForkJoinTask#cancel()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ForkJoinPool-deregisterWorker">
+        <span class="has-mr-6">4.2.34</span>
+        <span>ForkJoinPool#deregisterWorker()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ForkJoinPool-tryTerminate">
+        <span class="has-mr-6">4.2.35</span>
+        <span>ForkJoinPool#tryTerminate()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ForkJoinPool-startTerminating">
+        <span class="has-mr-6">4.2.36</span>
+        <span>ForkJoinPool#startTerminating()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ForkJoinPool-cancelSubmissions">
+        <span class="has-mr-6">4.2.37</span>
+        <span>ForkJoinPool#cancelSubmissions()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ForkJoinPool-pollSubmission">
+        <span class="has-mr-6">4.2.38</span>
+        <span>ForkJoinPool#pollSubmission()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ForkJoinPool-terminateWaiters">
+        <span class="has-mr-6">4.2.39</span>
+        <span>ForkJoinPool#terminateWaiters()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ForkJoinPool-tryReleaseWaiter">
+        <span class="has-mr-6">4.2.40</span>
+        <span>ForkJoinPool#tryReleaseWaiter()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ForkJoinWorkerThread-execTask-1">
+        <span class="has-mr-6">4.2.41</span>
+        <span>ForkJoinWorkerThread#execTask()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ForkJoinWorkerThread-popTask">
+        <span class="has-mr-6">4.2.42</span>
+        <span>ForkJoinWorkerThread#popTask()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ForkJoinWorkerThread-locallyDeqTask">
+        <span class="has-mr-6">4.2.43</span>
+        <span>ForkJoinWorkerThread#locallyDeqTask()</span>
+        </a></li></ul></li></ul></li><li>
+        <a class="is-flex" href="#5-总结">
+        <span class="has-mr-6">5</span>
+        <span>5 总结</span>
+        </a></li></ul>
+        </div>
+    </div>
+</div>
+
         
             
 <div class="card widget">
@@ -1098,18 +1313,18 @@ var _hmt = _hmt || [];
         
         <article class="media">
             <!-- 
-            <a href="/Python2ToPython3/" class="media-left">
+            <a href="/MySQL-Command/" class="media-left">
                 <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Python2切换Python3">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="MySQL基本命令">
                 </p>
             </a>
              -->
             <div class="media-content">
                 <div class="content">
                     <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
-                    <a href="/Python2ToPython3/" class="has-link-black-ter is-size-6">Python2切换Python3</a>
+                    <a href="/MySQL-Command/" class="has-link-black-ter is-size-6">MySQL基本命令</a>
                     <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
+                        <a class="has-link-grey -link" href="/categories/MySQL/">MySQL</a>
                     </p>
                 </div>
             </div>
@@ -1117,18 +1332,18 @@ var _hmt = _hmt || [];
         
         <article class="media">
             <!-- 
-            <a href="/SDCard-Read-Write/" class="media-left">
+            <a href="/Centos-Line/" class="media-left">
                 <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="SDCard文件读写权限">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Centos命令行图形界面切换">
                 </p>
             </a>
              -->
             <div class="media-content">
                 <div class="content">
                     <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
-                    <a href="/SDCard-Read-Write/" class="has-link-black-ter is-size-6">SDCard文件读写权限</a>
+                    <a href="/Centos-Line/" class="has-link-black-ter is-size-6">Centos命令行图形界面切换</a>
                     <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Android/">Android</a>
+                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
                     </p>
                 </div>
             </div>
@@ -1983,6 +2198,217 @@ var _hmt = _hmt || [];
 <div class="column is-4-tablet is-4-desktop is-3-widescreen is-hidden-touch is-hidden-desktop-only has-order-3 column-right ">
     
         
+<div class="card widget" id="toc">
+    <div class="card-content">
+        <div class="menu">
+            <h3 class="menu-label">
+                目录
+            </h3>
+            <ul class="menu-list"><li>
+        <a class="is-flex" href="#1-ForkJoinPool属性">
+        <span class="has-mr-6">1</span>
+        <span>1 ForkJoinPool属性</span>
+        </a></li><li>
+        <a class="is-flex" href="#2-ForkJoinWorkerThread属性">
+        <span class="has-mr-6">2</span>
+        <span>2 ForkJoinWorkerThread属性</span>
+        </a></li><li>
+        <a class="is-flex" href="#3-ForkJoinTask属性">
+        <span class="has-mr-6">3</span>
+        <span>3 ForkJoinTask属性</span>
+        </a></li><li>
+        <a class="is-flex" href="#4-非ForkJoin任务的执行过程">
+        <span class="has-mr-6">4</span>
+        <span>4 非ForkJoin任务的执行过程</span>
+        </a><ul class="menu-list"><li>
+        <a class="is-flex" href="#4-1-例">
+        <span class="has-mr-6">4.1</span>
+        <span>4.1 例</span>
+        </a></li><li>
+        <a class="is-flex" href="#4-2-ForkJoinPool">
+        <span class="has-mr-6">4.2</span>
+        <span>4.2 ForkJoinPool</span>
+        </a><ul class="menu-list"><li>
+        <a class="is-flex" href="#ForkJoinPool">
+        <span class="has-mr-6">4.2.1</span>
+        <span>ForkJoinPool</span>
+        </a></li><li>
+        <a class="is-flex" href="#ForkJoinPool默认的工作线程工厂">
+        <span class="has-mr-6">4.2.2</span>
+        <span>ForkJoinPool默认的工作线程工厂</span>
+        </a></li><li>
+        <a class="is-flex" href="#ForkJoinPool-submit">
+        <span class="has-mr-6">4.2.3</span>
+        <span>ForkJoinPool#submit()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ForkJoinTask-adapt">
+        <span class="has-mr-6">4.2.4</span>
+        <span>ForkJoinTask#adapt()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ForkJoinTask-AdaptedCallable">
+        <span class="has-mr-6">4.2.5</span>
+        <span>ForkJoinTask#AdaptedCallable()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ForkJoinTask-AdaptedRunnable">
+        <span class="has-mr-6">4.2.6</span>
+        <span>ForkJoinTask#AdaptedRunnable()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ForkJoinPool-forkOrSubmit">
+        <span class="has-mr-6">4.2.7</span>
+        <span>ForkJoinPool#forkOrSubmit()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ForkJoinPool-addSubmission">
+        <span class="has-mr-6">4.2.8</span>
+        <span>ForkJoinPool#addSubmission()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ForkJoinPool-growSubmissionQueue">
+        <span class="has-mr-6">4.2.9</span>
+        <span>ForkJoinPool#growSubmissionQueue()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ForkJoinPool-signalWork">
+        <span class="has-mr-6">4.2.10</span>
+        <span>ForkJoinPool#signalWork()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ForkJoinPool-addWorker">
+        <span class="has-mr-6">4.2.11</span>
+        <span>ForkJoinPool#addWorker()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ForkJoinPool-ForkJoinWorkerThreadFactory-newThread">
+        <span class="has-mr-6">4.2.12</span>
+        <span>ForkJoinPool#ForkJoinWorkerThreadFactory#newThread()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ForkJoinPool-nextWorkerName">
+        <span class="has-mr-6">4.2.13</span>
+        <span>ForkJoinPool#nextWorkerName()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ForkJoinPool-registerWorker">
+        <span class="has-mr-6">4.2.14</span>
+        <span>ForkJoinPool#registerWorker()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ForkJoinWorkerThread-run">
+        <span class="has-mr-6">4.2.15</span>
+        <span>ForkJoinWorkerThread#run()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ForkJoinWorkerThread-onStart">
+        <span class="has-mr-6">4.2.16</span>
+        <span>ForkJoinWorkerThread#onStart()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ForkJoinWorkerThread-onTermination">
+        <span class="has-mr-6">4.2.17</span>
+        <span>ForkJoinWorkerThread#onTermination()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ForkJoinPool-work">
+        <span class="has-mr-6">4.2.18</span>
+        <span>ForkJoinPool#work</span>
+        </a></li><li>
+        <a class="is-flex" href="#ForkJoinPool-scan">
+        <span class="has-mr-6">4.2.19</span>
+        <span>ForkJoinPool#scan()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ForkJoinWorkerThread-execTask">
+        <span class="has-mr-6">4.2.20</span>
+        <span>ForkJoinWorkerThread#execTask()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ForJoinTask-doExec">
+        <span class="has-mr-6">4.2.21</span>
+        <span>ForJoinTask#doExec()</span>
+        </a></li><li>
+        <a class="is-flex" href="#RecursiveAction-exec">
+        <span class="has-mr-6">4.2.22</span>
+        <span>RecursiveAction#exec()</span>
+        </a></li><li>
+        <a class="is-flex" href="#RecursiveAction-compute">
+        <span class="has-mr-6">4.2.23</span>
+        <span>RecursiveAction#compute()</span>
+        </a></li><li>
+        <a class="is-flex" href="#RecursiveTask-exec">
+        <span class="has-mr-6">4.2.24</span>
+        <span>RecursiveTask#exec()</span>
+        </a></li><li>
+        <a class="is-flex" href="#RecursiveTask-compute">
+        <span class="has-mr-6">4.2.25</span>
+        <span>RecursiveTask#compute()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ForkJoinTask-setCompletion">
+        <span class="has-mr-6">4.2.26</span>
+        <span>ForkJoinTask#setCompletion()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ForkJoinTask-setExceptionalCompletion">
+        <span class="has-mr-6">4.2.27</span>
+        <span>ForkJoinTask#setExceptionalCompletion()</span>
+        </a></li><li>
+        <a class="is-flex" href="#Exception-table">
+        <span class="has-mr-6">4.2.28</span>
+        <span>Exception table</span>
+        </a></li><li>
+        <a class="is-flex" href="#ForkJoinPool-tryAwaitWork">
+        <span class="has-mr-6">4.2.29</span>
+        <span>ForkJoinPool#tryAwaitWork()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ForkJoinPool-idleAwaitWork">
+        <span class="has-mr-6">4.2.30</span>
+        <span>ForkJoinPool#idleAwaitWork()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ForkJoinWorkerThread-onTermination-1">
+        <span class="has-mr-6">4.2.31</span>
+        <span>ForkJoinWorkerThread#onTermination()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ForkJoinWorkerThread-cancelTasks">
+        <span class="has-mr-6">4.2.32</span>
+        <span>ForkJoinWorkerThread#cancelTasks()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ForkJoinTask-cancel">
+        <span class="has-mr-6">4.2.33</span>
+        <span>ForkJoinTask#cancel()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ForkJoinPool-deregisterWorker">
+        <span class="has-mr-6">4.2.34</span>
+        <span>ForkJoinPool#deregisterWorker()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ForkJoinPool-tryTerminate">
+        <span class="has-mr-6">4.2.35</span>
+        <span>ForkJoinPool#tryTerminate()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ForkJoinPool-startTerminating">
+        <span class="has-mr-6">4.2.36</span>
+        <span>ForkJoinPool#startTerminating()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ForkJoinPool-cancelSubmissions">
+        <span class="has-mr-6">4.2.37</span>
+        <span>ForkJoinPool#cancelSubmissions()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ForkJoinPool-pollSubmission">
+        <span class="has-mr-6">4.2.38</span>
+        <span>ForkJoinPool#pollSubmission()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ForkJoinPool-terminateWaiters">
+        <span class="has-mr-6">4.2.39</span>
+        <span>ForkJoinPool#terminateWaiters()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ForkJoinPool-tryReleaseWaiter">
+        <span class="has-mr-6">4.2.40</span>
+        <span>ForkJoinPool#tryReleaseWaiter()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ForkJoinWorkerThread-execTask-1">
+        <span class="has-mr-6">4.2.41</span>
+        <span>ForkJoinWorkerThread#execTask()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ForkJoinWorkerThread-popTask">
+        <span class="has-mr-6">4.2.42</span>
+        <span>ForkJoinWorkerThread#popTask()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ForkJoinWorkerThread-locallyDeqTask">
+        <span class="has-mr-6">4.2.43</span>
+        <span>ForkJoinWorkerThread#locallyDeqTask()</span>
+        </a></li></ul></li></ul></li><li>
+        <a class="is-flex" href="#5-总结">
+        <span class="has-mr-6">5</span>
+        <span>5 总结</span>
+        </a></li></ul>
+        </div>
+    </div>
+</div>
+
     
         
 <div class="card widget">
@@ -2050,18 +2476,18 @@ var _hmt = _hmt || [];
         
         <article class="media">
             <!-- 
-            <a href="/Python2ToPython3/" class="media-left">
+            <a href="/MySQL-Command/" class="media-left">
                 <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Python2切换Python3">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="MySQL基本命令">
                 </p>
             </a>
              -->
             <div class="media-content">
                 <div class="content">
                     <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
-                    <a href="/Python2ToPython3/" class="has-link-black-ter is-size-6">Python2切换Python3</a>
+                    <a href="/MySQL-Command/" class="has-link-black-ter is-size-6">MySQL基本命令</a>
                     <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
+                        <a class="has-link-grey -link" href="/categories/MySQL/">MySQL</a>
                     </p>
                 </div>
             </div>
@@ -2069,18 +2495,18 @@ var _hmt = _hmt || [];
         
         <article class="media">
             <!-- 
-            <a href="/SDCard-Read-Write/" class="media-left">
+            <a href="/Centos-Line/" class="media-left">
                 <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="SDCard文件读写权限">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Centos命令行图形界面切换">
                 </p>
             </a>
              -->
             <div class="media-content">
                 <div class="content">
                     <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
-                    <a href="/SDCard-Read-Write/" class="has-link-black-ter is-size-6">SDCard文件读写权限</a>
+                    <a href="/Centos-Line/" class="has-link-black-ter is-size-6">Centos命令行图形界面切换</a>
                     <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Android/">Android</a>
+                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
                     </p>
                 </div>
             </div>

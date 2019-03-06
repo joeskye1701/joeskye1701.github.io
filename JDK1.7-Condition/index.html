@@ -15,7 +15,7 @@
 <meta property="og:site_name" content="Joe|博客">
 <meta property="og:description" content="1 介绍 2 代码 例1 例2 例3   3 源码分析 ReentrantLock#newCondition() AbstractQueuedSynchronizer#ConditionObject#await() AbstractQueuedSynchronizer#ConditionObject#addConditionWaiter() AbstractQueuedSynchronizer">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:updated_time" content="2018-10-23T04:19:30.146Z">
+<meta property="og:updated_time" content="2019-03-06T19:32:39.612Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="JDK1.7 Condition">
 <meta name="twitter:description" content="1 介绍 2 代码 例1 例2 例3   3 源码分析 ReentrantLock#newCondition() AbstractQueuedSynchronizer#ConditionObject#await() AbstractQueuedSynchronizer#ConditionObject#addConditionWaiter() AbstractQueuedSynchronizer">
@@ -123,6 +123,10 @@ var _hmt = _hmt || [];
             <div class="navbar-end">
                 
                 
+                <a class="navbar-item is-hidden-tablet catalogue" title="目录" href="javascript:;">
+                    <i class="fas fa-list-ul"></i>
+                </a>
+                
                 
                 <a class="navbar-item search" title="搜索" href="javascript:;">
                     <i class="fas fa-search"></i>
@@ -152,7 +156,7 @@ var _hmt = _hmt || [];
                 <span class="level-item has-text-grey">
                     
                     
-                    24 分钟 读完 (大约 3589 个字)
+                    24 分钟 读完 (大约 3605 个字)
                 </span>
                 
                 
@@ -167,14 +171,14 @@ var _hmt = _hmt || [];
         <div class="content">
             <!-- TOC -->
 <ul>
-<li><a href="#1-介绍">1 介绍</a></li>
-<li><a href="#2-代码">2 代码</a><ul>
-<li><a href="#例1">例1</a></li>
-<li><a href="#例2">例2</a></li>
-<li><a href="#例3">例3</a></li>
+<li><a href="#1-%E4%BB%8B%E7%BB%8D">1 介绍</a></li>
+<li><a href="#2-%E4%BB%A3%E7%A0%81">2 代码</a><ul>
+<li><a href="#%E4%BE%8B1">例1</a></li>
+<li><a href="#%E4%BE%8B2">例2</a></li>
+<li><a href="#%E4%BE%8B3">例3</a></li>
 </ul>
 </li>
-<li><a href="#3-源码分析">3 源码分析</a><ul>
+<li><a href="#3-%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90">3 源码分析</a><ul>
 <li><a href="#reentrantlocknewcondition">ReentrantLock#newCondition()</a></li>
 <li><a href="#abstractqueuedsynchronizerconditionobjectawait">AbstractQueuedSynchronizer#ConditionObject#await()</a></li>
 <li><a href="#abstractqueuedsynchronizerconditionobjectaddconditionwaiter">AbstractQueuedSynchronizer#ConditionObject#addConditionWaiter()</a></li>
@@ -185,7 +189,7 @@ var _hmt = _hmt || [];
 <li><a href="#abstractqueuedsynchronizerconditionobjectsignal">AbstractQueuedSynchronizer#ConditionObject#signal()</a></li>
 </ul>
 </li>
-<li><a href="#4-abstractqueuedsynchronizer和condition">4 AbstractQueuedSynchronizer和Condition</a><ul>
+<li><a href="#4-abstractqueuedsynchronizer%E5%92%8Ccondition">4 AbstractQueuedSynchronizer和Condition</a><ul>
 <li><a href="#abstractqueuedsynchronizer">AbstractQueuedSynchronizer</a></li>
 <li><a href="#condition">Condition</a></li>
 <li><a href="#abstractqueuedsynchronizerconditionobject">AbstractQueuedSynchronizer#ConditionObject()</a></li>
@@ -717,6 +721,97 @@ var _hmt = _hmt || [];
         <div class="column-right-shadow is-hidden-widescreen ">
         
             
+<div class="card widget" id="toc">
+    <div class="card-content">
+        <div class="menu">
+            <h3 class="menu-label">
+                目录
+            </h3>
+            <ul class="menu-list"><li>
+        <a class="is-flex" href="#1-介绍">
+        <span class="has-mr-6">1</span>
+        <span>1 介绍</span>
+        </a></li><li>
+        <a class="is-flex" href="#2-代码">
+        <span class="has-mr-6">2</span>
+        <span>2 代码</span>
+        </a><ul class="menu-list"><li>
+        <a class="is-flex" href="#例1">
+        <span class="has-mr-6">2.1</span>
+        <span>例1</span>
+        </a></li><li>
+        <a class="is-flex" href="#例2">
+        <span class="has-mr-6">2.2</span>
+        <span>例2</span>
+        </a></li><li>
+        <a class="is-flex" href="#例3">
+        <span class="has-mr-6">2.3</span>
+        <span>例3</span>
+        </a></li></ul></li><li>
+        <a class="is-flex" href="#3-源码分析">
+        <span class="has-mr-6">3</span>
+        <span>3 源码分析</span>
+        </a><ul class="menu-list"><li>
+        <a class="is-flex" href="#ReentrantLock-newCondition">
+        <span class="has-mr-6">3.1</span>
+        <span>ReentrantLock#newCondition()</span>
+        </a></li><li>
+        <a class="is-flex" href="#AbstractQueuedSynchronizer-ConditionObject-await">
+        <span class="has-mr-6">3.2</span>
+        <span>AbstractQueuedSynchronizer#ConditionObject#await()</span>
+        </a></li><li>
+        <a class="is-flex" href="#AbstractQueuedSynchronizer-ConditionObject-addConditionWaiter">
+        <span class="has-mr-6">3.3</span>
+        <span>AbstractQueuedSynchronizer#ConditionObject#addConditionWaiter()</span>
+        </a></li><li>
+        <a class="is-flex" href="#AbstractQueuedSynchronizer-ConditionObject-fullyRelease">
+        <span class="has-mr-6">3.4</span>
+        <span>AbstractQueuedSynchronizer#ConditionObject#fullyRelease()</span>
+        </a></li><li>
+        <a class="is-flex" href="#AbstractQueuedSynchronizer-isOnSyncQueue">
+        <span class="has-mr-6">3.5</span>
+        <span>AbstractQueuedSynchronizer#isOnSyncQueue()</span>
+        </a></li><li>
+        <a class="is-flex" href="#AbstractQueuedSynchronizer-findNodeFromTail">
+        <span class="has-mr-6">3.6</span>
+        <span>AbstractQueuedSynchronizer#findNodeFromTail()</span>
+        </a></li><li>
+        <a class="is-flex" href="#AbstractQueuedSynchronizer-acquireQueued">
+        <span class="has-mr-6">3.7</span>
+        <span>AbstractQueuedSynchronizer#acquireQueued()</span>
+        </a></li><li>
+        <a class="is-flex" href="#AbstractQueuedSynchronizer-ConditionObject-signal">
+        <span class="has-mr-6">3.8</span>
+        <span>AbstractQueuedSynchronizer#ConditionObject#signal()</span>
+        </a></li></ul></li><li>
+        <a class="is-flex" href="#4-AbstractQueuedSynchronizer和Condition">
+        <span class="has-mr-6">4</span>
+        <span>4 AbstractQueuedSynchronizer和Condition</span>
+        </a><ul class="menu-list"><li>
+        <a class="is-flex" href="#AbstractQueuedSynchronizer">
+        <span class="has-mr-6">4.1</span>
+        <span>AbstractQueuedSynchronizer</span>
+        </a></li><li>
+        <a class="is-flex" href="#Condition">
+        <span class="has-mr-6">4.2</span>
+        <span>Condition</span>
+        </a></li><li>
+        <a class="is-flex" href="#AbstractQueuedSynchronizer-ConditionObject">
+        <span class="has-mr-6">4.3</span>
+        <span>AbstractQueuedSynchronizer#ConditionObject()</span>
+        </a></li><li>
+        <a class="is-flex" href="#AbstractQueuedSynchronizer-ConditionObject-doSignal">
+        <span class="has-mr-6">4.4</span>
+        <span>AbstractQueuedSynchronizer#ConditionObject#doSignal()</span>
+        </a></li><li>
+        <a class="is-flex" href="#AbstractQueuedSynchronizer-transferForSignal">
+        <span class="has-mr-6">4.5</span>
+        <span>AbstractQueuedSynchronizer#transferForSignal()</span>
+        </a></li></ul></li></ul>
+        </div>
+    </div>
+</div>
+
         
             
 <div class="card widget">
@@ -784,18 +879,18 @@ var _hmt = _hmt || [];
         
         <article class="media">
             <!-- 
-            <a href="/Python2ToPython3/" class="media-left">
+            <a href="/MySQL-Command/" class="media-left">
                 <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Python2切换Python3">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="MySQL基本命令">
                 </p>
             </a>
              -->
             <div class="media-content">
                 <div class="content">
                     <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
-                    <a href="/Python2ToPython3/" class="has-link-black-ter is-size-6">Python2切换Python3</a>
+                    <a href="/MySQL-Command/" class="has-link-black-ter is-size-6">MySQL基本命令</a>
                     <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
+                        <a class="has-link-grey -link" href="/categories/MySQL/">MySQL</a>
                     </p>
                 </div>
             </div>
@@ -803,18 +898,18 @@ var _hmt = _hmt || [];
         
         <article class="media">
             <!-- 
-            <a href="/SDCard-Read-Write/" class="media-left">
+            <a href="/Centos-Line/" class="media-left">
                 <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="SDCard文件读写权限">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Centos命令行图形界面切换">
                 </p>
             </a>
              -->
             <div class="media-content">
                 <div class="content">
                     <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
-                    <a href="/SDCard-Read-Write/" class="has-link-black-ter is-size-6">SDCard文件读写权限</a>
+                    <a href="/Centos-Line/" class="has-link-black-ter is-size-6">Centos命令行图形界面切换</a>
                     <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Android/">Android</a>
+                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
                     </p>
                 </div>
             </div>
@@ -1669,6 +1764,97 @@ var _hmt = _hmt || [];
 <div class="column is-4-tablet is-4-desktop is-3-widescreen is-hidden-touch is-hidden-desktop-only has-order-3 column-right ">
     
         
+<div class="card widget" id="toc">
+    <div class="card-content">
+        <div class="menu">
+            <h3 class="menu-label">
+                目录
+            </h3>
+            <ul class="menu-list"><li>
+        <a class="is-flex" href="#1-介绍">
+        <span class="has-mr-6">1</span>
+        <span>1 介绍</span>
+        </a></li><li>
+        <a class="is-flex" href="#2-代码">
+        <span class="has-mr-6">2</span>
+        <span>2 代码</span>
+        </a><ul class="menu-list"><li>
+        <a class="is-flex" href="#例1">
+        <span class="has-mr-6">2.1</span>
+        <span>例1</span>
+        </a></li><li>
+        <a class="is-flex" href="#例2">
+        <span class="has-mr-6">2.2</span>
+        <span>例2</span>
+        </a></li><li>
+        <a class="is-flex" href="#例3">
+        <span class="has-mr-6">2.3</span>
+        <span>例3</span>
+        </a></li></ul></li><li>
+        <a class="is-flex" href="#3-源码分析">
+        <span class="has-mr-6">3</span>
+        <span>3 源码分析</span>
+        </a><ul class="menu-list"><li>
+        <a class="is-flex" href="#ReentrantLock-newCondition">
+        <span class="has-mr-6">3.1</span>
+        <span>ReentrantLock#newCondition()</span>
+        </a></li><li>
+        <a class="is-flex" href="#AbstractQueuedSynchronizer-ConditionObject-await">
+        <span class="has-mr-6">3.2</span>
+        <span>AbstractQueuedSynchronizer#ConditionObject#await()</span>
+        </a></li><li>
+        <a class="is-flex" href="#AbstractQueuedSynchronizer-ConditionObject-addConditionWaiter">
+        <span class="has-mr-6">3.3</span>
+        <span>AbstractQueuedSynchronizer#ConditionObject#addConditionWaiter()</span>
+        </a></li><li>
+        <a class="is-flex" href="#AbstractQueuedSynchronizer-ConditionObject-fullyRelease">
+        <span class="has-mr-6">3.4</span>
+        <span>AbstractQueuedSynchronizer#ConditionObject#fullyRelease()</span>
+        </a></li><li>
+        <a class="is-flex" href="#AbstractQueuedSynchronizer-isOnSyncQueue">
+        <span class="has-mr-6">3.5</span>
+        <span>AbstractQueuedSynchronizer#isOnSyncQueue()</span>
+        </a></li><li>
+        <a class="is-flex" href="#AbstractQueuedSynchronizer-findNodeFromTail">
+        <span class="has-mr-6">3.6</span>
+        <span>AbstractQueuedSynchronizer#findNodeFromTail()</span>
+        </a></li><li>
+        <a class="is-flex" href="#AbstractQueuedSynchronizer-acquireQueued">
+        <span class="has-mr-6">3.7</span>
+        <span>AbstractQueuedSynchronizer#acquireQueued()</span>
+        </a></li><li>
+        <a class="is-flex" href="#AbstractQueuedSynchronizer-ConditionObject-signal">
+        <span class="has-mr-6">3.8</span>
+        <span>AbstractQueuedSynchronizer#ConditionObject#signal()</span>
+        </a></li></ul></li><li>
+        <a class="is-flex" href="#4-AbstractQueuedSynchronizer和Condition">
+        <span class="has-mr-6">4</span>
+        <span>4 AbstractQueuedSynchronizer和Condition</span>
+        </a><ul class="menu-list"><li>
+        <a class="is-flex" href="#AbstractQueuedSynchronizer">
+        <span class="has-mr-6">4.1</span>
+        <span>AbstractQueuedSynchronizer</span>
+        </a></li><li>
+        <a class="is-flex" href="#Condition">
+        <span class="has-mr-6">4.2</span>
+        <span>Condition</span>
+        </a></li><li>
+        <a class="is-flex" href="#AbstractQueuedSynchronizer-ConditionObject">
+        <span class="has-mr-6">4.3</span>
+        <span>AbstractQueuedSynchronizer#ConditionObject()</span>
+        </a></li><li>
+        <a class="is-flex" href="#AbstractQueuedSynchronizer-ConditionObject-doSignal">
+        <span class="has-mr-6">4.4</span>
+        <span>AbstractQueuedSynchronizer#ConditionObject#doSignal()</span>
+        </a></li><li>
+        <a class="is-flex" href="#AbstractQueuedSynchronizer-transferForSignal">
+        <span class="has-mr-6">4.5</span>
+        <span>AbstractQueuedSynchronizer#transferForSignal()</span>
+        </a></li></ul></li></ul>
+        </div>
+    </div>
+</div>
+
     
         
 <div class="card widget">
@@ -1736,18 +1922,18 @@ var _hmt = _hmt || [];
         
         <article class="media">
             <!-- 
-            <a href="/Python2ToPython3/" class="media-left">
+            <a href="/MySQL-Command/" class="media-left">
                 <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Python2切换Python3">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="MySQL基本命令">
                 </p>
             </a>
              -->
             <div class="media-content">
                 <div class="content">
                     <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
-                    <a href="/Python2ToPython3/" class="has-link-black-ter is-size-6">Python2切换Python3</a>
+                    <a href="/MySQL-Command/" class="has-link-black-ter is-size-6">MySQL基本命令</a>
                     <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
+                        <a class="has-link-grey -link" href="/categories/MySQL/">MySQL</a>
                     </p>
                 </div>
             </div>
@@ -1755,18 +1941,18 @@ var _hmt = _hmt || [];
         
         <article class="media">
             <!-- 
-            <a href="/SDCard-Read-Write/" class="media-left">
+            <a href="/Centos-Line/" class="media-left">
                 <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="SDCard文件读写权限">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Centos命令行图形界面切换">
                 </p>
             </a>
              -->
             <div class="media-content">
                 <div class="content">
                     <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
-                    <a href="/SDCard-Read-Write/" class="has-link-black-ter is-size-6">SDCard文件读写权限</a>
+                    <a href="/Centos-Line/" class="has-link-black-ter is-size-6">Centos命令行图形界面切换</a>
                     <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Android/">Android</a>
+                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
                     </p>
                 </div>
             </div>

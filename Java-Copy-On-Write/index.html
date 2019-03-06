@@ -15,7 +15,7 @@
 <meta property="og:site_name" content="Joe|博客">
 <meta property="og:description" content="1 基础知识 1.1 CopyOnWrite容器   2 实现原理 CopyOnWriteArrayList源码 CopyOnWriteArrayList#add() CopyOnWriteArrayList#get()   实现简单的CopyOnWriteMap   3 应用场景 3.1 需要注意两件事情   4 缺点 内存占用问题 数据一致性问题     1 基础知识Copy-On-Wri">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:updated_time" content="2018-10-20T00:20:56.641Z">
+<meta property="og:updated_time" content="2019-03-06T19:31:15.966Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Java Copy-On-Write并发优化策略">
 <meta name="twitter:description" content="1 基础知识 1.1 CopyOnWrite容器   2 实现原理 CopyOnWriteArrayList源码 CopyOnWriteArrayList#add() CopyOnWriteArrayList#get()   实现简单的CopyOnWriteMap   3 应用场景 3.1 需要注意两件事情   4 缺点 内存占用问题 数据一致性问题     1 基础知识Copy-On-Wri">
@@ -123,6 +123,10 @@ var _hmt = _hmt || [];
             <div class="navbar-end">
                 
                 
+                <a class="navbar-item is-hidden-tablet catalogue" title="目录" href="javascript:;">
+                    <i class="fas fa-list-ul"></i>
+                </a>
+                
                 
                 <a class="navbar-item search" title="搜索" href="javascript:;">
                     <i class="fas fa-search"></i>
@@ -152,7 +156,7 @@ var _hmt = _hmt || [];
                 <span class="level-item has-text-grey">
                     
                     
-                    9 分钟 读完 (大约 1314 个字)
+                    9 分钟 读完 (大约 1371 个字)
                 </span>
                 
                 
@@ -167,26 +171,26 @@ var _hmt = _hmt || [];
         <div class="content">
             <!-- TOC -->
 <ul>
-<li><a href="#1-基础知识">1 基础知识</a><ul>
-<li><a href="#11-copyonwrite容器">1.1 CopyOnWrite容器</a></li>
+<li><a href="#1-%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86">1 基础知识</a><ul>
+<li><a href="#11-copyonwrite%E5%AE%B9%E5%99%A8">1.1 CopyOnWrite容器</a></li>
 </ul>
 </li>
-<li><a href="#2-实现原理">2 实现原理</a><ul>
-<li><a href="#copyonwritearraylist源码">CopyOnWriteArrayList源码</a><ul>
+<li><a href="#2-%E5%AE%9E%E7%8E%B0%E5%8E%9F%E7%90%86">2 实现原理</a><ul>
+<li><a href="#copyonwritearraylist%E6%BA%90%E7%A0%81">CopyOnWriteArrayList源码</a><ul>
 <li><a href="#copyonwritearraylistadd">CopyOnWriteArrayList#add()</a></li>
 <li><a href="#copyonwritearraylistget">CopyOnWriteArrayList#get()</a></li>
 </ul>
 </li>
-<li><a href="#实现简单的copyonwritemap">实现简单的CopyOnWriteMap</a></li>
+<li><a href="#%E5%AE%9E%E7%8E%B0%E7%AE%80%E5%8D%95%E7%9A%84copyonwritemap">实现简单的CopyOnWriteMap</a></li>
 </ul>
 </li>
-<li><a href="#3-应用场景">3 应用场景</a><ul>
-<li><a href="#31-需要注意两件事情">3.1 需要注意两件事情</a></li>
+<li><a href="#3-%E5%BA%94%E7%94%A8%E5%9C%BA%E6%99%AF">3 应用场景</a><ul>
+<li><a href="#31-%E9%9C%80%E8%A6%81%E6%B3%A8%E6%84%8F%E4%B8%A4%E4%BB%B6%E4%BA%8B%E6%83%85">3.1 需要注意两件事情</a></li>
 </ul>
 </li>
-<li><a href="#4-缺点">4 缺点</a><ul>
-<li><a href="#内存占用问题">内存占用问题</a></li>
-<li><a href="#数据一致性问题">数据一致性问题</a></li>
+<li><a href="#4-%E7%BC%BA%E7%82%B9">4 缺点</a><ul>
+<li><a href="#%E5%86%85%E5%AD%98%E5%8D%A0%E7%94%A8%E9%97%AE%E9%A2%98">内存占用问题</a></li>
+<li><a href="#%E6%95%B0%E6%8D%AE%E4%B8%80%E8%87%B4%E6%80%A7%E9%97%AE%E9%A2%98">数据一致性问题</a></li>
 </ul>
 </li>
 </ul>
@@ -651,6 +655,65 @@ var _hmt = _hmt || [];
         <div class="column-right-shadow is-hidden-widescreen ">
         
             
+<div class="card widget" id="toc">
+    <div class="card-content">
+        <div class="menu">
+            <h3 class="menu-label">
+                目录
+            </h3>
+            <ul class="menu-list"><li>
+        <a class="is-flex" href="#1-基础知识">
+        <span class="has-mr-6">1</span>
+        <span>1 基础知识</span>
+        </a><ul class="menu-list"><li>
+        <a class="is-flex" href="#1-1-CopyOnWrite容器">
+        <span class="has-mr-6">1.1</span>
+        <span>1.1 CopyOnWrite容器</span>
+        </a></li></ul></li><li>
+        <a class="is-flex" href="#2-实现原理">
+        <span class="has-mr-6">2</span>
+        <span>2 实现原理</span>
+        </a><ul class="menu-list"><li>
+        <a class="is-flex" href="#CopyOnWriteArrayList源码">
+        <span class="has-mr-6">2.1</span>
+        <span>CopyOnWriteArrayList源码</span>
+        </a><ul class="menu-list"><li>
+        <a class="is-flex" href="#CopyOnWriteArrayList-add">
+        <span class="has-mr-6">2.1.1</span>
+        <span>CopyOnWriteArrayList#add()</span>
+        </a></li><li>
+        <a class="is-flex" href="#CopyOnWriteArrayList-get">
+        <span class="has-mr-6">2.1.2</span>
+        <span>CopyOnWriteArrayList#get()</span>
+        </a></li></ul></li><li>
+        <a class="is-flex" href="#实现简单的CopyOnWriteMap">
+        <span class="has-mr-6">2.2</span>
+        <span>实现简单的CopyOnWriteMap</span>
+        </a></li></ul></li><li>
+        <a class="is-flex" href="#3-应用场景">
+        <span class="has-mr-6">3</span>
+        <span>3 应用场景</span>
+        </a><ul class="menu-list"><li>
+        <a class="is-flex" href="#3-1-需要注意两件事情">
+        <span class="has-mr-6">3.1</span>
+        <span>3.1 需要注意两件事情</span>
+        </a></li></ul></li><li>
+        <a class="is-flex" href="#4-缺点">
+        <span class="has-mr-6">4</span>
+        <span>4 缺点</span>
+        </a><ul class="menu-list"><li>
+        <a class="is-flex" href="#内存占用问题">
+        <span class="has-mr-6">4.1</span>
+        <span>内存占用问题</span>
+        </a></li><li>
+        <a class="is-flex" href="#数据一致性问题">
+        <span class="has-mr-6">4.2</span>
+        <span>数据一致性问题</span>
+        </a></li></ul></li></ul>
+        </div>
+    </div>
+</div>
+
         
             
 <div class="card widget">
@@ -718,18 +781,18 @@ var _hmt = _hmt || [];
         
         <article class="media">
             <!-- 
-            <a href="/Python2ToPython3/" class="media-left">
+            <a href="/MySQL-Command/" class="media-left">
                 <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Python2切换Python3">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="MySQL基本命令">
                 </p>
             </a>
              -->
             <div class="media-content">
                 <div class="content">
                     <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
-                    <a href="/Python2ToPython3/" class="has-link-black-ter is-size-6">Python2切换Python3</a>
+                    <a href="/MySQL-Command/" class="has-link-black-ter is-size-6">MySQL基本命令</a>
                     <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
+                        <a class="has-link-grey -link" href="/categories/MySQL/">MySQL</a>
                     </p>
                 </div>
             </div>
@@ -737,18 +800,18 @@ var _hmt = _hmt || [];
         
         <article class="media">
             <!-- 
-            <a href="/SDCard-Read-Write/" class="media-left">
+            <a href="/Centos-Line/" class="media-left">
                 <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="SDCard文件读写权限">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Centos命令行图形界面切换">
                 </p>
             </a>
              -->
             <div class="media-content">
                 <div class="content">
                     <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
-                    <a href="/SDCard-Read-Write/" class="has-link-black-ter is-size-6">SDCard文件读写权限</a>
+                    <a href="/Centos-Line/" class="has-link-black-ter is-size-6">Centos命令行图形界面切换</a>
                     <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Android/">Android</a>
+                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
                     </p>
                 </div>
             </div>
@@ -1603,6 +1666,65 @@ var _hmt = _hmt || [];
 <div class="column is-4-tablet is-4-desktop is-3-widescreen is-hidden-touch is-hidden-desktop-only has-order-3 column-right ">
     
         
+<div class="card widget" id="toc">
+    <div class="card-content">
+        <div class="menu">
+            <h3 class="menu-label">
+                目录
+            </h3>
+            <ul class="menu-list"><li>
+        <a class="is-flex" href="#1-基础知识">
+        <span class="has-mr-6">1</span>
+        <span>1 基础知识</span>
+        </a><ul class="menu-list"><li>
+        <a class="is-flex" href="#1-1-CopyOnWrite容器">
+        <span class="has-mr-6">1.1</span>
+        <span>1.1 CopyOnWrite容器</span>
+        </a></li></ul></li><li>
+        <a class="is-flex" href="#2-实现原理">
+        <span class="has-mr-6">2</span>
+        <span>2 实现原理</span>
+        </a><ul class="menu-list"><li>
+        <a class="is-flex" href="#CopyOnWriteArrayList源码">
+        <span class="has-mr-6">2.1</span>
+        <span>CopyOnWriteArrayList源码</span>
+        </a><ul class="menu-list"><li>
+        <a class="is-flex" href="#CopyOnWriteArrayList-add">
+        <span class="has-mr-6">2.1.1</span>
+        <span>CopyOnWriteArrayList#add()</span>
+        </a></li><li>
+        <a class="is-flex" href="#CopyOnWriteArrayList-get">
+        <span class="has-mr-6">2.1.2</span>
+        <span>CopyOnWriteArrayList#get()</span>
+        </a></li></ul></li><li>
+        <a class="is-flex" href="#实现简单的CopyOnWriteMap">
+        <span class="has-mr-6">2.2</span>
+        <span>实现简单的CopyOnWriteMap</span>
+        </a></li></ul></li><li>
+        <a class="is-flex" href="#3-应用场景">
+        <span class="has-mr-6">3</span>
+        <span>3 应用场景</span>
+        </a><ul class="menu-list"><li>
+        <a class="is-flex" href="#3-1-需要注意两件事情">
+        <span class="has-mr-6">3.1</span>
+        <span>3.1 需要注意两件事情</span>
+        </a></li></ul></li><li>
+        <a class="is-flex" href="#4-缺点">
+        <span class="has-mr-6">4</span>
+        <span>4 缺点</span>
+        </a><ul class="menu-list"><li>
+        <a class="is-flex" href="#内存占用问题">
+        <span class="has-mr-6">4.1</span>
+        <span>内存占用问题</span>
+        </a></li><li>
+        <a class="is-flex" href="#数据一致性问题">
+        <span class="has-mr-6">4.2</span>
+        <span>数据一致性问题</span>
+        </a></li></ul></li></ul>
+        </div>
+    </div>
+</div>
+
     
         
 <div class="card widget">
@@ -1670,18 +1792,18 @@ var _hmt = _hmt || [];
         
         <article class="media">
             <!-- 
-            <a href="/Python2ToPython3/" class="media-left">
+            <a href="/MySQL-Command/" class="media-left">
                 <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Python2切换Python3">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="MySQL基本命令">
                 </p>
             </a>
              -->
             <div class="media-content">
                 <div class="content">
                     <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
-                    <a href="/Python2ToPython3/" class="has-link-black-ter is-size-6">Python2切换Python3</a>
+                    <a href="/MySQL-Command/" class="has-link-black-ter is-size-6">MySQL基本命令</a>
                     <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
+                        <a class="has-link-grey -link" href="/categories/MySQL/">MySQL</a>
                     </p>
                 </div>
             </div>
@@ -1689,18 +1811,18 @@ var _hmt = _hmt || [];
         
         <article class="media">
             <!-- 
-            <a href="/SDCard-Read-Write/" class="media-left">
+            <a href="/Centos-Line/" class="media-left">
                 <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="SDCard文件读写权限">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Centos命令行图形界面切换">
                 </p>
             </a>
              -->
             <div class="media-content">
                 <div class="content">
                     <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
-                    <a href="/SDCard-Read-Write/" class="has-link-black-ter is-size-6">SDCard文件读写权限</a>
+                    <a href="/Centos-Line/" class="has-link-black-ter is-size-6">Centos命令行图形界面切换</a>
                     <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Android/">Android</a>
+                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
                     </p>
                 </div>
             </div>

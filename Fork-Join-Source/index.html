@@ -15,7 +15,7 @@
 <meta property="og:site_name" content="Joe|博客">
 <meta property="og:description" content="1 Fork ForkJoinTask#fork() ForkJoinWorkerThread#pushTask() ForkJoinWorkerThread#growQueue()   2 Join ForkJoinTask#doJoin() ForkJoinWorkerThread#unpushTask() ForkJoinWorkerThread#joinTask() ForkJoinW">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:updated_time" content="2018-10-22T00:36:19.883Z">
+<meta property="og:updated_time" content="2019-03-06T19:28:51.437Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Fork-Join源码分析">
 <meta name="twitter:description" content="1 Fork ForkJoinTask#fork() ForkJoinWorkerThread#pushTask() ForkJoinWorkerThread#growQueue()   2 Join ForkJoinTask#doJoin() ForkJoinWorkerThread#unpushTask() ForkJoinWorkerThread#joinTask() ForkJoinW">
@@ -123,6 +123,10 @@ var _hmt = _hmt || [];
             <div class="navbar-end">
                 
                 
+                <a class="navbar-item is-hidden-tablet catalogue" title="目录" href="javascript:;">
+                    <i class="fas fa-list-ul"></i>
+                </a>
+                
                 
                 <a class="navbar-item search" title="搜索" href="javascript:;">
                     <i class="fas fa-search"></i>
@@ -152,7 +156,7 @@ var _hmt = _hmt || [];
                 <span class="level-item has-text-grey">
                     
                     
-                    28 分钟 读完 (大约 4210 个字)
+                    28 分钟 读完 (大约 4212 个字)
                 </span>
                 
                 
@@ -193,7 +197,7 @@ var _hmt = _hmt || [];
 <li><a href="#forkjointaskreportresult">ForkJoinTask#reportResult()</a></li>
 </ul>
 </li>
-<li><a href="#3-总结">3 总结</a></li>
+<li><a href="#3-%E6%80%BB%E7%BB%93">3 总结</a></li>
 </ul>
 <!-- /TOC -->
 <p>这篇源码分析基于JDK7。</p>
@@ -768,6 +772,101 @@ var _hmt = _hmt || [];
         <div class="column-right-shadow is-hidden-widescreen ">
         
             
+<div class="card widget" id="toc">
+    <div class="card-content">
+        <div class="menu">
+            <h3 class="menu-label">
+                目录
+            </h3>
+            <ul class="menu-list"><li>
+        <a class="is-flex" href="#1-Fork">
+        <span class="has-mr-6">1</span>
+        <span>1 Fork</span>
+        </a><ul class="menu-list"><li>
+        <a class="is-flex" href="#ForkJoinTask-fork">
+        <span class="has-mr-6">1.1</span>
+        <span>ForkJoinTask#fork()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ForkJoinWorkerThread-pushTask">
+        <span class="has-mr-6">1.2</span>
+        <span>ForkJoinWorkerThread#pushTask()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ForkJoinWorkerThread-growQueue">
+        <span class="has-mr-6">1.3</span>
+        <span>ForkJoinWorkerThread#growQueue()</span>
+        </a></li></ul></li><li>
+        <a class="is-flex" href="#2-Join">
+        <span class="has-mr-6">2</span>
+        <span>2 Join</span>
+        </a><ul class="menu-list"><li>
+        <a class="is-flex" href="#ForkJoinTask-doJoin">
+        <span class="has-mr-6">2.1</span>
+        <span>ForkJoinTask#doJoin()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ForkJoinWorkerThread-unpushTask">
+        <span class="has-mr-6">2.2</span>
+        <span>ForkJoinWorkerThread#unpushTask()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ForkJoinWorkerThread-joinTask">
+        <span class="has-mr-6">2.3</span>
+        <span>ForkJoinWorkerThread#joinTask()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ForkJoinWorkerThread-localHelpJoinTask">
+        <span class="has-mr-6">2.4</span>
+        <span>ForkJoinWorkerThread#localHelpJoinTask()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ForkJoinWorkerThread-tryDeqAndExec">
+        <span class="has-mr-6">2.5</span>
+        <span>ForkJoinWorkerThread#tryDeqAndExec()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ForkJoinWorkerThread-helpJoinTask">
+        <span class="has-mr-6">2.6</span>
+        <span>ForkJoinWorkerThread#helpJoinTask()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ForkJoinPool-tryAwaitJoin">
+        <span class="has-mr-6">2.7</span>
+        <span>ForkJoinPool#tryAwaitJoin()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ForkJoinPool-tryPreBlock">
+        <span class="has-mr-6">2.8</span>
+        <span>ForkJoinPool#tryPreBlock()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ForkJoinTask-tryAwaitDone">
+        <span class="has-mr-6">2.9</span>
+        <span>ForkJoinTask#tryAwaitDone()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ForkJoinPool-postBlock">
+        <span class="has-mr-6">2.10</span>
+        <span>ForkJoinPool#postBlock()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ForkJoinTask-cancelIgnoringExceptions">
+        <span class="has-mr-6">2.11</span>
+        <span>ForkJoinTask#cancelIgnoringExceptions()</span>
+        </a><ul class="menu-list"><li>
+        <a class="is-flex" href="#cancelIgnoringExceptions">
+        <span class="has-mr-6">2.11.1</span>
+        <span>cancelIgnoringExceptions()</span>
+        </a></li></ul></li><li>
+        <a class="is-flex" href="#ForkJoinTask-getRawResult">
+        <span class="has-mr-6">2.12</span>
+        <span>ForkJoinTask#getRawResult()</span>
+        </a></li><li>
+        <a class="is-flex" href="#RecursiveTask-getRawResult">
+        <span class="has-mr-6">2.13</span>
+        <span>RecursiveTask#getRawResult()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ForkJoinTask-reportResult">
+        <span class="has-mr-6">2.14</span>
+        <span>ForkJoinTask#reportResult()</span>
+        </a></li></ul></li><li>
+        <a class="is-flex" href="#3-总结">
+        <span class="has-mr-6">3</span>
+        <span>3 总结</span>
+        </a></li></ul>
+        </div>
+    </div>
+</div>
+
         
             
 <div class="card widget">
@@ -835,18 +934,18 @@ var _hmt = _hmt || [];
         
         <article class="media">
             <!-- 
-            <a href="/Python2ToPython3/" class="media-left">
+            <a href="/MySQL-Command/" class="media-left">
                 <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Python2切换Python3">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="MySQL基本命令">
                 </p>
             </a>
              -->
             <div class="media-content">
                 <div class="content">
                     <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
-                    <a href="/Python2ToPython3/" class="has-link-black-ter is-size-6">Python2切换Python3</a>
+                    <a href="/MySQL-Command/" class="has-link-black-ter is-size-6">MySQL基本命令</a>
                     <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
+                        <a class="has-link-grey -link" href="/categories/MySQL/">MySQL</a>
                     </p>
                 </div>
             </div>
@@ -854,18 +953,18 @@ var _hmt = _hmt || [];
         
         <article class="media">
             <!-- 
-            <a href="/SDCard-Read-Write/" class="media-left">
+            <a href="/Centos-Line/" class="media-left">
                 <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="SDCard文件读写权限">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Centos命令行图形界面切换">
                 </p>
             </a>
              -->
             <div class="media-content">
                 <div class="content">
                     <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
-                    <a href="/SDCard-Read-Write/" class="has-link-black-ter is-size-6">SDCard文件读写权限</a>
+                    <a href="/Centos-Line/" class="has-link-black-ter is-size-6">Centos命令行图形界面切换</a>
                     <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Android/">Android</a>
+                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
                     </p>
                 </div>
             </div>
@@ -1720,6 +1819,101 @@ var _hmt = _hmt || [];
 <div class="column is-4-tablet is-4-desktop is-3-widescreen is-hidden-touch is-hidden-desktop-only has-order-3 column-right ">
     
         
+<div class="card widget" id="toc">
+    <div class="card-content">
+        <div class="menu">
+            <h3 class="menu-label">
+                目录
+            </h3>
+            <ul class="menu-list"><li>
+        <a class="is-flex" href="#1-Fork">
+        <span class="has-mr-6">1</span>
+        <span>1 Fork</span>
+        </a><ul class="menu-list"><li>
+        <a class="is-flex" href="#ForkJoinTask-fork">
+        <span class="has-mr-6">1.1</span>
+        <span>ForkJoinTask#fork()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ForkJoinWorkerThread-pushTask">
+        <span class="has-mr-6">1.2</span>
+        <span>ForkJoinWorkerThread#pushTask()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ForkJoinWorkerThread-growQueue">
+        <span class="has-mr-6">1.3</span>
+        <span>ForkJoinWorkerThread#growQueue()</span>
+        </a></li></ul></li><li>
+        <a class="is-flex" href="#2-Join">
+        <span class="has-mr-6">2</span>
+        <span>2 Join</span>
+        </a><ul class="menu-list"><li>
+        <a class="is-flex" href="#ForkJoinTask-doJoin">
+        <span class="has-mr-6">2.1</span>
+        <span>ForkJoinTask#doJoin()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ForkJoinWorkerThread-unpushTask">
+        <span class="has-mr-6">2.2</span>
+        <span>ForkJoinWorkerThread#unpushTask()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ForkJoinWorkerThread-joinTask">
+        <span class="has-mr-6">2.3</span>
+        <span>ForkJoinWorkerThread#joinTask()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ForkJoinWorkerThread-localHelpJoinTask">
+        <span class="has-mr-6">2.4</span>
+        <span>ForkJoinWorkerThread#localHelpJoinTask()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ForkJoinWorkerThread-tryDeqAndExec">
+        <span class="has-mr-6">2.5</span>
+        <span>ForkJoinWorkerThread#tryDeqAndExec()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ForkJoinWorkerThread-helpJoinTask">
+        <span class="has-mr-6">2.6</span>
+        <span>ForkJoinWorkerThread#helpJoinTask()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ForkJoinPool-tryAwaitJoin">
+        <span class="has-mr-6">2.7</span>
+        <span>ForkJoinPool#tryAwaitJoin()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ForkJoinPool-tryPreBlock">
+        <span class="has-mr-6">2.8</span>
+        <span>ForkJoinPool#tryPreBlock()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ForkJoinTask-tryAwaitDone">
+        <span class="has-mr-6">2.9</span>
+        <span>ForkJoinTask#tryAwaitDone()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ForkJoinPool-postBlock">
+        <span class="has-mr-6">2.10</span>
+        <span>ForkJoinPool#postBlock()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ForkJoinTask-cancelIgnoringExceptions">
+        <span class="has-mr-6">2.11</span>
+        <span>ForkJoinTask#cancelIgnoringExceptions()</span>
+        </a><ul class="menu-list"><li>
+        <a class="is-flex" href="#cancelIgnoringExceptions">
+        <span class="has-mr-6">2.11.1</span>
+        <span>cancelIgnoringExceptions()</span>
+        </a></li></ul></li><li>
+        <a class="is-flex" href="#ForkJoinTask-getRawResult">
+        <span class="has-mr-6">2.12</span>
+        <span>ForkJoinTask#getRawResult()</span>
+        </a></li><li>
+        <a class="is-flex" href="#RecursiveTask-getRawResult">
+        <span class="has-mr-6">2.13</span>
+        <span>RecursiveTask#getRawResult()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ForkJoinTask-reportResult">
+        <span class="has-mr-6">2.14</span>
+        <span>ForkJoinTask#reportResult()</span>
+        </a></li></ul></li><li>
+        <a class="is-flex" href="#3-总结">
+        <span class="has-mr-6">3</span>
+        <span>3 总结</span>
+        </a></li></ul>
+        </div>
+    </div>
+</div>
+
     
         
 <div class="card widget">
@@ -1787,18 +1981,18 @@ var _hmt = _hmt || [];
         
         <article class="media">
             <!-- 
-            <a href="/Python2ToPython3/" class="media-left">
+            <a href="/MySQL-Command/" class="media-left">
                 <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Python2切换Python3">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="MySQL基本命令">
                 </p>
             </a>
              -->
             <div class="media-content">
                 <div class="content">
                     <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
-                    <a href="/Python2ToPython3/" class="has-link-black-ter is-size-6">Python2切换Python3</a>
+                    <a href="/MySQL-Command/" class="has-link-black-ter is-size-6">MySQL基本命令</a>
                     <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
+                        <a class="has-link-grey -link" href="/categories/MySQL/">MySQL</a>
                     </p>
                 </div>
             </div>
@@ -1806,18 +2000,18 @@ var _hmt = _hmt || [];
         
         <article class="media">
             <!-- 
-            <a href="/SDCard-Read-Write/" class="media-left">
+            <a href="/Centos-Line/" class="media-left">
                 <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="SDCard文件读写权限">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Centos命令行图形界面切换">
                 </p>
             </a>
              -->
             <div class="media-content">
                 <div class="content">
                     <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
-                    <a href="/SDCard-Read-Write/" class="has-link-black-ter is-size-6">SDCard文件读写权限</a>
+                    <a href="/Centos-Line/" class="has-link-black-ter is-size-6">Centos命令行图形界面切换</a>
                     <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Android/">Android</a>
+                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
                     </p>
                 </div>
             </div>

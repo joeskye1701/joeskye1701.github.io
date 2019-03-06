@@ -23,7 +23,7 @@
 <meta property="og:image" content="https://joeskye1701.github.io/JMM-1/jmm-1-6.jpg">
 <meta property="og:image" content="https://joeskye1701.github.io/JMM-1/jmm-1-7.jpg">
 <meta property="og:image" content="https://joeskye1701.github.io/JMM-1/jmm-1-8.jpg">
-<meta property="og:updated_time" content="2018-10-20T00:30:25.649Z">
+<meta property="og:updated_time" content="2019-03-06T19:33:52.549Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="深入理解Java内存模型(基础)">
 <meta name="twitter:description" content="1 并发编程模型的分类 2 Java内存模型的抽象 3 重排序 4 处理器重排序与内存屏障指令 5 Happens-Before 6 参考   1 并发编程模型的分类在并发编程中，我们需要处理两个关键问题：线程之间如何通信及线程之间如何同步。通信是指线程之间以何种机制来交换信息。在命令式编程中，线程之间的通信机制有两种：共享内存和消息传递。在共享内存的并发模型里，线程之间共享程序的公共状态，线">
@@ -132,6 +132,10 @@ var _hmt = _hmt || [];
             <div class="navbar-end">
                 
                 
+                <a class="navbar-item is-hidden-tablet catalogue" title="目录" href="javascript:;">
+                    <i class="fas fa-list-ul"></i>
+                </a>
+                
                 
                 <a class="navbar-item search" title="搜索" href="javascript:;">
                     <i class="fas fa-search"></i>
@@ -161,7 +165,7 @@ var _hmt = _hmt || [];
                 <span class="level-item has-text-grey">
                     
                     
-                    24 分钟 读完 (大约 3623 个字)
+                    24 分钟 读完 (大约 3667 个字)
                 </span>
                 
                 
@@ -176,12 +180,12 @@ var _hmt = _hmt || [];
         <div class="content">
             <!-- TOC -->
 <ul>
-<li><a href="#1-并发编程模型的分类">1 并发编程模型的分类</a></li>
-<li><a href="#2-java内存模型的抽象">2 Java内存模型的抽象</a></li>
-<li><a href="#3-重排序">3 重排序</a></li>
-<li><a href="#4-处理器重排序与内存屏障指令">4 处理器重排序与内存屏障指令</a></li>
+<li><a href="#1-%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B%E6%A8%A1%E5%9E%8B%E7%9A%84%E5%88%86%E7%B1%BB">1 并发编程模型的分类</a></li>
+<li><a href="#2-java%E5%86%85%E5%AD%98%E6%A8%A1%E5%9E%8B%E7%9A%84%E6%8A%BD%E8%B1%A1">2 Java内存模型的抽象</a></li>
+<li><a href="#3-%E9%87%8D%E6%8E%92%E5%BA%8F">3 重排序</a></li>
+<li><a href="#4-%E5%A4%84%E7%90%86%E5%99%A8%E9%87%8D%E6%8E%92%E5%BA%8F%E4%B8%8E%E5%86%85%E5%AD%98%E5%B1%8F%E9%9A%9C%E6%8C%87%E4%BB%A4">4 处理器重排序与内存屏障指令</a></li>
 <li><a href="#5-happens-before">5 Happens-Before</a></li>
-<li><a href="#6-参考">6 参考</a></li>
+<li><a href="#6-%E5%8F%82%E8%80%83">6 参考</a></li>
 </ul>
 <!-- /TOC -->
 <h1 id="1-并发编程模型的分类"><a href="#1-并发编程模型的分类" class="headerlink" title="1 并发编程模型的分类"></a>1 并发编程模型的分类</h1><p>在并发编程中，我们需要处理两个关键问题：线程之间如何通信及线程之间如何同步。通信是指线程之间以何种机制来交换信息。在命令式编程中，线程之间的通信机制有两种：共享内存和消息传递。<br>在共享内存的并发模型里，线程之间共享程序的公共状态，线程之间通过写-读内存中的公共状态来隐式进行通信。<br>在消息传递的并发模型里，线程之间没有公共状态，线程之间必须通过明确的发送消息来显式进行通信。<br>同步是指程序用于控制不同线程之间操作发生相对顺序的机制。在共享内存并发模型里，同步是显式进行的。程序员必须显式指定某个方法或某段代码需要在线程之间互斥执行。在消息传递的并发模型里，由于消息的发送必须在消息的接收之前，因此同步是隐式进行的。<br>Java的并发采用的是共享内存模型（主内存共享），Java线程之间的通信总是隐式进行，整个通信过程对程序员完全透明。如果编写多线程程序的Java程序员不理解隐式进行的线程之间通信的工作机制，很可能会遇到各种奇怪的内存可见性问题。<br><a id="more"></a></p>
@@ -674,6 +678,41 @@ var _hmt = _hmt || [];
         <div class="column-right-shadow is-hidden-widescreen ">
         
             
+<div class="card widget" id="toc">
+    <div class="card-content">
+        <div class="menu">
+            <h3 class="menu-label">
+                目录
+            </h3>
+            <ul class="menu-list"><li>
+        <a class="is-flex" href="#1-并发编程模型的分类">
+        <span class="has-mr-6">1</span>
+        <span>1 并发编程模型的分类</span>
+        </a></li><li>
+        <a class="is-flex" href="#2-Java内存模型的抽象">
+        <span class="has-mr-6">2</span>
+        <span>2 Java内存模型的抽象</span>
+        </a></li><li>
+        <a class="is-flex" href="#3-重排序">
+        <span class="has-mr-6">3</span>
+        <span>3 重排序</span>
+        </a></li><li>
+        <a class="is-flex" href="#4-处理器重排序与内存屏障指令">
+        <span class="has-mr-6">4</span>
+        <span>4 处理器重排序与内存屏障指令</span>
+        </a></li><li>
+        <a class="is-flex" href="#5-Happens-Before">
+        <span class="has-mr-6">5</span>
+        <span>5 Happens-Before</span>
+        </a></li><li>
+        <a class="is-flex" href="#6-参考">
+        <span class="has-mr-6">6</span>
+        <span>6 参考</span>
+        </a></li></ul>
+        </div>
+    </div>
+</div>
+
         
             
 <div class="card widget">
@@ -741,18 +780,18 @@ var _hmt = _hmt || [];
         
         <article class="media">
             <!-- 
-            <a href="/Python2ToPython3/" class="media-left">
+            <a href="/MySQL-Command/" class="media-left">
                 <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Python2切换Python3">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="MySQL基本命令">
                 </p>
             </a>
              -->
             <div class="media-content">
                 <div class="content">
                     <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
-                    <a href="/Python2ToPython3/" class="has-link-black-ter is-size-6">Python2切换Python3</a>
+                    <a href="/MySQL-Command/" class="has-link-black-ter is-size-6">MySQL基本命令</a>
                     <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
+                        <a class="has-link-grey -link" href="/categories/MySQL/">MySQL</a>
                     </p>
                 </div>
             </div>
@@ -760,18 +799,18 @@ var _hmt = _hmt || [];
         
         <article class="media">
             <!-- 
-            <a href="/SDCard-Read-Write/" class="media-left">
+            <a href="/Centos-Line/" class="media-left">
                 <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="SDCard文件读写权限">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Centos命令行图形界面切换">
                 </p>
             </a>
              -->
             <div class="media-content">
                 <div class="content">
                     <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
-                    <a href="/SDCard-Read-Write/" class="has-link-black-ter is-size-6">SDCard文件读写权限</a>
+                    <a href="/Centos-Line/" class="has-link-black-ter is-size-6">Centos命令行图形界面切换</a>
                     <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Android/">Android</a>
+                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
                     </p>
                 </div>
             </div>
@@ -1626,6 +1665,41 @@ var _hmt = _hmt || [];
 <div class="column is-4-tablet is-4-desktop is-3-widescreen is-hidden-touch is-hidden-desktop-only has-order-3 column-right ">
     
         
+<div class="card widget" id="toc">
+    <div class="card-content">
+        <div class="menu">
+            <h3 class="menu-label">
+                目录
+            </h3>
+            <ul class="menu-list"><li>
+        <a class="is-flex" href="#1-并发编程模型的分类">
+        <span class="has-mr-6">1</span>
+        <span>1 并发编程模型的分类</span>
+        </a></li><li>
+        <a class="is-flex" href="#2-Java内存模型的抽象">
+        <span class="has-mr-6">2</span>
+        <span>2 Java内存模型的抽象</span>
+        </a></li><li>
+        <a class="is-flex" href="#3-重排序">
+        <span class="has-mr-6">3</span>
+        <span>3 重排序</span>
+        </a></li><li>
+        <a class="is-flex" href="#4-处理器重排序与内存屏障指令">
+        <span class="has-mr-6">4</span>
+        <span>4 处理器重排序与内存屏障指令</span>
+        </a></li><li>
+        <a class="is-flex" href="#5-Happens-Before">
+        <span class="has-mr-6">5</span>
+        <span>5 Happens-Before</span>
+        </a></li><li>
+        <a class="is-flex" href="#6-参考">
+        <span class="has-mr-6">6</span>
+        <span>6 参考</span>
+        </a></li></ul>
+        </div>
+    </div>
+</div>
+
     
         
 <div class="card widget">
@@ -1693,18 +1767,18 @@ var _hmt = _hmt || [];
         
         <article class="media">
             <!-- 
-            <a href="/Python2ToPython3/" class="media-left">
+            <a href="/MySQL-Command/" class="media-left">
                 <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Python2切换Python3">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="MySQL基本命令">
                 </p>
             </a>
              -->
             <div class="media-content">
                 <div class="content">
                     <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
-                    <a href="/Python2ToPython3/" class="has-link-black-ter is-size-6">Python2切换Python3</a>
+                    <a href="/MySQL-Command/" class="has-link-black-ter is-size-6">MySQL基本命令</a>
                     <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
+                        <a class="has-link-grey -link" href="/categories/MySQL/">MySQL</a>
                     </p>
                 </div>
             </div>
@@ -1712,18 +1786,18 @@ var _hmt = _hmt || [];
         
         <article class="media">
             <!-- 
-            <a href="/SDCard-Read-Write/" class="media-left">
+            <a href="/Centos-Line/" class="media-left">
                 <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="SDCard文件读写权限">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Centos命令行图形界面切换">
                 </p>
             </a>
              -->
             <div class="media-content">
                 <div class="content">
                     <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
-                    <a href="/SDCard-Read-Write/" class="has-link-black-ter is-size-6">SDCard文件读写权限</a>
+                    <a href="/Centos-Line/" class="has-link-black-ter is-size-6">Centos命令行图形界面切换</a>
                     <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Android/">Android</a>
+                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
                     </p>
                 </div>
             </div>

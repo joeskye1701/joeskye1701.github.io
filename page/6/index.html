@@ -215,7 +215,7 @@ var _hmt = _hmt || [];
                 <span class="level-item has-text-grey">
                     
                     
-                    32 分钟 读完 (大约 4800 个字)
+                    33 分钟 读完 (大约 4898 个字)
                 </span>
                 
                 
@@ -230,24 +230,24 @@ var _hmt = _hmt || [];
         <div class="content">
             <!-- TOC -->
 <ul>
-<li><a href="#1-volatile特性">1 volatile特性</a></li>
-<li><a href="#2-volatile写-读建立的happens-before关系">2 volatile写-读建立的happens-before关系</a><ul>
-<li><a href="#happens-before在jsr-133中的规则">happens-before在JSR-133中的规则</a></li>
+<li><a href="#1-volatile%E7%89%B9%E6%80%A7">1 volatile特性</a></li>
+<li><a href="#2-volatile%E5%86%99-%E8%AF%BB%E5%BB%BA%E7%AB%8B%E7%9A%84happens-before%E5%85%B3%E7%B3%BB">2 volatile写-读建立的happens-before关系</a><ul>
+<li><a href="#happens-before%E5%9C%A8jsr-133%E4%B8%AD%E7%9A%84%E8%A7%84%E5%88%99">happens-before在JSR-133中的规则`</a></li>
 </ul>
 </li>
-<li><a href="#3-volatile写-读的内存语义">3 volatile写-读的内存语义</a><ul>
-<li><a href="#volatile写的内存语义如下">volatile写的内存语义如下</a></li>
-<li><a href="#volatile读的内存语义如下">volatile读的内存语义如下</a></li>
+<li><a href="#3-volatile%E5%86%99-%E8%AF%BB%E7%9A%84%E5%86%85%E5%AD%98%E8%AF%AD%E4%B9%89">3 volatile写-读的内存语义</a><ul>
+<li><a href="#volatile%E5%86%99%E7%9A%84%E5%86%85%E5%AD%98%E8%AF%AD%E4%B9%89%E5%A6%82%E4%B8%8B">volatile写的内存语义如下</a></li>
+<li><a href="#volatile%E8%AF%BB%E7%9A%84%E5%86%85%E5%AD%98%E8%AF%AD%E4%B9%89%E5%A6%82%E4%B8%8B">volatile读的内存语义如下</a></li>
 </ul>
 </li>
-<li><a href="#4-volatile内存语义的实现">4 volatile内存语义的实现</a><ul>
-<li><a href="#volatile写插入内存屏障">volatile写插入内存屏障</a></li>
-<li><a href="#volatile读插入内存屏障">volatile读插入内存屏障</a></li>
-<li><a href="#编译器对内存屏障进行优化">编译器对内存屏障进行优化</a></li>
+<li><a href="#4-volatile%E5%86%85%E5%AD%98%E8%AF%AD%E4%B9%89%E7%9A%84%E5%AE%9E%E7%8E%B0">4 volatile内存语义的实现</a><ul>
+<li><a href="#volatile%E5%86%99%E6%8F%92%E5%85%A5%E5%86%85%E5%AD%98%E5%B1%8F%E9%9A%9C">volatile写插入内存屏障</a></li>
+<li><a href="#volatile%E8%AF%BB%E6%8F%92%E5%85%A5%E5%86%85%E5%AD%98%E5%B1%8F%E9%9A%9C">volatile读插入内存屏障</a></li>
+<li><a href="#%E7%BC%96%E8%AF%91%E5%99%A8%E5%AF%B9%E5%86%85%E5%AD%98%E5%B1%8F%E9%9A%9C%E8%BF%9B%E8%A1%8C%E4%BC%98%E5%8C%96">编译器对内存屏障进行优化</a></li>
 </ul>
 </li>
-<li><a href="#5-jsr-133为什么要增强volatile的内存语义">5 JSR-133为什么要增强volatile的内存语义</a></li>
-<li><a href="#6-参考">6 参考</a></li>
+<li><a href="#5-jsr-133%E4%B8%BA%E4%BB%80%E4%B9%88%E8%A6%81%E5%A2%9E%E5%BC%BAvolatile%E7%9A%84%E5%86%85%E5%AD%98%E8%AF%AD%E4%B9%89">5 JSR-133为什么要增强volatile的内存语义</a></li>
+<li><a href="#6-%E5%8F%82%E8%80%83">6 参考</a></li>
 </ul>
 <!-- /TOC -->
 <h1 id="1-volatile特性"><a href="#1-volatile特性" class="headerlink" title="1 volatile特性"></a>1 volatile特性</h1><p>当我们声明共享变量为<code>volatile</code>后，对这个变量的读/写将会很特别。<br>理解<code>volatile</code>特性的一个好方法，把对<code>volatile</code>变量的单个读/写，看成是使用同一个监视器锁对这些单个读/写操作做了同步。下面我们通过具体的示例来说明，请看下面的示例代码：<br><figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">VolatileFeaturesExample</span> </span>&#123;</span><br><span class="line">    <span class="hljs-keyword">volatile</span> <span class="hljs-keyword">long</span> vl = <span class="hljs-number">0L</span>;  <span class="hljs-comment">//使用volatile声明64位的long型变量</span></span><br><span class="line"></span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">set</span><span class="hljs-params">(<span class="hljs-keyword">long</span> l)</span> </span>&#123;</span><br><span class="line">        vl = l;   <span class="hljs-comment">//单个volatile变量的写</span></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">getAndIncrement</span> <span class="hljs-params">()</span> </span>&#123;</span><br><span class="line">        vl++;    <span class="hljs-comment">//复合（多个）volatile变量的读/写</span></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">long</span> <span class="hljs-title">get</span><span class="hljs-params">()</span> </span>&#123;</span><br><span class="line">        <span class="hljs-keyword">return</span> vl;   <span class="hljs-comment">//单个volatile变量的读</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
@@ -297,7 +297,7 @@ var _hmt = _hmt || [];
                 <span class="level-item has-text-grey">
                     
                     
-                    24 分钟 读完 (大约 3623 个字)
+                    24 分钟 读完 (大约 3667 个字)
                 </span>
                 
                 
@@ -312,12 +312,12 @@ var _hmt = _hmt || [];
         <div class="content">
             <!-- TOC -->
 <ul>
-<li><a href="#1-并发编程模型的分类">1 并发编程模型的分类</a></li>
-<li><a href="#2-java内存模型的抽象">2 Java内存模型的抽象</a></li>
-<li><a href="#3-重排序">3 重排序</a></li>
-<li><a href="#4-处理器重排序与内存屏障指令">4 处理器重排序与内存屏障指令</a></li>
+<li><a href="#1-%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B%E6%A8%A1%E5%9E%8B%E7%9A%84%E5%88%86%E7%B1%BB">1 并发编程模型的分类</a></li>
+<li><a href="#2-java%E5%86%85%E5%AD%98%E6%A8%A1%E5%9E%8B%E7%9A%84%E6%8A%BD%E8%B1%A1">2 Java内存模型的抽象</a></li>
+<li><a href="#3-%E9%87%8D%E6%8E%92%E5%BA%8F">3 重排序</a></li>
+<li><a href="#4-%E5%A4%84%E7%90%86%E5%99%A8%E9%87%8D%E6%8E%92%E5%BA%8F%E4%B8%8E%E5%86%85%E5%AD%98%E5%B1%8F%E9%9A%9C%E6%8C%87%E4%BB%A4">4 处理器重排序与内存屏障指令</a></li>
 <li><a href="#5-happens-before">5 Happens-Before</a></li>
-<li><a href="#6-参考">6 参考</a></li>
+<li><a href="#6-%E5%8F%82%E8%80%83">6 参考</a></li>
 </ul>
 <!-- /TOC -->
 <h1 id="1-并发编程模型的分类"><a href="#1-并发编程模型的分类" class="headerlink" title="1 并发编程模型的分类"></a>1 并发编程模型的分类</h1><p>在并发编程中，我们需要处理两个关键问题：线程之间如何通信及线程之间如何同步。通信是指线程之间以何种机制来交换信息。在命令式编程中，线程之间的通信机制有两种：共享内存和消息传递。<br>在共享内存的并发模型里，线程之间共享程序的公共状态，线程之间通过写-读内存中的公共状态来隐式进行通信。<br>在消息传递的并发模型里，线程之间没有公共状态，线程之间必须通过明确的发送消息来显式进行通信。<br>同步是指程序用于控制不同线程之间操作发生相对顺序的机制。在共享内存并发模型里，同步是显式进行的。程序员必须显式指定某个方法或某段代码需要在线程之间互斥执行。在消息传递的并发模型里，由于消息的发送必须在消息的接收之前，因此同步是隐式进行的。<br>Java的并发采用的是共享内存模型（主内存共享），Java线程之间的通信总是隐式进行，整个通信过程对程序员完全透明。如果编写多线程程序的Java程序员不理解隐式进行的线程之间通信的工作机制，很可能会遇到各种奇怪的内存可见性问题。<br></p>
@@ -515,7 +515,7 @@ var _hmt = _hmt || [];
                 <span class="level-item has-text-grey">
                     
                     
-                    25 分钟 读完 (大约 3732 个字)
+                    25 分钟 读完 (大约 3788 个字)
                 </span>
                 
                 
@@ -530,27 +530,27 @@ var _hmt = _hmt || [];
         <div class="content">
             <!-- TOC -->
 <ul>
-<li><a href="#1-基础">1 基础</a></li>
-<li><a href="#2-对象销毁和对象重生">2 对象销毁和对象重生</a><ul>
+<li><a href="#1-%E5%9F%BA%E7%A1%80">1 基础</a></li>
+<li><a href="#2-%E5%AF%B9%E8%B1%A1%E9%94%80%E6%AF%81%E5%92%8C%E5%AF%B9%E8%B1%A1%E9%87%8D%E7%94%9F">2 对象销毁和对象重生</a><ul>
 <li><a href="#unfinalized">unfinalized</a></li>
 <li><a href="#finalizable">finalizable</a></li>
 <li><a href="#finalized">finalized</a></li>
 <li><a href="#reachable">reachable</a></li>
 <li><a href="#finalizer-reachable">finalizer-reachable</a></li>
 <li><a href="#unreachable">unreachable</a></li>
-<li><a href="#22-对象再生">2.2 对象再生</a><ul>
-<li><a href="#221-例子1">2.2.1 例子1</a></li>
-<li><a href="#222-例子2">2.2.2 例子2</a></li>
+<li><a href="#22-%E5%AF%B9%E8%B1%A1%E5%86%8D%E7%94%9F">2.2 对象再生</a><ul>
+<li><a href="#221-%E4%BE%8B%E5%AD%901">2.2.1 例子1</a></li>
+<li><a href="#222-%E4%BE%8B%E5%AD%902">2.2.2 例子2</a></li>
 </ul>
 </li>
 </ul>
 </li>
-<li><a href="#3-finalize执行顺序">3 Finalize执行顺序</a></li>
-<li><a href="#4-何时及如何使用finalize">4 何时及如何使用finalize</a></li>
-<li><a href="#5-finalize的安全性">5 finalize的安全性</a><ul>
-<li><a href="#51-finalizer类属性结构">5.1 Finalizer类属性结构</a></li>
+<li><a href="#3-finalize%E6%89%A7%E8%A1%8C%E9%A1%BA%E5%BA%8F">3 Finalize执行顺序</a></li>
+<li><a href="#4-%E4%BD%95%E6%97%B6%E5%8F%8A%E5%A6%82%E4%BD%95%E4%BD%BF%E7%94%A8finalize">4 何时及如何使用finalize</a></li>
+<li><a href="#5-finalize%E7%9A%84%E5%AE%89%E5%85%A8%E6%80%A7">5 finalize的安全性</a><ul>
+<li><a href="#51-finalizer%E7%B1%BB%E5%B1%9E%E6%80%A7%E7%BB%93%E6%9E%84">5.1 Finalizer类属性结构</a></li>
 <li><a href="#52-finalizerclass">5.2 Finalizer.class</a></li>
-<li><a href="#53-总结">5.3 总结</a></li>
+<li><a href="#53-%E6%80%BB%E7%BB%93">5.3 总结</a></li>
 </ul>
 </li>
 </ul>
@@ -1347,18 +1347,18 @@ var _hmt = _hmt || [];
         
         <article class="media">
             <!-- 
-            <a href="/Python2ToPython3/" class="media-left">
+            <a href="/MySQL-Command/" class="media-left">
                 <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Python2切换Python3">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="MySQL基本命令">
                 </p>
             </a>
              -->
             <div class="media-content">
                 <div class="content">
                     <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
-                    <a href="/Python2ToPython3/" class="has-link-black-ter is-size-6">Python2切换Python3</a>
+                    <a href="/MySQL-Command/" class="has-link-black-ter is-size-6">MySQL基本命令</a>
                     <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
+                        <a class="has-link-grey -link" href="/categories/MySQL/">MySQL</a>
                     </p>
                 </div>
             </div>
@@ -1366,18 +1366,18 @@ var _hmt = _hmt || [];
         
         <article class="media">
             <!-- 
-            <a href="/SDCard-Read-Write/" class="media-left">
+            <a href="/Centos-Line/" class="media-left">
                 <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="SDCard文件读写权限">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Centos命令行图形界面切换">
                 </p>
             </a>
              -->
             <div class="media-content">
                 <div class="content">
                     <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
-                    <a href="/SDCard-Read-Write/" class="has-link-black-ter is-size-6">SDCard文件读写权限</a>
+                    <a href="/Centos-Line/" class="has-link-black-ter is-size-6">Centos命令行图形界面切换</a>
                     <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Android/">Android</a>
+                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
                     </p>
                 </div>
             </div>
@@ -2299,18 +2299,18 @@ var _hmt = _hmt || [];
         
         <article class="media">
             <!-- 
-            <a href="/Python2ToPython3/" class="media-left">
+            <a href="/MySQL-Command/" class="media-left">
                 <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Python2切换Python3">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="MySQL基本命令">
                 </p>
             </a>
              -->
             <div class="media-content">
                 <div class="content">
                     <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
-                    <a href="/Python2ToPython3/" class="has-link-black-ter is-size-6">Python2切换Python3</a>
+                    <a href="/MySQL-Command/" class="has-link-black-ter is-size-6">MySQL基本命令</a>
                     <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
+                        <a class="has-link-grey -link" href="/categories/MySQL/">MySQL</a>
                     </p>
                 </div>
             </div>
@@ -2318,18 +2318,18 @@ var _hmt = _hmt || [];
         
         <article class="media">
             <!-- 
-            <a href="/SDCard-Read-Write/" class="media-left">
+            <a href="/Centos-Line/" class="media-left">
                 <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="SDCard文件读写权限">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Centos命令行图形界面切换">
                 </p>
             </a>
              -->
             <div class="media-content">
                 <div class="content">
                     <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
-                    <a href="/SDCard-Read-Write/" class="has-link-black-ter is-size-6">SDCard文件读写权限</a>
+                    <a href="/Centos-Line/" class="has-link-black-ter is-size-6">Centos命令行图形界面切换</a>
                     <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Android/">Android</a>
+                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
                     </p>
                 </div>
             </div>

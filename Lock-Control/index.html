@@ -7,18 +7,18 @@
 
 
 
-    <meta name="description" content="update数据库的时候，数据库控制并发的方式，基本分为2种：乐观锁、悲观锁。 悲观锁锁记录我们一般的操作就是SELECT … FOR UPDATE，行级锁。这个SQL在读取完数据后，就能把这行数据锁住，防止其它SESSION对行数据进行修改。这就是我们所说的悲观锁。为什么叫悲观锁呢，因为它会让其它SESSION阻塞，等待锁定行记录的那条SESSION将修改COMMIT掉后才能获得对行数据的操作资">
+    <meta name="description" content="悲观锁 乐观锁   update数据库的时候，数据库控制并发的方式，基本分为2种：乐观锁、悲观锁。 悲观锁锁记录我们一般的操作就是SELECT … FOR UPDATE，行级锁。这个SQL在读取完数据后，就能把这行数据锁住，防止其它SESSION对行数据进行修改。这就是我们所说的悲观锁。为什么叫悲观锁呢，因为它会让其它SESSION阻塞，等待锁定行记录的那条SESSION将修改COMMIT掉后">
 <meta name="keywords" content="Centos,Linux">
 <meta property="og:type" content="article">
 <meta property="og:title" content="锁粒度的控制">
 <meta property="og:url" content="https://joeskye1701.github.io/Lock-Control/index.html">
 <meta property="og:site_name" content="Joe|博客">
-<meta property="og:description" content="update数据库的时候，数据库控制并发的方式，基本分为2种：乐观锁、悲观锁。 悲观锁锁记录我们一般的操作就是SELECT … FOR UPDATE，行级锁。这个SQL在读取完数据后，就能把这行数据锁住，防止其它SESSION对行数据进行修改。这就是我们所说的悲观锁。为什么叫悲观锁呢，因为它会让其它SESSION阻塞，等待锁定行记录的那条SESSION将修改COMMIT掉后才能获得对行数据的操作资">
+<meta property="og:description" content="悲观锁 乐观锁   update数据库的时候，数据库控制并发的方式，基本分为2种：乐观锁、悲观锁。 悲观锁锁记录我们一般的操作就是SELECT … FOR UPDATE，行级锁。这个SQL在读取完数据后，就能把这行数据锁住，防止其它SESSION对行数据进行修改。这就是我们所说的悲观锁。为什么叫悲观锁呢，因为它会让其它SESSION阻塞，等待锁定行记录的那条SESSION将修改COMMIT掉后">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:updated_time" content="2019-02-25T21:20:07.504Z">
+<meta property="og:updated_time" content="2019-03-06T19:47:36.555Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="锁粒度的控制">
-<meta name="twitter:description" content="update数据库的时候，数据库控制并发的方式，基本分为2种：乐观锁、悲观锁。 悲观锁锁记录我们一般的操作就是SELECT … FOR UPDATE，行级锁。这个SQL在读取完数据后，就能把这行数据锁住，防止其它SESSION对行数据进行修改。这就是我们所说的悲观锁。为什么叫悲观锁呢，因为它会让其它SESSION阻塞，等待锁定行记录的那条SESSION将修改COMMIT掉后才能获得对行数据的操作资">
+<meta name="twitter:description" content="悲观锁 乐观锁   update数据库的时候，数据库控制并发的方式，基本分为2种：乐观锁、悲观锁。 悲观锁锁记录我们一般的操作就是SELECT … FOR UPDATE，行级锁。这个SQL在读取完数据后，就能把这行数据锁住，防止其它SESSION对行数据进行修改。这就是我们所说的悲观锁。为什么叫悲观锁呢，因为它会让其它SESSION阻塞，等待锁定行记录的那条SESSION将修改COMMIT掉后">
 
 
 
@@ -123,6 +123,10 @@ var _hmt = _hmt || [];
             <div class="navbar-end">
                 
                 
+                <a class="navbar-item is-hidden-tablet catalogue" title="目录" href="javascript:;">
+                    <i class="fas fa-list-ul"></i>
+                </a>
+                
                 
                 <a class="navbar-item search" title="搜索" href="javascript:;">
                     <i class="fas fa-search"></i>
@@ -152,7 +156,7 @@ var _hmt = _hmt || [];
                 <span class="level-item has-text-grey">
                     
                     
-                    4 分钟 读完 (大约 586 个字)
+                    4 分钟 读完 (大约 604 个字)
                 </span>
                 
                 
@@ -165,7 +169,13 @@ var _hmt = _hmt || [];
             
         </h1>
         <div class="content">
-            <p>update数据库的时候，数据库控制并发的方式，基本分为2种：乐观锁、悲观锁。</p>
+            <!-- TOC -->
+<ul>
+<li><a href="#%E6%82%B2%E8%A7%82%E9%94%81">悲观锁</a></li>
+<li><a href="#%E4%B9%90%E8%A7%82%E9%94%81">乐观锁</a></li>
+</ul>
+<!-- /TOC -->
+<p>update数据库的时候，数据库控制并发的方式，基本分为2种：乐观锁、悲观锁。</p>
 <h1 id="悲观锁"><a href="#悲观锁" class="headerlink" title="悲观锁"></a>悲观锁</h1><p>锁记录我们一般的操作就是SELECT … FOR UPDATE，行级锁。这个SQL在读取完数据后，就能把这行数据锁住，防止其它SESSION对行数据进行修改。这就是我们所说的悲观锁。<br>为什么叫悲观锁呢，因为它会让其它SESSION阻塞，等待锁定行记录的那条SESSION将修改COMMIT掉后才能获得对行数据的操作资源。<br>我们通常不提倡用悲观锁，为什么呢？因为我们通常公司里的服务都是访问量挺高的，所以占用数据池资源是挺大的，如果用悲观锁，就会导致很多的资源阻塞而无法使用，这样我们的系统便会变得很慢，老是在等资源。<br>个人觉得悲观锁的使用场景得看业务和实际情况，如果这个模块本身访问量就很低，那就可以用悲观锁。<br><a id="more"></a></p>
 <h1 id="乐观锁"><a href="#乐观锁" class="headerlink" title="乐观锁"></a>乐观锁</h1><p>在表中加入版本号字段，更新时将版本号同时更新。<br>在表中加入字段，每次UPDATE前会先去读取该版本号（可以是一个整数），更新的时候将之前读取版本号加1再和实际那行的版本号比较，如果大于实际版本号便更新，其他则失败。<br>举个例子，比如表中的字段LOCK_ST = 0。2个SEESION同时去更新它，a SESSION和b SESSION同时会读取0这个值，然后a比较快，更新了这条数据，并把版本字段LOCK_ST更新成1，这个时候b再去更新，b会把读到的LOCK_ST加1，<br>也就是0+1，然后提交更新的时候比较版本号，发现1=1，所以更新不了，于是b就失败了。这就是我们所说的乐观锁。不锁定资源，任由所有SESSION都去更新，但是更新会失败。<br>通常我们的系统中比较提倡乐观锁，原因和悲观锁正好相反。</p>
 
@@ -618,6 +628,25 @@ var _hmt = _hmt || [];
         <div class="column-right-shadow is-hidden-widescreen ">
         
             
+<div class="card widget" id="toc">
+    <div class="card-content">
+        <div class="menu">
+            <h3 class="menu-label">
+                目录
+            </h3>
+            <ul class="menu-list"><li>
+        <a class="is-flex" href="#悲观锁">
+        <span class="has-mr-6">1</span>
+        <span>悲观锁</span>
+        </a></li><li>
+        <a class="is-flex" href="#乐观锁">
+        <span class="has-mr-6">2</span>
+        <span>乐观锁</span>
+        </a></li></ul>
+        </div>
+    </div>
+</div>
+
         
             
 <div class="card widget">
@@ -685,18 +714,18 @@ var _hmt = _hmt || [];
         
         <article class="media">
             <!-- 
-            <a href="/Python2ToPython3/" class="media-left">
+            <a href="/MySQL-Command/" class="media-left">
                 <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Python2切换Python3">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="MySQL基本命令">
                 </p>
             </a>
              -->
             <div class="media-content">
                 <div class="content">
                     <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
-                    <a href="/Python2ToPython3/" class="has-link-black-ter is-size-6">Python2切换Python3</a>
+                    <a href="/MySQL-Command/" class="has-link-black-ter is-size-6">MySQL基本命令</a>
                     <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
+                        <a class="has-link-grey -link" href="/categories/MySQL/">MySQL</a>
                     </p>
                 </div>
             </div>
@@ -704,18 +733,18 @@ var _hmt = _hmt || [];
         
         <article class="media">
             <!-- 
-            <a href="/SDCard-Read-Write/" class="media-left">
+            <a href="/Centos-Line/" class="media-left">
                 <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="SDCard文件读写权限">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Centos命令行图形界面切换">
                 </p>
             </a>
              -->
             <div class="media-content">
                 <div class="content">
                     <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
-                    <a href="/SDCard-Read-Write/" class="has-link-black-ter is-size-6">SDCard文件读写权限</a>
+                    <a href="/Centos-Line/" class="has-link-black-ter is-size-6">Centos命令行图形界面切换</a>
                     <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Android/">Android</a>
+                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
                     </p>
                 </div>
             </div>
@@ -1570,6 +1599,25 @@ var _hmt = _hmt || [];
 <div class="column is-4-tablet is-4-desktop is-3-widescreen is-hidden-touch is-hidden-desktop-only has-order-3 column-right ">
     
         
+<div class="card widget" id="toc">
+    <div class="card-content">
+        <div class="menu">
+            <h3 class="menu-label">
+                目录
+            </h3>
+            <ul class="menu-list"><li>
+        <a class="is-flex" href="#悲观锁">
+        <span class="has-mr-6">1</span>
+        <span>悲观锁</span>
+        </a></li><li>
+        <a class="is-flex" href="#乐观锁">
+        <span class="has-mr-6">2</span>
+        <span>乐观锁</span>
+        </a></li></ul>
+        </div>
+    </div>
+</div>
+
     
         
 <div class="card widget">
@@ -1637,18 +1685,18 @@ var _hmt = _hmt || [];
         
         <article class="media">
             <!-- 
-            <a href="/Python2ToPython3/" class="media-left">
+            <a href="/MySQL-Command/" class="media-left">
                 <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Python2切换Python3">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="MySQL基本命令">
                 </p>
             </a>
              -->
             <div class="media-content">
                 <div class="content">
                     <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
-                    <a href="/Python2ToPython3/" class="has-link-black-ter is-size-6">Python2切换Python3</a>
+                    <a href="/MySQL-Command/" class="has-link-black-ter is-size-6">MySQL基本命令</a>
                     <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
+                        <a class="has-link-grey -link" href="/categories/MySQL/">MySQL</a>
                     </p>
                 </div>
             </div>
@@ -1656,18 +1704,18 @@ var _hmt = _hmt || [];
         
         <article class="media">
             <!-- 
-            <a href="/SDCard-Read-Write/" class="media-left">
+            <a href="/Centos-Line/" class="media-left">
                 <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="SDCard文件读写权限">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Centos命令行图形界面切换">
                 </p>
             </a>
              -->
             <div class="media-content">
                 <div class="content">
                     <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
-                    <a href="/SDCard-Read-Write/" class="has-link-black-ter is-size-6">SDCard文件读写权限</a>
+                    <a href="/Centos-Line/" class="has-link-black-ter is-size-6">Centos命令行图形界面切换</a>
                     <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Android/">Android</a>
+                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
                     </p>
                 </div>
             </div>

@@ -15,7 +15,7 @@
 <meta property="og:site_name" content="Joe|博客">
 <meta property="og:description" content="1 介绍CountDownLatch 2 源码分析 CountDownLatch#Sync CountDownLatch   3 总结   1 介绍CountDownLatch一种锁，称为闭锁。可以让一个或多个线程等待另外一个或多个线程执行完毕后再执行。CountDownLatch是基于AQS构建，使用共享模式。CountDownLatch中提供一个count值来表示要等待的(其他任务)完成次">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:updated_time" content="2018-10-23T04:07:48.457Z">
+<meta property="og:updated_time" content="2019-03-06T19:31:54.198Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="JDK1.6 CountDownLatch">
 <meta name="twitter:description" content="1 介绍CountDownLatch 2 源码分析 CountDownLatch#Sync CountDownLatch   3 总结   1 介绍CountDownLatch一种锁，称为闭锁。可以让一个或多个线程等待另外一个或多个线程执行完毕后再执行。CountDownLatch是基于AQS构建，使用共享模式。CountDownLatch中提供一个count值来表示要等待的(其他任务)完成次">
@@ -123,6 +123,10 @@ var _hmt = _hmt || [];
             <div class="navbar-end">
                 
                 
+                <a class="navbar-item is-hidden-tablet catalogue" title="目录" href="javascript:;">
+                    <i class="fas fa-list-ul"></i>
+                </a>
+                
                 
                 <a class="navbar-item search" title="搜索" href="javascript:;">
                     <i class="fas fa-search"></i>
@@ -152,7 +156,7 @@ var _hmt = _hmt || [];
                 <span class="level-item has-text-grey">
                     
                     
-                    9 分钟 读完 (大约 1357 个字)
+                    9 分钟 读完 (大约 1365 个字)
                 </span>
                 
                 
@@ -167,13 +171,13 @@ var _hmt = _hmt || [];
         <div class="content">
             <!-- TOC -->
 <ul>
-<li><a href="#1-介绍countdownlatch">1 介绍CountDownLatch</a></li>
-<li><a href="#2-源码分析">2 源码分析</a><ul>
+<li><a href="#1-%E4%BB%8B%E7%BB%8Dcountdownlatch">1 介绍CountDownLatch</a></li>
+<li><a href="#2-%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90">2 源码分析</a><ul>
 <li><a href="#countdownlatchsync">CountDownLatch#Sync</a></li>
 <li><a href="#countdownlatch">CountDownLatch</a></li>
 </ul>
 </li>
-<li><a href="#3-总结">3 总结</a></li>
+<li><a href="#3-%E6%80%BB%E7%BB%93">3 总结</a></li>
 </ul>
 <!-- /TOC -->
 <h1 id="1-介绍CountDownLatch"><a href="#1-介绍CountDownLatch" class="headerlink" title="1 介绍CountDownLatch"></a>1 介绍CountDownLatch</h1><p>一种锁，称为闭锁。可以让一个或多个线程等待另外一个或多个线程执行完毕后再执行。<br>CountDownLatch是基于AQS构建，使用共享模式。<br>CountDownLatch中提供一个count值来表示要等待的(其他任务)完成次数，常规用法有两种：Count(1)和Count(N)。举个栗子，百米赛跑，N个选手，每个选手可以看成是一个线程。起跑前，选手准备(线程启动，然后在Count(1)上阻塞)，当发令枪响后(相当于Count(1)闭锁释放)，选手一起起跑(相当于线程通过Count(1)继续执行)，当所有选手都通过终点(相当于Count(N)闭锁释放)，然后再统计成绩。</p>
@@ -645,6 +649,37 @@ var _hmt = _hmt || [];
         <div class="column-right-shadow is-hidden-widescreen ">
         
             
+<div class="card widget" id="toc">
+    <div class="card-content">
+        <div class="menu">
+            <h3 class="menu-label">
+                目录
+            </h3>
+            <ul class="menu-list"><li>
+        <a class="is-flex" href="#1-介绍CountDownLatch">
+        <span class="has-mr-6">1</span>
+        <span>1 介绍CountDownLatch</span>
+        </a></li><li>
+        <a class="is-flex" href="#2-源码分析">
+        <span class="has-mr-6">2</span>
+        <span>2 源码分析</span>
+        </a><ul class="menu-list"><li>
+        <a class="is-flex" href="#CountDownLatch-Sync">
+        <span class="has-mr-6">2.1</span>
+        <span>CountDownLatch#Sync</span>
+        </a></li><li>
+        <a class="is-flex" href="#CountDownLatch">
+        <span class="has-mr-6">2.2</span>
+        <span>CountDownLatch</span>
+        </a></li></ul></li><li>
+        <a class="is-flex" href="#3-总结">
+        <span class="has-mr-6">3</span>
+        <span>3 总结</span>
+        </a></li></ul>
+        </div>
+    </div>
+</div>
+
         
             
 <div class="card widget">
@@ -712,18 +747,18 @@ var _hmt = _hmt || [];
         
         <article class="media">
             <!-- 
-            <a href="/Python2ToPython3/" class="media-left">
+            <a href="/MySQL-Command/" class="media-left">
                 <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Python2切换Python3">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="MySQL基本命令">
                 </p>
             </a>
              -->
             <div class="media-content">
                 <div class="content">
                     <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
-                    <a href="/Python2ToPython3/" class="has-link-black-ter is-size-6">Python2切换Python3</a>
+                    <a href="/MySQL-Command/" class="has-link-black-ter is-size-6">MySQL基本命令</a>
                     <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
+                        <a class="has-link-grey -link" href="/categories/MySQL/">MySQL</a>
                     </p>
                 </div>
             </div>
@@ -731,18 +766,18 @@ var _hmt = _hmt || [];
         
         <article class="media">
             <!-- 
-            <a href="/SDCard-Read-Write/" class="media-left">
+            <a href="/Centos-Line/" class="media-left">
                 <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="SDCard文件读写权限">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Centos命令行图形界面切换">
                 </p>
             </a>
              -->
             <div class="media-content">
                 <div class="content">
                     <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
-                    <a href="/SDCard-Read-Write/" class="has-link-black-ter is-size-6">SDCard文件读写权限</a>
+                    <a href="/Centos-Line/" class="has-link-black-ter is-size-6">Centos命令行图形界面切换</a>
                     <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Android/">Android</a>
+                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
                     </p>
                 </div>
             </div>
@@ -1597,6 +1632,37 @@ var _hmt = _hmt || [];
 <div class="column is-4-tablet is-4-desktop is-3-widescreen is-hidden-touch is-hidden-desktop-only has-order-3 column-right ">
     
         
+<div class="card widget" id="toc">
+    <div class="card-content">
+        <div class="menu">
+            <h3 class="menu-label">
+                目录
+            </h3>
+            <ul class="menu-list"><li>
+        <a class="is-flex" href="#1-介绍CountDownLatch">
+        <span class="has-mr-6">1</span>
+        <span>1 介绍CountDownLatch</span>
+        </a></li><li>
+        <a class="is-flex" href="#2-源码分析">
+        <span class="has-mr-6">2</span>
+        <span>2 源码分析</span>
+        </a><ul class="menu-list"><li>
+        <a class="is-flex" href="#CountDownLatch-Sync">
+        <span class="has-mr-6">2.1</span>
+        <span>CountDownLatch#Sync</span>
+        </a></li><li>
+        <a class="is-flex" href="#CountDownLatch">
+        <span class="has-mr-6">2.2</span>
+        <span>CountDownLatch</span>
+        </a></li></ul></li><li>
+        <a class="is-flex" href="#3-总结">
+        <span class="has-mr-6">3</span>
+        <span>3 总结</span>
+        </a></li></ul>
+        </div>
+    </div>
+</div>
+
     
         
 <div class="card widget">
@@ -1664,18 +1730,18 @@ var _hmt = _hmt || [];
         
         <article class="media">
             <!-- 
-            <a href="/Python2ToPython3/" class="media-left">
+            <a href="/MySQL-Command/" class="media-left">
                 <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Python2切换Python3">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="MySQL基本命令">
                 </p>
             </a>
              -->
             <div class="media-content">
                 <div class="content">
                     <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
-                    <a href="/Python2ToPython3/" class="has-link-black-ter is-size-6">Python2切换Python3</a>
+                    <a href="/MySQL-Command/" class="has-link-black-ter is-size-6">MySQL基本命令</a>
                     <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
+                        <a class="has-link-grey -link" href="/categories/MySQL/">MySQL</a>
                     </p>
                 </div>
             </div>
@@ -1683,18 +1749,18 @@ var _hmt = _hmt || [];
         
         <article class="media">
             <!-- 
-            <a href="/SDCard-Read-Write/" class="media-left">
+            <a href="/Centos-Line/" class="media-left">
                 <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="SDCard文件读写权限">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Centos命令行图形界面切换">
                 </p>
             </a>
              -->
             <div class="media-content">
                 <div class="content">
                     <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
-                    <a href="/SDCard-Read-Write/" class="has-link-black-ter is-size-6">SDCard文件读写权限</a>
+                    <a href="/Centos-Line/" class="has-link-black-ter is-size-6">Centos命令行图形界面切换</a>
                     <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Android/">Android</a>
+                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
                     </p>
                 </div>
             </div>

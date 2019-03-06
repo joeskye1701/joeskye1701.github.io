@@ -17,7 +17,7 @@
 <meta property="og:locale" content="zh-CN">
 <meta property="og:image" content="https://joeskye1701.github.io/JDK1.6-ThreadPoolExecutor/ThreadPoolExecutor-1-1.jpg">
 <meta property="og:image" content="https://joeskye1701.github.io/JDK1.6-ThreadPoolExecutor/ThreadPoolExecutor-1-2.jpg">
-<meta property="og:updated_time" content="2018-10-23T04:06:38.875Z">
+<meta property="og:updated_time" content="2019-03-06T19:32:36.784Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="JDK1.6 ThreadPoolExecutor">
 <meta name="twitter:description" content="1 介绍 2 源码分析 Executor ExecutorService AbstractExecutorService#newTaskFor AbstractExecutorService#submit AbstractExecutorService#doInvokeAny() AbstractExecutorService#invokeAny() AbstractExecutorServi">
@@ -126,6 +126,10 @@ var _hmt = _hmt || [];
             <div class="navbar-end">
                 
                 
+                <a class="navbar-item is-hidden-tablet catalogue" title="目录" href="javascript:;">
+                    <i class="fas fa-list-ul"></i>
+                </a>
+                
                 
                 <a class="navbar-item search" title="搜索" href="javascript:;">
                     <i class="fas fa-search"></i>
@@ -155,7 +159,7 @@ var _hmt = _hmt || [];
                 <span class="level-item has-text-grey">
                     
                     
-                    44 分钟 读完 (大约 6527 个字)
+                    44 分钟 读完 (大约 6548 个字)
                 </span>
                 
                 
@@ -170,8 +174,8 @@ var _hmt = _hmt || [];
         <div class="content">
             <!-- TOC -->
 <ul>
-<li><a href="#1-介绍">1 介绍</a></li>
-<li><a href="#2-源码分析">2 源码分析</a><ul>
+<li><a href="#1-%E4%BB%8B%E7%BB%8D">1 介绍</a></li>
+<li><a href="#2-%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90">2 源码分析</a><ul>
 <li><a href="#executor">Executor</a></li>
 <li><a href="#executorservice">ExecutorService</a></li>
 <li><a href="#abstractexecutorservicenewtaskfor">AbstractExecutorService#newTaskFor</a></li>
@@ -180,7 +184,7 @@ var _hmt = _hmt || [];
 <li><a href="#abstractexecutorserviceinvokeany">AbstractExecutorService#invokeAny()</a></li>
 <li><a href="#abstractexecutorserviceinvokeall">AbstractExecutorService#invokeAll()</a></li>
 <li><a href="#threadpoolexecutor">ThreadPoolExecutor</a></li>
-<li><a href="#threadpoolexecutor-构造函数">ThreadPoolExecutor 构造函数</a></li>
+<li><a href="#threadpoolexecutor-%E6%9E%84%E9%80%A0%E5%87%BD%E6%95%B0">ThreadPoolExecutor 构造函数</a></li>
 <li><a href="#executorsdefaultthreadfactory">Executors#defaultThreadFactory()</a></li>
 <li><a href="#executorsdefaultthreadfactory">Executors#DefaultThreadFactory</a></li>
 <li><a href="#threadpoolexecutorexecute">ThreadPoolExecutor#execute()</a></li>
@@ -205,7 +209,7 @@ var _hmt = _hmt || [];
 <li><a href="#threadpoolexecutorprestartallcorethreads">ThreadPoolExecutor#prestartAllCoreThreads()</a></li>
 <li><a href="#threadpoolexecutorsetcorepoolsize">ThreadPoolExecutor#setCorePoolSize()</a></li>
 <li><a href="#threadpoolexecutorsetmaximumpoolsize">ThreadPoolExecutor#setMaximumPoolSize()</a></li>
-<li><a href="#实现rejectedexecutionhandler接口">实现RejectedExecutionHandler接口</a><ul>
+<li><a href="#%E5%AE%9E%E7%8E%B0rejectedexecutionhandler%E6%8E%A5%E5%8F%A3">实现RejectedExecutionHandler接口</a><ul>
 <li><a href="#threadpoolexecutorabortpolicy">ThreadPoolExecutor#AbortPolicy</a></li>
 <li><a href="#threadpoolexecutorcallerrunspolicy">ThreadPoolExecutor#CallerRunsPolicy</a></li>
 <li><a href="#threadpoolexecutordiscardpolicy">ThreadPoolExecutor#DiscardPolicy</a></li>
@@ -214,7 +218,7 @@ var _hmt = _hmt || [];
 </li>
 </ul>
 </li>
-<li><a href="#3-总结">3 总结</a></li>
+<li><a href="#3-%E6%80%BB%E7%BB%93">3 总结</a></li>
 </ul>
 <!-- /TOC -->
 <h1 id="1-介绍"><a href="#1-介绍" class="headerlink" title="1 介绍"></a>1 介绍</h1><p>ThreadPoolExecutor是JUC包中提供的线程池，使用ThreadPoolExecutor的好处一方面是能重用线程资源，避免重复创建线程带来的开销；另一方面是ThreadPoolExecutor提供了内部资源(线程、任务)的管理功能，方便我们监控线程池工作状态。</p>
@@ -874,6 +878,181 @@ var _hmt = _hmt || [];
         <div class="column-right-shadow is-hidden-widescreen ">
         
             
+<div class="card widget" id="toc">
+    <div class="card-content">
+        <div class="menu">
+            <h3 class="menu-label">
+                目录
+            </h3>
+            <ul class="menu-list"><li>
+        <a class="is-flex" href="#1-介绍">
+        <span class="has-mr-6">1</span>
+        <span>1 介绍</span>
+        </a></li><li>
+        <a class="is-flex" href="#2-源码分析">
+        <span class="has-mr-6">2</span>
+        <span>2 源码分析</span>
+        </a><ul class="menu-list"><li>
+        <a class="is-flex" href="#Executor">
+        <span class="has-mr-6">2.1</span>
+        <span>Executor</span>
+        </a></li><li>
+        <a class="is-flex" href="#ExecutorService">
+        <span class="has-mr-6">2.2</span>
+        <span>ExecutorService</span>
+        </a></li><li>
+        <a class="is-flex" href="#AbstractExecutorService-newTaskFor">
+        <span class="has-mr-6">2.3</span>
+        <span>AbstractExecutorService#newTaskFor</span>
+        </a></li><li>
+        <a class="is-flex" href="#AbstractExecutorService-submit">
+        <span class="has-mr-6">2.4</span>
+        <span>AbstractExecutorService#submit</span>
+        </a></li><li>
+        <a class="is-flex" href="#AbstractExecutorService-doInvokeAny">
+        <span class="has-mr-6">2.5</span>
+        <span>AbstractExecutorService#doInvokeAny()</span>
+        </a></li><li>
+        <a class="is-flex" href="#AbstractExecutorService-invokeAny">
+        <span class="has-mr-6">2.6</span>
+        <span>AbstractExecutorService#invokeAny()</span>
+        </a></li><li>
+        <a class="is-flex" href="#AbstractExecutorService-invokeAll">
+        <span class="has-mr-6">2.7</span>
+        <span>AbstractExecutorService#invokeAll()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ThreadPoolExecutor">
+        <span class="has-mr-6">2.8</span>
+        <span>ThreadPoolExecutor</span>
+        </a></li><li>
+        <a class="is-flex" href="#ThreadPoolExecutor-构造函数">
+        <span class="has-mr-6">2.9</span>
+        <span>ThreadPoolExecutor 构造函数</span>
+        </a></li><li>
+        <a class="is-flex" href="#Executors-defaultThreadFactory">
+        <span class="has-mr-6">2.10</span>
+        <span>Executors#defaultThreadFactory()</span>
+        </a></li><li>
+        <a class="is-flex" href="#Executors-DefaultThreadFactory">
+        <span class="has-mr-6">2.11</span>
+        <span>Executors#DefaultThreadFactory</span>
+        </a></li><li>
+        <a class="is-flex" href="#ThreadPoolExecutor-execute">
+        <span class="has-mr-6">2.12</span>
+        <span>ThreadPoolExecutor#execute()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ThreadPoolExecutor-addIfUnderCorePoolSize">
+        <span class="has-mr-6">2.13</span>
+        <span>ThreadPoolExecutor#addIfUnderCorePoolSize()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ThreadPoolExecutor-addThread">
+        <span class="has-mr-6">2.14</span>
+        <span>ThreadPoolExecutor#addThread()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ThreadPoolExecutor-Worker">
+        <span class="has-mr-6">2.15</span>
+        <span>ThreadPoolExecutor#Worker</span>
+        </a></li><li>
+        <a class="is-flex" href="#ThreadPoolExecutor-beforeExecute">
+        <span class="has-mr-6">2.16</span>
+        <span>ThreadPoolExecutor#beforeExecute()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ThreadPoolExecutor-afterExecute">
+        <span class="has-mr-6">2.17</span>
+        <span>ThreadPoolExecutor#afterExecute()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ThreadPoolExecutor-getTask">
+        <span class="has-mr-6">2.18</span>
+        <span>ThreadPoolExecutor#getTask()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ThreadPoolExecutor-workerCanExit">
+        <span class="has-mr-6">2.19</span>
+        <span>ThreadPoolExecutor#workerCanExit()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ThreadPoolExecutor-interruptIdleWorkers">
+        <span class="has-mr-6">2.20</span>
+        <span>ThreadPoolExecutor#interruptIdleWorkers()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ThreadPoolExecutor-workerDone">
+        <span class="has-mr-6">2.21</span>
+        <span>ThreadPoolExecutor#workerDone()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ThreadPoolExecutor-tryTerminate">
+        <span class="has-mr-6">2.22</span>
+        <span>ThreadPoolExecutor#tryTerminate()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ThreadPoolExecutor-ensureQueuedTaskHandled">
+        <span class="has-mr-6">2.23</span>
+        <span>ThreadPoolExecutor#ensureQueuedTaskHandled()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ThreadPoolExecutor-addIfUnderMaximumPoolSize">
+        <span class="has-mr-6">2.24</span>
+        <span>ThreadPoolExecutor#addIfUnderMaximumPoolSize()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ThreadPoolExecutor-shutdown">
+        <span class="has-mr-6">2.25</span>
+        <span>ThreadPoolExecutor#shutdown()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ThreadPoolExecutor-shutdownNow">
+        <span class="has-mr-6">2.26</span>
+        <span>ThreadPoolExecutor#shutdownNow()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ThreadPoolExecutor-drainQueue">
+        <span class="has-mr-6">2.27</span>
+        <span>ThreadPoolExecutor#drainQueue()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ThreadPoolExecutor-awaitTermination">
+        <span class="has-mr-6">2.28</span>
+        <span>ThreadPoolExecutor#awaitTermination()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ThreadPoolExecutor-finalize">
+        <span class="has-mr-6">2.29</span>
+        <span>ThreadPoolExecutor#finalize()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ThreadPoolExecutor-prestartCoreThread">
+        <span class="has-mr-6">2.30</span>
+        <span>ThreadPoolExecutor#prestartCoreThread()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ThreadPoolExecutor-prestartAllCoreThreads">
+        <span class="has-mr-6">2.31</span>
+        <span>ThreadPoolExecutor#prestartAllCoreThreads()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ThreadPoolExecutor-setCorePoolSize">
+        <span class="has-mr-6">2.32</span>
+        <span>ThreadPoolExecutor#setCorePoolSize()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ThreadPoolExecutor-setMaximumPoolSize">
+        <span class="has-mr-6">2.33</span>
+        <span>ThreadPoolExecutor#setMaximumPoolSize()</span>
+        </a></li><li>
+        <a class="is-flex" href="#实现RejectedExecutionHandler接口">
+        <span class="has-mr-6">2.34</span>
+        <span>实现RejectedExecutionHandler接口</span>
+        </a><ul class="menu-list"><li>
+        <a class="is-flex" href="#ThreadPoolExecutor-AbortPolicy">
+        <span class="has-mr-6">2.34.1</span>
+        <span>ThreadPoolExecutor#AbortPolicy</span>
+        </a></li><li>
+        <a class="is-flex" href="#ThreadPoolExecutor-CallerRunsPolicy">
+        <span class="has-mr-6">2.34.2</span>
+        <span>ThreadPoolExecutor#CallerRunsPolicy</span>
+        </a></li><li>
+        <a class="is-flex" href="#ThreadPoolExecutor-DiscardPolicy">
+        <span class="has-mr-6">2.34.3</span>
+        <span>ThreadPoolExecutor#DiscardPolicy</span>
+        </a></li><li>
+        <a class="is-flex" href="#ThreadPoolExecutor-DiscardOldestPolicy">
+        <span class="has-mr-6">2.34.4</span>
+        <span>ThreadPoolExecutor#DiscardOldestPolicy</span>
+        </a></li></ul></li></ul></li><li>
+        <a class="is-flex" href="#3-总结">
+        <span class="has-mr-6">3</span>
+        <span>3 总结</span>
+        </a></li></ul>
+        </div>
+    </div>
+</div>
+
         
             
 <div class="card widget">
@@ -941,18 +1120,18 @@ var _hmt = _hmt || [];
         
         <article class="media">
             <!-- 
-            <a href="/Python2ToPython3/" class="media-left">
+            <a href="/MySQL-Command/" class="media-left">
                 <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Python2切换Python3">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="MySQL基本命令">
                 </p>
             </a>
              -->
             <div class="media-content">
                 <div class="content">
                     <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
-                    <a href="/Python2ToPython3/" class="has-link-black-ter is-size-6">Python2切换Python3</a>
+                    <a href="/MySQL-Command/" class="has-link-black-ter is-size-6">MySQL基本命令</a>
                     <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
+                        <a class="has-link-grey -link" href="/categories/MySQL/">MySQL</a>
                     </p>
                 </div>
             </div>
@@ -960,18 +1139,18 @@ var _hmt = _hmt || [];
         
         <article class="media">
             <!-- 
-            <a href="/SDCard-Read-Write/" class="media-left">
+            <a href="/Centos-Line/" class="media-left">
                 <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="SDCard文件读写权限">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Centos命令行图形界面切换">
                 </p>
             </a>
              -->
             <div class="media-content">
                 <div class="content">
                     <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
-                    <a href="/SDCard-Read-Write/" class="has-link-black-ter is-size-6">SDCard文件读写权限</a>
+                    <a href="/Centos-Line/" class="has-link-black-ter is-size-6">Centos命令行图形界面切换</a>
                     <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Android/">Android</a>
+                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
                     </p>
                 </div>
             </div>
@@ -1826,6 +2005,181 @@ var _hmt = _hmt || [];
 <div class="column is-4-tablet is-4-desktop is-3-widescreen is-hidden-touch is-hidden-desktop-only has-order-3 column-right ">
     
         
+<div class="card widget" id="toc">
+    <div class="card-content">
+        <div class="menu">
+            <h3 class="menu-label">
+                目录
+            </h3>
+            <ul class="menu-list"><li>
+        <a class="is-flex" href="#1-介绍">
+        <span class="has-mr-6">1</span>
+        <span>1 介绍</span>
+        </a></li><li>
+        <a class="is-flex" href="#2-源码分析">
+        <span class="has-mr-6">2</span>
+        <span>2 源码分析</span>
+        </a><ul class="menu-list"><li>
+        <a class="is-flex" href="#Executor">
+        <span class="has-mr-6">2.1</span>
+        <span>Executor</span>
+        </a></li><li>
+        <a class="is-flex" href="#ExecutorService">
+        <span class="has-mr-6">2.2</span>
+        <span>ExecutorService</span>
+        </a></li><li>
+        <a class="is-flex" href="#AbstractExecutorService-newTaskFor">
+        <span class="has-mr-6">2.3</span>
+        <span>AbstractExecutorService#newTaskFor</span>
+        </a></li><li>
+        <a class="is-flex" href="#AbstractExecutorService-submit">
+        <span class="has-mr-6">2.4</span>
+        <span>AbstractExecutorService#submit</span>
+        </a></li><li>
+        <a class="is-flex" href="#AbstractExecutorService-doInvokeAny">
+        <span class="has-mr-6">2.5</span>
+        <span>AbstractExecutorService#doInvokeAny()</span>
+        </a></li><li>
+        <a class="is-flex" href="#AbstractExecutorService-invokeAny">
+        <span class="has-mr-6">2.6</span>
+        <span>AbstractExecutorService#invokeAny()</span>
+        </a></li><li>
+        <a class="is-flex" href="#AbstractExecutorService-invokeAll">
+        <span class="has-mr-6">2.7</span>
+        <span>AbstractExecutorService#invokeAll()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ThreadPoolExecutor">
+        <span class="has-mr-6">2.8</span>
+        <span>ThreadPoolExecutor</span>
+        </a></li><li>
+        <a class="is-flex" href="#ThreadPoolExecutor-构造函数">
+        <span class="has-mr-6">2.9</span>
+        <span>ThreadPoolExecutor 构造函数</span>
+        </a></li><li>
+        <a class="is-flex" href="#Executors-defaultThreadFactory">
+        <span class="has-mr-6">2.10</span>
+        <span>Executors#defaultThreadFactory()</span>
+        </a></li><li>
+        <a class="is-flex" href="#Executors-DefaultThreadFactory">
+        <span class="has-mr-6">2.11</span>
+        <span>Executors#DefaultThreadFactory</span>
+        </a></li><li>
+        <a class="is-flex" href="#ThreadPoolExecutor-execute">
+        <span class="has-mr-6">2.12</span>
+        <span>ThreadPoolExecutor#execute()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ThreadPoolExecutor-addIfUnderCorePoolSize">
+        <span class="has-mr-6">2.13</span>
+        <span>ThreadPoolExecutor#addIfUnderCorePoolSize()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ThreadPoolExecutor-addThread">
+        <span class="has-mr-6">2.14</span>
+        <span>ThreadPoolExecutor#addThread()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ThreadPoolExecutor-Worker">
+        <span class="has-mr-6">2.15</span>
+        <span>ThreadPoolExecutor#Worker</span>
+        </a></li><li>
+        <a class="is-flex" href="#ThreadPoolExecutor-beforeExecute">
+        <span class="has-mr-6">2.16</span>
+        <span>ThreadPoolExecutor#beforeExecute()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ThreadPoolExecutor-afterExecute">
+        <span class="has-mr-6">2.17</span>
+        <span>ThreadPoolExecutor#afterExecute()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ThreadPoolExecutor-getTask">
+        <span class="has-mr-6">2.18</span>
+        <span>ThreadPoolExecutor#getTask()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ThreadPoolExecutor-workerCanExit">
+        <span class="has-mr-6">2.19</span>
+        <span>ThreadPoolExecutor#workerCanExit()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ThreadPoolExecutor-interruptIdleWorkers">
+        <span class="has-mr-6">2.20</span>
+        <span>ThreadPoolExecutor#interruptIdleWorkers()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ThreadPoolExecutor-workerDone">
+        <span class="has-mr-6">2.21</span>
+        <span>ThreadPoolExecutor#workerDone()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ThreadPoolExecutor-tryTerminate">
+        <span class="has-mr-6">2.22</span>
+        <span>ThreadPoolExecutor#tryTerminate()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ThreadPoolExecutor-ensureQueuedTaskHandled">
+        <span class="has-mr-6">2.23</span>
+        <span>ThreadPoolExecutor#ensureQueuedTaskHandled()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ThreadPoolExecutor-addIfUnderMaximumPoolSize">
+        <span class="has-mr-6">2.24</span>
+        <span>ThreadPoolExecutor#addIfUnderMaximumPoolSize()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ThreadPoolExecutor-shutdown">
+        <span class="has-mr-6">2.25</span>
+        <span>ThreadPoolExecutor#shutdown()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ThreadPoolExecutor-shutdownNow">
+        <span class="has-mr-6">2.26</span>
+        <span>ThreadPoolExecutor#shutdownNow()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ThreadPoolExecutor-drainQueue">
+        <span class="has-mr-6">2.27</span>
+        <span>ThreadPoolExecutor#drainQueue()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ThreadPoolExecutor-awaitTermination">
+        <span class="has-mr-6">2.28</span>
+        <span>ThreadPoolExecutor#awaitTermination()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ThreadPoolExecutor-finalize">
+        <span class="has-mr-6">2.29</span>
+        <span>ThreadPoolExecutor#finalize()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ThreadPoolExecutor-prestartCoreThread">
+        <span class="has-mr-6">2.30</span>
+        <span>ThreadPoolExecutor#prestartCoreThread()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ThreadPoolExecutor-prestartAllCoreThreads">
+        <span class="has-mr-6">2.31</span>
+        <span>ThreadPoolExecutor#prestartAllCoreThreads()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ThreadPoolExecutor-setCorePoolSize">
+        <span class="has-mr-6">2.32</span>
+        <span>ThreadPoolExecutor#setCorePoolSize()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ThreadPoolExecutor-setMaximumPoolSize">
+        <span class="has-mr-6">2.33</span>
+        <span>ThreadPoolExecutor#setMaximumPoolSize()</span>
+        </a></li><li>
+        <a class="is-flex" href="#实现RejectedExecutionHandler接口">
+        <span class="has-mr-6">2.34</span>
+        <span>实现RejectedExecutionHandler接口</span>
+        </a><ul class="menu-list"><li>
+        <a class="is-flex" href="#ThreadPoolExecutor-AbortPolicy">
+        <span class="has-mr-6">2.34.1</span>
+        <span>ThreadPoolExecutor#AbortPolicy</span>
+        </a></li><li>
+        <a class="is-flex" href="#ThreadPoolExecutor-CallerRunsPolicy">
+        <span class="has-mr-6">2.34.2</span>
+        <span>ThreadPoolExecutor#CallerRunsPolicy</span>
+        </a></li><li>
+        <a class="is-flex" href="#ThreadPoolExecutor-DiscardPolicy">
+        <span class="has-mr-6">2.34.3</span>
+        <span>ThreadPoolExecutor#DiscardPolicy</span>
+        </a></li><li>
+        <a class="is-flex" href="#ThreadPoolExecutor-DiscardOldestPolicy">
+        <span class="has-mr-6">2.34.4</span>
+        <span>ThreadPoolExecutor#DiscardOldestPolicy</span>
+        </a></li></ul></li></ul></li><li>
+        <a class="is-flex" href="#3-总结">
+        <span class="has-mr-6">3</span>
+        <span>3 总结</span>
+        </a></li></ul>
+        </div>
+    </div>
+</div>
+
     
         
 <div class="card widget">
@@ -1893,18 +2247,18 @@ var _hmt = _hmt || [];
         
         <article class="media">
             <!-- 
-            <a href="/Python2ToPython3/" class="media-left">
+            <a href="/MySQL-Command/" class="media-left">
                 <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Python2切换Python3">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="MySQL基本命令">
                 </p>
             </a>
              -->
             <div class="media-content">
                 <div class="content">
                     <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
-                    <a href="/Python2ToPython3/" class="has-link-black-ter is-size-6">Python2切换Python3</a>
+                    <a href="/MySQL-Command/" class="has-link-black-ter is-size-6">MySQL基本命令</a>
                     <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
+                        <a class="has-link-grey -link" href="/categories/MySQL/">MySQL</a>
                     </p>
                 </div>
             </div>
@@ -1912,18 +2266,18 @@ var _hmt = _hmt || [];
         
         <article class="media">
             <!-- 
-            <a href="/SDCard-Read-Write/" class="media-left">
+            <a href="/Centos-Line/" class="media-left">
                 <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="SDCard文件读写权限">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Centos命令行图形界面切换">
                 </p>
             </a>
              -->
             <div class="media-content">
                 <div class="content">
                     <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
-                    <a href="/SDCard-Read-Write/" class="has-link-black-ter is-size-6">SDCard文件读写权限</a>
+                    <a href="/Centos-Line/" class="has-link-black-ter is-size-6">Centos命令行图形界面切换</a>
                     <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Android/">Android</a>
+                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
                     </p>
                 </div>
             </div>

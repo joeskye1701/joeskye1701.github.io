@@ -17,7 +17,7 @@
 <meta property="og:locale" content="zh-CN">
 <meta property="og:image" content="https://joeskye1701.github.io/JVM-Finalize/finalize-1.jpg">
 <meta property="og:image" content="https://joeskye1701.github.io/JVM-Finalize/finalize-2.jpg">
-<meta property="og:updated_time" content="2018-10-20T00:25:12.572Z">
+<meta property="og:updated_time" content="2019-03-06T19:34:33.327Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="深入理解Finalize">
 <meta name="twitter:description" content="1 基础 2 对象销毁和对象重生 unfinalized finalizable finalized reachable finalizer-reachable unreachable 2.2 对象再生 2.2.1 例子1 2.2.2 例子2     3 Finalize执行顺序 4 何时及如何使用finalize 5 finalize的安全性 5.1 Finalizer类属性结构 5.2 F">
@@ -126,6 +126,10 @@ var _hmt = _hmt || [];
             <div class="navbar-end">
                 
                 
+                <a class="navbar-item is-hidden-tablet catalogue" title="目录" href="javascript:;">
+                    <i class="fas fa-list-ul"></i>
+                </a>
+                
                 
                 <a class="navbar-item search" title="搜索" href="javascript:;">
                     <i class="fas fa-search"></i>
@@ -155,7 +159,7 @@ var _hmt = _hmt || [];
                 <span class="level-item has-text-grey">
                     
                     
-                    25 分钟 读完 (大约 3732 个字)
+                    25 分钟 读完 (大约 3788 个字)
                 </span>
                 
                 
@@ -170,27 +174,27 @@ var _hmt = _hmt || [];
         <div class="content">
             <!-- TOC -->
 <ul>
-<li><a href="#1-基础">1 基础</a></li>
-<li><a href="#2-对象销毁和对象重生">2 对象销毁和对象重生</a><ul>
+<li><a href="#1-%E5%9F%BA%E7%A1%80">1 基础</a></li>
+<li><a href="#2-%E5%AF%B9%E8%B1%A1%E9%94%80%E6%AF%81%E5%92%8C%E5%AF%B9%E8%B1%A1%E9%87%8D%E7%94%9F">2 对象销毁和对象重生</a><ul>
 <li><a href="#unfinalized">unfinalized</a></li>
 <li><a href="#finalizable">finalizable</a></li>
 <li><a href="#finalized">finalized</a></li>
 <li><a href="#reachable">reachable</a></li>
 <li><a href="#finalizer-reachable">finalizer-reachable</a></li>
 <li><a href="#unreachable">unreachable</a></li>
-<li><a href="#22-对象再生">2.2 对象再生</a><ul>
-<li><a href="#221-例子1">2.2.1 例子1</a></li>
-<li><a href="#222-例子2">2.2.2 例子2</a></li>
+<li><a href="#22-%E5%AF%B9%E8%B1%A1%E5%86%8D%E7%94%9F">2.2 对象再生</a><ul>
+<li><a href="#221-%E4%BE%8B%E5%AD%901">2.2.1 例子1</a></li>
+<li><a href="#222-%E4%BE%8B%E5%AD%902">2.2.2 例子2</a></li>
 </ul>
 </li>
 </ul>
 </li>
-<li><a href="#3-finalize执行顺序">3 Finalize执行顺序</a></li>
-<li><a href="#4-何时及如何使用finalize">4 何时及如何使用finalize</a></li>
-<li><a href="#5-finalize的安全性">5 finalize的安全性</a><ul>
-<li><a href="#51-finalizer类属性结构">5.1 Finalizer类属性结构</a></li>
+<li><a href="#3-finalize%E6%89%A7%E8%A1%8C%E9%A1%BA%E5%BA%8F">3 Finalize执行顺序</a></li>
+<li><a href="#4-%E4%BD%95%E6%97%B6%E5%8F%8A%E5%A6%82%E4%BD%95%E4%BD%BF%E7%94%A8finalize">4 何时及如何使用finalize</a></li>
+<li><a href="#5-finalize%E7%9A%84%E5%AE%89%E5%85%A8%E6%80%A7">5 finalize的安全性</a><ul>
+<li><a href="#51-finalizer%E7%B1%BB%E5%B1%9E%E6%80%A7%E7%BB%93%E6%9E%84">5.1 Finalizer类属性结构</a></li>
 <li><a href="#52-finalizerclass">5.2 Finalizer.class</a></li>
-<li><a href="#53-总结">5.3 总结</a></li>
+<li><a href="#53-%E6%80%BB%E7%BB%93">5.3 总结</a></li>
 </ul>
 </li>
 </ul>
@@ -702,6 +706,85 @@ var _hmt = _hmt || [];
         <div class="column-right-shadow is-hidden-widescreen ">
         
             
+<div class="card widget" id="toc">
+    <div class="card-content">
+        <div class="menu">
+            <h3 class="menu-label">
+                目录
+            </h3>
+            <ul class="menu-list"><li>
+        <a class="is-flex" href="#1-基础">
+        <span class="has-mr-6">1</span>
+        <span>1 基础</span>
+        </a></li><li>
+        <a class="is-flex" href="#2-对象销毁和对象重生">
+        <span class="has-mr-6">2</span>
+        <span>2 对象销毁和对象重生</span>
+        </a><ul class="menu-list"><li>
+        <a class="is-flex" href="#unfinalized">
+        <span class="has-mr-6">2.1</span>
+        <span>unfinalized</span>
+        </a></li><li>
+        <a class="is-flex" href="#finalizable">
+        <span class="has-mr-6">2.2</span>
+        <span>finalizable</span>
+        </a></li><li>
+        <a class="is-flex" href="#finalized">
+        <span class="has-mr-6">2.3</span>
+        <span>finalized</span>
+        </a></li><li>
+        <a class="is-flex" href="#reachable">
+        <span class="has-mr-6">2.4</span>
+        <span>reachable</span>
+        </a></li><li>
+        <a class="is-flex" href="#finalizer-reachable">
+        <span class="has-mr-6">2.5</span>
+        <span>finalizer-reachable</span>
+        </a></li><li>
+        <a class="is-flex" href="#unreachable">
+        <span class="has-mr-6">2.6</span>
+        <span>unreachable</span>
+        </a></li><li>
+        <a class="is-flex" href="#2-2-对象再生">
+        <span class="has-mr-6">2.7</span>
+        <span>2.2 对象再生</span>
+        </a><ul class="menu-list"><li>
+        <a class="is-flex" href="#2-2-1-例子1">
+        <span class="has-mr-6">2.7.1</span>
+        <span>2.2.1 例子1</span>
+        </a></li><li>
+        <a class="is-flex" href="#2-2-2-例子2">
+        <span class="has-mr-6">2.7.2</span>
+        <span>2.2.2 例子2</span>
+        </a></li></ul></li></ul></li><li>
+        <a class="is-flex" href="#3-Finalize执行顺序">
+        <span class="has-mr-6">3</span>
+        <span>3 Finalize执行顺序</span>
+        </a></li><li>
+        <a class="is-flex" href="#4-何时及如何使用finalize">
+        <span class="has-mr-6">4</span>
+        <span>4 何时及如何使用finalize</span>
+        </a></li><li>
+        <a class="is-flex" href="#5-finalize的安全性">
+        <span class="has-mr-6">5</span>
+        <span>5 finalize的安全性</span>
+        </a><ul class="menu-list"><li>
+        <a class="is-flex" href="#5-1-Finalizer类属性结构">
+        <span class="has-mr-6">5.1</span>
+        <span>5.1 Finalizer类属性结构</span>
+        </a></li><li>
+        <a class="is-flex" href="#5-2-Finalizer-class">
+        <span class="has-mr-6">5.2</span>
+        <span>5.2 Finalizer.class</span>
+        </a></li><li>
+        <a class="is-flex" href="#5-3-总结">
+        <span class="has-mr-6">5.3</span>
+        <span>5.3 总结</span>
+        </a></li></ul></li></ul>
+        </div>
+    </div>
+</div>
+
         
             
 <div class="card widget">
@@ -769,18 +852,18 @@ var _hmt = _hmt || [];
         
         <article class="media">
             <!-- 
-            <a href="/Python2ToPython3/" class="media-left">
+            <a href="/MySQL-Command/" class="media-left">
                 <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Python2切换Python3">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="MySQL基本命令">
                 </p>
             </a>
              -->
             <div class="media-content">
                 <div class="content">
                     <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
-                    <a href="/Python2ToPython3/" class="has-link-black-ter is-size-6">Python2切换Python3</a>
+                    <a href="/MySQL-Command/" class="has-link-black-ter is-size-6">MySQL基本命令</a>
                     <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
+                        <a class="has-link-grey -link" href="/categories/MySQL/">MySQL</a>
                     </p>
                 </div>
             </div>
@@ -788,18 +871,18 @@ var _hmt = _hmt || [];
         
         <article class="media">
             <!-- 
-            <a href="/SDCard-Read-Write/" class="media-left">
+            <a href="/Centos-Line/" class="media-left">
                 <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="SDCard文件读写权限">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Centos命令行图形界面切换">
                 </p>
             </a>
              -->
             <div class="media-content">
                 <div class="content">
                     <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
-                    <a href="/SDCard-Read-Write/" class="has-link-black-ter is-size-6">SDCard文件读写权限</a>
+                    <a href="/Centos-Line/" class="has-link-black-ter is-size-6">Centos命令行图形界面切换</a>
                     <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Android/">Android</a>
+                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
                     </p>
                 </div>
             </div>
@@ -1654,6 +1737,85 @@ var _hmt = _hmt || [];
 <div class="column is-4-tablet is-4-desktop is-3-widescreen is-hidden-touch is-hidden-desktop-only has-order-3 column-right ">
     
         
+<div class="card widget" id="toc">
+    <div class="card-content">
+        <div class="menu">
+            <h3 class="menu-label">
+                目录
+            </h3>
+            <ul class="menu-list"><li>
+        <a class="is-flex" href="#1-基础">
+        <span class="has-mr-6">1</span>
+        <span>1 基础</span>
+        </a></li><li>
+        <a class="is-flex" href="#2-对象销毁和对象重生">
+        <span class="has-mr-6">2</span>
+        <span>2 对象销毁和对象重生</span>
+        </a><ul class="menu-list"><li>
+        <a class="is-flex" href="#unfinalized">
+        <span class="has-mr-6">2.1</span>
+        <span>unfinalized</span>
+        </a></li><li>
+        <a class="is-flex" href="#finalizable">
+        <span class="has-mr-6">2.2</span>
+        <span>finalizable</span>
+        </a></li><li>
+        <a class="is-flex" href="#finalized">
+        <span class="has-mr-6">2.3</span>
+        <span>finalized</span>
+        </a></li><li>
+        <a class="is-flex" href="#reachable">
+        <span class="has-mr-6">2.4</span>
+        <span>reachable</span>
+        </a></li><li>
+        <a class="is-flex" href="#finalizer-reachable">
+        <span class="has-mr-6">2.5</span>
+        <span>finalizer-reachable</span>
+        </a></li><li>
+        <a class="is-flex" href="#unreachable">
+        <span class="has-mr-6">2.6</span>
+        <span>unreachable</span>
+        </a></li><li>
+        <a class="is-flex" href="#2-2-对象再生">
+        <span class="has-mr-6">2.7</span>
+        <span>2.2 对象再生</span>
+        </a><ul class="menu-list"><li>
+        <a class="is-flex" href="#2-2-1-例子1">
+        <span class="has-mr-6">2.7.1</span>
+        <span>2.2.1 例子1</span>
+        </a></li><li>
+        <a class="is-flex" href="#2-2-2-例子2">
+        <span class="has-mr-6">2.7.2</span>
+        <span>2.2.2 例子2</span>
+        </a></li></ul></li></ul></li><li>
+        <a class="is-flex" href="#3-Finalize执行顺序">
+        <span class="has-mr-6">3</span>
+        <span>3 Finalize执行顺序</span>
+        </a></li><li>
+        <a class="is-flex" href="#4-何时及如何使用finalize">
+        <span class="has-mr-6">4</span>
+        <span>4 何时及如何使用finalize</span>
+        </a></li><li>
+        <a class="is-flex" href="#5-finalize的安全性">
+        <span class="has-mr-6">5</span>
+        <span>5 finalize的安全性</span>
+        </a><ul class="menu-list"><li>
+        <a class="is-flex" href="#5-1-Finalizer类属性结构">
+        <span class="has-mr-6">5.1</span>
+        <span>5.1 Finalizer类属性结构</span>
+        </a></li><li>
+        <a class="is-flex" href="#5-2-Finalizer-class">
+        <span class="has-mr-6">5.2</span>
+        <span>5.2 Finalizer.class</span>
+        </a></li><li>
+        <a class="is-flex" href="#5-3-总结">
+        <span class="has-mr-6">5.3</span>
+        <span>5.3 总结</span>
+        </a></li></ul></li></ul>
+        </div>
+    </div>
+</div>
+
     
         
 <div class="card widget">
@@ -1721,18 +1883,18 @@ var _hmt = _hmt || [];
         
         <article class="media">
             <!-- 
-            <a href="/Python2ToPython3/" class="media-left">
+            <a href="/MySQL-Command/" class="media-left">
                 <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Python2切换Python3">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="MySQL基本命令">
                 </p>
             </a>
              -->
             <div class="media-content">
                 <div class="content">
                     <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
-                    <a href="/Python2ToPython3/" class="has-link-black-ter is-size-6">Python2切换Python3</a>
+                    <a href="/MySQL-Command/" class="has-link-black-ter is-size-6">MySQL基本命令</a>
                     <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
+                        <a class="has-link-grey -link" href="/categories/MySQL/">MySQL</a>
                     </p>
                 </div>
             </div>
@@ -1740,18 +1902,18 @@ var _hmt = _hmt || [];
         
         <article class="media">
             <!-- 
-            <a href="/SDCard-Read-Write/" class="media-left">
+            <a href="/Centos-Line/" class="media-left">
                 <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="SDCard文件读写权限">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Centos命令行图形界面切换">
                 </p>
             </a>
              -->
             <div class="media-content">
                 <div class="content">
                     <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
-                    <a href="/SDCard-Read-Write/" class="has-link-black-ter is-size-6">SDCard文件读写权限</a>
+                    <a href="/Centos-Line/" class="has-link-black-ter is-size-6">Centos命令行图形界面切换</a>
                     <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Android/">Android</a>
+                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
                     </p>
                 </div>
             </div>

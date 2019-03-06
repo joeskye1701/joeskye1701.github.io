@@ -7,19 +7,19 @@
 
 
 
-    <meta name="description" content="1 源码 UserMapper application-context.xml test   2 原理分析 MapperScannerConfigurer#Scanner#doScan MapperFactoryBean#afterPropertiesSet() MapperFactoryBean#getObject() SqlSessionTemplate#getMapper() org.a">
+    <meta name="description" content="1 源码 UserMapper` application-context.xml` test`   2 原理分析 MapperScannerConfigurer#Scanner#doScan` MapperFactoryBean#afterPropertiesSet()` MapperFactoryBean#getObject()` SqlSessionTemplate#getMapper()">
 <meta name="keywords" content="MyBatis,开源项目">
 <meta property="og:type" content="article">
 <meta property="og:title" content="MyBatis基于接口编程的原理分析">
 <meta property="og:url" content="https://joeskye1701.github.io/MyBatis-Interface-Analysis/index.html">
 <meta property="og:site_name" content="Joe|博客">
-<meta property="og:description" content="1 源码 UserMapper application-context.xml test   2 原理分析 MapperScannerConfigurer#Scanner#doScan MapperFactoryBean#afterPropertiesSet() MapperFactoryBean#getObject() SqlSessionTemplate#getMapper() org.a">
+<meta property="og:description" content="1 源码 UserMapper` application-context.xml` test`   2 原理分析 MapperScannerConfigurer#Scanner#doScan` MapperFactoryBean#afterPropertiesSet()` MapperFactoryBean#getObject()` SqlSessionTemplate#getMapper()">
 <meta property="og:locale" content="zh-CN">
 <meta property="og:image" content="https://joeskye1701.github.io/MyBatis-Interface-Analysis/Mybatis.jpg">
-<meta property="og:updated_time" content="2018-10-20T00:32:59.176Z">
+<meta property="og:updated_time" content="2019-03-06T19:42:11.482Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="MyBatis基于接口编程的原理分析">
-<meta name="twitter:description" content="1 源码 UserMapper application-context.xml test   2 原理分析 MapperScannerConfigurer#Scanner#doScan MapperFactoryBean#afterPropertiesSet() MapperFactoryBean#getObject() SqlSessionTemplate#getMapper() org.a">
+<meta name="twitter:description" content="1 源码 UserMapper` application-context.xml` test`   2 原理分析 MapperScannerConfigurer#Scanner#doScan` MapperFactoryBean#afterPropertiesSet()` MapperFactoryBean#getObject()` SqlSessionTemplate#getMapper()">
 <meta name="twitter:image" content="https://joeskye1701.github.io/MyBatis-Interface-Analysis/Mybatis.jpg">
 
 
@@ -125,6 +125,10 @@ var _hmt = _hmt || [];
             <div class="navbar-end">
                 
                 
+                <a class="navbar-item is-hidden-tablet catalogue" title="目录" href="javascript:;">
+                    <i class="fas fa-list-ul"></i>
+                </a>
+                
                 
                 <a class="navbar-item search" title="搜索" href="javascript:;">
                     <i class="fas fa-search"></i>
@@ -154,7 +158,7 @@ var _hmt = _hmt || [];
                 <span class="level-item has-text-grey">
                     
                     
-                    13 分钟 读完 (大约 1931 个字)
+                    13 分钟 读完 (大约 1941 个字)
                 </span>
                 
                 
@@ -169,24 +173,24 @@ var _hmt = _hmt || [];
         <div class="content">
             <!-- TOC -->
 <ul>
-<li><a href="#1-源码">1 源码</a><ul>
-<li><a href="#usermapper">UserMapper</a></li>
-<li><a href="#application-contextxml">application-context.xml</a></li>
-<li><a href="#test">test</a></li>
+<li><a href="#1-%E6%BA%90%E7%A0%81">1 源码</a><ul>
+<li><a href="#usermapper">UserMapper`</a></li>
+<li><a href="#application-contextxml">application-context.xml`</a></li>
+<li><a href="#test">test`</a></li>
 </ul>
 </li>
-<li><a href="#2-原理分析">2 原理分析</a><ul>
-<li><a href="#mapperscannerconfigurerscannerdoscan">MapperScannerConfigurer#Scanner#doScan</a></li>
-<li><a href="#mapperfactorybeanafterpropertiesset">MapperFactoryBean#afterPropertiesSet()</a></li>
-<li><a href="#mapperfactorybeangetobject">MapperFactoryBean#getObject()</a></li>
-<li><a href="#sqlsessiontemplategetmapper">SqlSessionTemplate#getMapper()</a></li>
-<li><a href="#orgapacheibatissessionconfigurationgetmapper">org.apache.ibatis.session.Configuration#getMapper()</a></li>
-<li><a href="#orgapacheibatisbindingmapperregistrygetmapper">org.apache.ibatis.binding.MapperRegistry#getMapper()</a></li>
-<li><a href="#mapperproxynewmapperproxy">MapperProxy#newMapperProxy()</a></li>
-<li><a href="#mapperproxyinvoke">MapperProxy#invoke</a></li>
+<li><a href="#2-%E5%8E%9F%E7%90%86%E5%88%86%E6%9E%90">2 原理分析</a><ul>
+<li><a href="#mapperscannerconfigurerscannerdoscan">MapperScannerConfigurer#Scanner#doScan`</a></li>
+<li><a href="#mapperfactorybeanafterpropertiesset">MapperFactoryBean#afterPropertiesSet()`</a></li>
+<li><a href="#mapperfactorybeangetobject">MapperFactoryBean#getObject()`</a></li>
+<li><a href="#sqlsessiontemplategetmapper">SqlSessionTemplate#getMapper()`</a></li>
+<li><a href="#orgapacheibatissessionconfigurationgetmapper">org.apache.ibatis.session.Configuration#getMapper()`</a></li>
+<li><a href="#orgapacheibatisbindingmapperregistrygetmapper">org.apache.ibatis.binding.MapperRegistry#getMapper()`</a></li>
+<li><a href="#mapperproxynewmapperproxy">MapperProxy#newMapperProxy()`</a></li>
+<li><a href="#mapperproxyinvoke">MapperProxy#invoke`</a></li>
 </ul>
 </li>
-<li><a href="#3-mybatis版本差异">3 Mybatis版本差异</a><ul>
+<li><a href="#3-mybatis%E7%89%88%E6%9C%AC%E5%B7%AE%E5%BC%82">3 Mybatis版本差异</a><ul>
 <li><a href="#mapperfactorybeancheckdaoconfig">MapperFactoryBean#checkDaoConfig()</a></li>
 <li><a href="#mapperproxyinvoke">MapperProxy#invoke()</a></li>
 </ul>
@@ -282,16 +286,16 @@ var _hmt = _hmt || [];
     <div class="level post-navigation is-flex-wrap is-mobile">
         
         <div class="level-start">
-            <a class="level level-item has-link-grey  article-nav-prev" href="/kryo/">
+            <a class="level level-item has-link-grey  article-nav-prev" href="/Optimal-Scheduling-Problem/">
                 <i class="level-item fas fa-chevron-left"></i>
-                <span class="level-item">Kryo</span>
+                <span class="level-item">最佳调度问题(回溯算法)</span>
             </a>
         </div>
         
         
         <div class="level-end">
-            <a class="level level-item has-link-grey  article-nav-next" href="/Optimal-Scheduling-Problem/">
-                <span class="level-item">最佳调度问题(回溯算法)</span>
+            <a class="level level-item has-link-grey  article-nav-next" href="/Eight-Queens/">
+                <span class="level-item">八皇后(回溯算法)</span>
                 <i class="level-item fas fa-chevron-right"></i>
             </a>
         </div>
@@ -674,6 +678,81 @@ var _hmt = _hmt || [];
         <div class="column-right-shadow is-hidden-widescreen ">
         
             
+<div class="card widget" id="toc">
+    <div class="card-content">
+        <div class="menu">
+            <h3 class="menu-label">
+                目录
+            </h3>
+            <ul class="menu-list"><li>
+        <a class="is-flex" href="#1-源码">
+        <span class="has-mr-6">1</span>
+        <span>1 源码</span>
+        </a><ul class="menu-list"><li>
+        <a class="is-flex" href="#UserMapper">
+        <span class="has-mr-6">1.1</span>
+        <span>UserMapper</span>
+        </a></li><li>
+        <a class="is-flex" href="#application-context-xml">
+        <span class="has-mr-6">1.2</span>
+        <span>application-context.xml</span>
+        </a></li><li>
+        <a class="is-flex" href="#test">
+        <span class="has-mr-6">1.3</span>
+        <span>test</span>
+        </a></li></ul></li><li>
+        <a class="is-flex" href="#2-原理分析">
+        <span class="has-mr-6">2</span>
+        <span>2 原理分析</span>
+        </a><ul class="menu-list"><li>
+        <a class="is-flex" href="#MapperScannerConfigurer-Scanner-doScan">
+        <span class="has-mr-6">2.1</span>
+        <span>MapperScannerConfigurer#Scanner#doScan</span>
+        </a></li><li>
+        <a class="is-flex" href="#MapperFactoryBean-afterPropertiesSet">
+        <span class="has-mr-6">2.2</span>
+        <span>MapperFactoryBean#afterPropertiesSet()</span>
+        </a></li><li>
+        <a class="is-flex" href="#MapperFactoryBean-getObject">
+        <span class="has-mr-6">2.3</span>
+        <span>MapperFactoryBean#getObject()</span>
+        </a></li><li>
+        <a class="is-flex" href="#SqlSessionTemplate-getMapper">
+        <span class="has-mr-6">2.4</span>
+        <span>SqlSessionTemplate#getMapper()</span>
+        </a></li><li>
+        <a class="is-flex" href="#org-apache-ibatis-session-Configuration-getMapper">
+        <span class="has-mr-6">2.5</span>
+        <span>org.apache.ibatis.session.Configuration#getMapper()</span>
+        </a></li><li>
+        <a class="is-flex" href="#org-apache-ibatis-binding-MapperRegistry-getMapper">
+        <span class="has-mr-6">2.6</span>
+        <span>org.apache.ibatis.binding.MapperRegistry#getMapper()</span>
+        </a></li><li>
+        <a class="is-flex" href="#MapperProxy-newMapperProxy">
+        <span class="has-mr-6">2.7</span>
+        <span>MapperProxy#newMapperProxy()</span>
+        </a></li><li>
+        <a class="is-flex" href="#MapperProxy-invoke">
+        <span class="has-mr-6">2.8</span>
+        <span>MapperProxy#invoke</span>
+        </a></li></ul></li><li>
+        <a class="is-flex" href="#3-Mybatis版本差异">
+        <span class="has-mr-6">3</span>
+        <span>3 Mybatis版本差异</span>
+        </a><ul class="menu-list"><li>
+        <a class="is-flex" href="#MapperFactoryBean-checkDaoConfig">
+        <span class="has-mr-6">3.1</span>
+        <span>MapperFactoryBean#checkDaoConfig()</span>
+        </a></li><li>
+        <a class="is-flex" href="#MapperProxy-invoke-1">
+        <span class="has-mr-6">3.2</span>
+        <span>MapperProxy#invoke()</span>
+        </a></li></ul></li></ul>
+        </div>
+    </div>
+</div>
+
         
             
 <div class="card widget">
@@ -741,18 +820,18 @@ var _hmt = _hmt || [];
         
         <article class="media">
             <!-- 
-            <a href="/Python2ToPython3/" class="media-left">
+            <a href="/MySQL-Command/" class="media-left">
                 <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Python2切换Python3">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="MySQL基本命令">
                 </p>
             </a>
              -->
             <div class="media-content">
                 <div class="content">
                     <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
-                    <a href="/Python2ToPython3/" class="has-link-black-ter is-size-6">Python2切换Python3</a>
+                    <a href="/MySQL-Command/" class="has-link-black-ter is-size-6">MySQL基本命令</a>
                     <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
+                        <a class="has-link-grey -link" href="/categories/MySQL/">MySQL</a>
                     </p>
                 </div>
             </div>
@@ -760,18 +839,18 @@ var _hmt = _hmt || [];
         
         <article class="media">
             <!-- 
-            <a href="/SDCard-Read-Write/" class="media-left">
+            <a href="/Centos-Line/" class="media-left">
                 <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="SDCard文件读写权限">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Centos命令行图形界面切换">
                 </p>
             </a>
              -->
             <div class="media-content">
                 <div class="content">
                     <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
-                    <a href="/SDCard-Read-Write/" class="has-link-black-ter is-size-6">SDCard文件读写权限</a>
+                    <a href="/Centos-Line/" class="has-link-black-ter is-size-6">Centos命令行图形界面切换</a>
                     <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Android/">Android</a>
+                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
                     </p>
                 </div>
             </div>
@@ -1626,6 +1705,81 @@ var _hmt = _hmt || [];
 <div class="column is-4-tablet is-4-desktop is-3-widescreen is-hidden-touch is-hidden-desktop-only has-order-3 column-right ">
     
         
+<div class="card widget" id="toc">
+    <div class="card-content">
+        <div class="menu">
+            <h3 class="menu-label">
+                目录
+            </h3>
+            <ul class="menu-list"><li>
+        <a class="is-flex" href="#1-源码">
+        <span class="has-mr-6">1</span>
+        <span>1 源码</span>
+        </a><ul class="menu-list"><li>
+        <a class="is-flex" href="#UserMapper">
+        <span class="has-mr-6">1.1</span>
+        <span>UserMapper</span>
+        </a></li><li>
+        <a class="is-flex" href="#application-context-xml">
+        <span class="has-mr-6">1.2</span>
+        <span>application-context.xml</span>
+        </a></li><li>
+        <a class="is-flex" href="#test">
+        <span class="has-mr-6">1.3</span>
+        <span>test</span>
+        </a></li></ul></li><li>
+        <a class="is-flex" href="#2-原理分析">
+        <span class="has-mr-6">2</span>
+        <span>2 原理分析</span>
+        </a><ul class="menu-list"><li>
+        <a class="is-flex" href="#MapperScannerConfigurer-Scanner-doScan">
+        <span class="has-mr-6">2.1</span>
+        <span>MapperScannerConfigurer#Scanner#doScan</span>
+        </a></li><li>
+        <a class="is-flex" href="#MapperFactoryBean-afterPropertiesSet">
+        <span class="has-mr-6">2.2</span>
+        <span>MapperFactoryBean#afterPropertiesSet()</span>
+        </a></li><li>
+        <a class="is-flex" href="#MapperFactoryBean-getObject">
+        <span class="has-mr-6">2.3</span>
+        <span>MapperFactoryBean#getObject()</span>
+        </a></li><li>
+        <a class="is-flex" href="#SqlSessionTemplate-getMapper">
+        <span class="has-mr-6">2.4</span>
+        <span>SqlSessionTemplate#getMapper()</span>
+        </a></li><li>
+        <a class="is-flex" href="#org-apache-ibatis-session-Configuration-getMapper">
+        <span class="has-mr-6">2.5</span>
+        <span>org.apache.ibatis.session.Configuration#getMapper()</span>
+        </a></li><li>
+        <a class="is-flex" href="#org-apache-ibatis-binding-MapperRegistry-getMapper">
+        <span class="has-mr-6">2.6</span>
+        <span>org.apache.ibatis.binding.MapperRegistry#getMapper()</span>
+        </a></li><li>
+        <a class="is-flex" href="#MapperProxy-newMapperProxy">
+        <span class="has-mr-6">2.7</span>
+        <span>MapperProxy#newMapperProxy()</span>
+        </a></li><li>
+        <a class="is-flex" href="#MapperProxy-invoke">
+        <span class="has-mr-6">2.8</span>
+        <span>MapperProxy#invoke</span>
+        </a></li></ul></li><li>
+        <a class="is-flex" href="#3-Mybatis版本差异">
+        <span class="has-mr-6">3</span>
+        <span>3 Mybatis版本差异</span>
+        </a><ul class="menu-list"><li>
+        <a class="is-flex" href="#MapperFactoryBean-checkDaoConfig">
+        <span class="has-mr-6">3.1</span>
+        <span>MapperFactoryBean#checkDaoConfig()</span>
+        </a></li><li>
+        <a class="is-flex" href="#MapperProxy-invoke-1">
+        <span class="has-mr-6">3.2</span>
+        <span>MapperProxy#invoke()</span>
+        </a></li></ul></li></ul>
+        </div>
+    </div>
+</div>
+
     
         
 <div class="card widget">
@@ -1693,18 +1847,18 @@ var _hmt = _hmt || [];
         
         <article class="media">
             <!-- 
-            <a href="/Python2ToPython3/" class="media-left">
+            <a href="/MySQL-Command/" class="media-left">
                 <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Python2切换Python3">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="MySQL基本命令">
                 </p>
             </a>
              -->
             <div class="media-content">
                 <div class="content">
                     <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
-                    <a href="/Python2ToPython3/" class="has-link-black-ter is-size-6">Python2切换Python3</a>
+                    <a href="/MySQL-Command/" class="has-link-black-ter is-size-6">MySQL基本命令</a>
                     <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
+                        <a class="has-link-grey -link" href="/categories/MySQL/">MySQL</a>
                     </p>
                 </div>
             </div>
@@ -1712,18 +1866,18 @@ var _hmt = _hmt || [];
         
         <article class="media">
             <!-- 
-            <a href="/SDCard-Read-Write/" class="media-left">
+            <a href="/Centos-Line/" class="media-left">
                 <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="SDCard文件读写权限">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Centos命令行图形界面切换">
                 </p>
             </a>
              -->
             <div class="media-content">
                 <div class="content">
                     <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
-                    <a href="/SDCard-Read-Write/" class="has-link-black-ter is-size-6">SDCard文件读写权限</a>
+                    <a href="/Centos-Line/" class="has-link-black-ter is-size-6">Centos命令行图形界面切换</a>
                     <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Android/">Android</a>
+                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
                     </p>
                 </div>
             </div>

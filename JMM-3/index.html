@@ -20,7 +20,7 @@
 <meta property="og:image" content="https://joeskye1701.github.io/JMM-3/jmm-5-3.jpg">
 <meta property="og:image" content="https://joeskye1701.github.io/JMM-3/jmm-5-4.jpg">
 <meta property="og:image" content="https://joeskye1701.github.io/JMM-3/jmm-5-5.jpg">
-<meta property="og:updated_time" content="2018-10-20T00:30:42.528Z">
+<meta property="og:updated_time" content="2019-03-06T19:33:58.608Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="深入理解Java内存模型(锁)">
 <meta name="twitter:description" content="1 锁的释放-获取建立的Happens-Before关系 2 锁释放和获取的内存语义 3 锁内存语义的实现 ReentrantLock公平锁 ReentrantLock非公平锁 intel的手册对lock前缀的说明如下 公平锁和非公平锁的内存语义总结   4 Concurrent包的实现 5 参考   1 锁的释放-获取建立的Happens-Before关系锁是Java并发编程中最重要的同步机">
@@ -129,6 +129,10 @@ var _hmt = _hmt || [];
             <div class="navbar-end">
                 
                 
+                <a class="navbar-item is-hidden-tablet catalogue" title="目录" href="javascript:;">
+                    <i class="fas fa-list-ul"></i>
+                </a>
+                
                 
                 <a class="navbar-item search" title="搜索" href="javascript:;">
                     <i class="fas fa-search"></i>
@@ -158,7 +162,7 @@ var _hmt = _hmt || [];
                 <span class="level-item has-text-grey">
                     
                     
-                    23 分钟 读完 (大约 3488 个字)
+                    24 分钟 读完 (大约 3567 个字)
                 </span>
                 
                 
@@ -173,17 +177,17 @@ var _hmt = _hmt || [];
         <div class="content">
             <!-- TOC -->
 <ul>
-<li><a href="#1-锁的释放-获取建立的happens-before关系">1 锁的释放-获取建立的Happens-Before关系</a></li>
-<li><a href="#2-锁释放和获取的内存语义">2 锁释放和获取的内存语义</a></li>
-<li><a href="#3-锁内存语义的实现">3 锁内存语义的实现</a><ul>
-<li><a href="#reentrantlock公平锁">ReentrantLock公平锁</a></li>
-<li><a href="#reentrantlock非公平锁">ReentrantLock非公平锁</a></li>
-<li><a href="#intel的手册对lock前缀的说明如下">intel的手册对lock前缀的说明如下</a></li>
-<li><a href="#公平锁和非公平锁的内存语义总结">公平锁和非公平锁的内存语义总结</a></li>
+<li><a href="#1-%E9%94%81%E7%9A%84%E9%87%8A%E6%94%BE-%E8%8E%B7%E5%8F%96%E5%BB%BA%E7%AB%8B%E7%9A%84happens-before%E5%85%B3%E7%B3%BB">1 锁的释放-获取建立的Happens-Before关系</a></li>
+<li><a href="#2-%E9%94%81%E9%87%8A%E6%94%BE%E5%92%8C%E8%8E%B7%E5%8F%96%E7%9A%84%E5%86%85%E5%AD%98%E8%AF%AD%E4%B9%89">2 锁释放和获取的内存语义</a></li>
+<li><a href="#3-%E9%94%81%E5%86%85%E5%AD%98%E8%AF%AD%E4%B9%89%E7%9A%84%E5%AE%9E%E7%8E%B0">3 锁内存语义的实现</a><ul>
+<li><a href="#reentrantlock%E5%85%AC%E5%B9%B3%E9%94%81">ReentrantLock公平锁</a></li>
+<li><a href="#reentrantlock%E9%9D%9E%E5%85%AC%E5%B9%B3%E9%94%81">ReentrantLock非公平锁</a></li>
+<li><a href="#intel%E7%9A%84%E6%89%8B%E5%86%8C%E5%AF%B9lock%E5%89%8D%E7%BC%80%E7%9A%84%E8%AF%B4%E6%98%8E%E5%A6%82%E4%B8%8B">intel的手册对lock前缀的说明如下</a></li>
+<li><a href="#%E5%85%AC%E5%B9%B3%E9%94%81%E5%92%8C%E9%9D%9E%E5%85%AC%E5%B9%B3%E9%94%81%E7%9A%84%E5%86%85%E5%AD%98%E8%AF%AD%E4%B9%89%E6%80%BB%E7%BB%93">公平锁和非公平锁的内存语义总结</a></li>
 </ul>
 </li>
-<li><a href="#4-concurrent包的实现">4 Concurrent包的实现</a></li>
-<li><a href="#5-参考">5 参考</a></li>
+<li><a href="#4-concurrent%E5%8C%85%E7%9A%84%E5%AE%9E%E7%8E%B0">4 Concurrent包的实现</a></li>
+<li><a href="#5-%E5%8F%82%E8%80%83">5 参考</a></li>
 </ul>
 <!-- /TOC -->
 <h1 id="1-锁的释放-获取建立的Happens-Before关系"><a href="#1-锁的释放-获取建立的Happens-Before关系" class="headerlink" title="1 锁的释放-获取建立的Happens-Before关系"></a>1 锁的释放-获取建立的Happens-Before关系</h1><p>锁是Java并发编程中最重要的同步机制。锁除了让临界区互斥执行外，还可以让释放锁的线程向获取同一个锁的线程发送消息。<br>下面是锁释放-获取的示例代码。<br><figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">MonitorExample</span> </span>&#123;</span><br><span class="line">    <span class="hljs-keyword">int</span> a = <span class="hljs-number">0</span>;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">synchronized</span> <span class="hljs-keyword">void</span> <span class="hljs-title">writer</span><span class="hljs-params">()</span> </span>&#123;  <span class="hljs-comment">//1</span></span><br><span class="line">        a++;                             <span class="hljs-comment">//2</span></span><br><span class="line">    &#125;                                    <span class="hljs-comment">//3</span></span><br><span class="line"></span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">synchronized</span> <span class="hljs-keyword">void</span> <span class="hljs-title">reader</span><span class="hljs-params">()</span> </span>&#123;  <span class="hljs-comment">//4</span></span><br><span class="line">        <span class="hljs-keyword">int</span> i = a;                       <span class="hljs-comment">//5</span></span><br><span class="line">        ……</span><br><span class="line">    &#125;                                    <span class="hljs-comment">//6</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
@@ -688,6 +692,53 @@ var _hmt = _hmt || [];
         <div class="column-right-shadow is-hidden-widescreen ">
         
             
+<div class="card widget" id="toc">
+    <div class="card-content">
+        <div class="menu">
+            <h3 class="menu-label">
+                目录
+            </h3>
+            <ul class="menu-list"><li>
+        <a class="is-flex" href="#1-锁的释放-获取建立的Happens-Before关系">
+        <span class="has-mr-6">1</span>
+        <span>1 锁的释放-获取建立的Happens-Before关系</span>
+        </a></li><li>
+        <a class="is-flex" href="#2-锁释放和获取的内存语义">
+        <span class="has-mr-6">2</span>
+        <span>2 锁释放和获取的内存语义</span>
+        </a></li><li>
+        <a class="is-flex" href="#3-锁内存语义的实现">
+        <span class="has-mr-6">3</span>
+        <span>3 锁内存语义的实现</span>
+        </a><ul class="menu-list"><li>
+        <a class="is-flex" href="#ReentrantLock公平锁">
+        <span class="has-mr-6">3.1</span>
+        <span>ReentrantLock公平锁</span>
+        </a></li><li>
+        <a class="is-flex" href="#ReentrantLock非公平锁">
+        <span class="has-mr-6">3.2</span>
+        <span>ReentrantLock非公平锁</span>
+        </a></li><li>
+        <a class="is-flex" href="#intel的手册对lock前缀的说明如下">
+        <span class="has-mr-6">3.3</span>
+        <span>intel的手册对lock前缀的说明如下</span>
+        </a></li><li>
+        <a class="is-flex" href="#公平锁和非公平锁的内存语义总结">
+        <span class="has-mr-6">3.4</span>
+        <span>公平锁和非公平锁的内存语义总结</span>
+        </a></li></ul></li><li>
+        <a class="is-flex" href="#4-Concurrent包的实现">
+        <span class="has-mr-6">4</span>
+        <span>4 Concurrent包的实现</span>
+        </a></li><li>
+        <a class="is-flex" href="#5-参考">
+        <span class="has-mr-6">5</span>
+        <span>5 参考</span>
+        </a></li></ul>
+        </div>
+    </div>
+</div>
+
         
             
 <div class="card widget">
@@ -755,18 +806,18 @@ var _hmt = _hmt || [];
         
         <article class="media">
             <!-- 
-            <a href="/Python2ToPython3/" class="media-left">
+            <a href="/MySQL-Command/" class="media-left">
                 <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Python2切换Python3">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="MySQL基本命令">
                 </p>
             </a>
              -->
             <div class="media-content">
                 <div class="content">
                     <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
-                    <a href="/Python2ToPython3/" class="has-link-black-ter is-size-6">Python2切换Python3</a>
+                    <a href="/MySQL-Command/" class="has-link-black-ter is-size-6">MySQL基本命令</a>
                     <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
+                        <a class="has-link-grey -link" href="/categories/MySQL/">MySQL</a>
                     </p>
                 </div>
             </div>
@@ -774,18 +825,18 @@ var _hmt = _hmt || [];
         
         <article class="media">
             <!-- 
-            <a href="/SDCard-Read-Write/" class="media-left">
+            <a href="/Centos-Line/" class="media-left">
                 <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="SDCard文件读写权限">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Centos命令行图形界面切换">
                 </p>
             </a>
              -->
             <div class="media-content">
                 <div class="content">
                     <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
-                    <a href="/SDCard-Read-Write/" class="has-link-black-ter is-size-6">SDCard文件读写权限</a>
+                    <a href="/Centos-Line/" class="has-link-black-ter is-size-6">Centos命令行图形界面切换</a>
                     <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Android/">Android</a>
+                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
                     </p>
                 </div>
             </div>
@@ -1640,6 +1691,53 @@ var _hmt = _hmt || [];
 <div class="column is-4-tablet is-4-desktop is-3-widescreen is-hidden-touch is-hidden-desktop-only has-order-3 column-right ">
     
         
+<div class="card widget" id="toc">
+    <div class="card-content">
+        <div class="menu">
+            <h3 class="menu-label">
+                目录
+            </h3>
+            <ul class="menu-list"><li>
+        <a class="is-flex" href="#1-锁的释放-获取建立的Happens-Before关系">
+        <span class="has-mr-6">1</span>
+        <span>1 锁的释放-获取建立的Happens-Before关系</span>
+        </a></li><li>
+        <a class="is-flex" href="#2-锁释放和获取的内存语义">
+        <span class="has-mr-6">2</span>
+        <span>2 锁释放和获取的内存语义</span>
+        </a></li><li>
+        <a class="is-flex" href="#3-锁内存语义的实现">
+        <span class="has-mr-6">3</span>
+        <span>3 锁内存语义的实现</span>
+        </a><ul class="menu-list"><li>
+        <a class="is-flex" href="#ReentrantLock公平锁">
+        <span class="has-mr-6">3.1</span>
+        <span>ReentrantLock公平锁</span>
+        </a></li><li>
+        <a class="is-flex" href="#ReentrantLock非公平锁">
+        <span class="has-mr-6">3.2</span>
+        <span>ReentrantLock非公平锁</span>
+        </a></li><li>
+        <a class="is-flex" href="#intel的手册对lock前缀的说明如下">
+        <span class="has-mr-6">3.3</span>
+        <span>intel的手册对lock前缀的说明如下</span>
+        </a></li><li>
+        <a class="is-flex" href="#公平锁和非公平锁的内存语义总结">
+        <span class="has-mr-6">3.4</span>
+        <span>公平锁和非公平锁的内存语义总结</span>
+        </a></li></ul></li><li>
+        <a class="is-flex" href="#4-Concurrent包的实现">
+        <span class="has-mr-6">4</span>
+        <span>4 Concurrent包的实现</span>
+        </a></li><li>
+        <a class="is-flex" href="#5-参考">
+        <span class="has-mr-6">5</span>
+        <span>5 参考</span>
+        </a></li></ul>
+        </div>
+    </div>
+</div>
+
     
         
 <div class="card widget">
@@ -1707,18 +1805,18 @@ var _hmt = _hmt || [];
         
         <article class="media">
             <!-- 
-            <a href="/Python2ToPython3/" class="media-left">
+            <a href="/MySQL-Command/" class="media-left">
                 <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Python2切换Python3">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="MySQL基本命令">
                 </p>
             </a>
              -->
             <div class="media-content">
                 <div class="content">
                     <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
-                    <a href="/Python2ToPython3/" class="has-link-black-ter is-size-6">Python2切换Python3</a>
+                    <a href="/MySQL-Command/" class="has-link-black-ter is-size-6">MySQL基本命令</a>
                     <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
+                        <a class="has-link-grey -link" href="/categories/MySQL/">MySQL</a>
                     </p>
                 </div>
             </div>
@@ -1726,18 +1824,18 @@ var _hmt = _hmt || [];
         
         <article class="media">
             <!-- 
-            <a href="/SDCard-Read-Write/" class="media-left">
+            <a href="/Centos-Line/" class="media-left">
                 <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="SDCard文件读写权限">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Centos命令行图形界面切换">
                 </p>
             </a>
              -->
             <div class="media-content">
                 <div class="content">
                     <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
-                    <a href="/SDCard-Read-Write/" class="has-link-black-ter is-size-6">SDCard文件读写权限</a>
+                    <a href="/Centos-Line/" class="has-link-black-ter is-size-6">Centos命令行图形界面切换</a>
                     <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Android/">Android</a>
+                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
                     </p>
                 </div>
             </div>

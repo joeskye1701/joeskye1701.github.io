@@ -15,7 +15,7 @@
 <meta property="og:site_name" content="Joe|博客">
 <meta property="og:description" content="1 介绍 写锁(tryAcquire) 读锁(tryAcquireShared)   2 源码分析 Sync属性 Sync#tryAcquire() Sync#writerShouldBlock() Sync#tryRelease() Sync#HoldCounter Sync#ThreadLocalHoldCounter Sync#tryAcquireShared Sync#fullTryA">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:updated_time" content="2018-10-23T04:16:37.427Z">
+<meta property="og:updated_time" content="2019-03-06T19:32:25.092Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="JDK1.6 ReentrantReadWriteLock">
 <meta name="twitter:description" content="1 介绍 写锁(tryAcquire) 读锁(tryAcquireShared)   2 源码分析 Sync属性 Sync#tryAcquire() Sync#writerShouldBlock() Sync#tryRelease() Sync#HoldCounter Sync#ThreadLocalHoldCounter Sync#tryAcquireShared Sync#fullTryA">
@@ -123,6 +123,10 @@ var _hmt = _hmt || [];
             <div class="navbar-end">
                 
                 
+                <a class="navbar-item is-hidden-tablet catalogue" title="目录" href="javascript:;">
+                    <i class="fas fa-list-ul"></i>
+                </a>
+                
                 
                 <a class="navbar-item search" title="搜索" href="javascript:;">
                     <i class="fas fa-search"></i>
@@ -152,7 +156,7 @@ var _hmt = _hmt || [];
                 <span class="level-item has-text-grey">
                     
                     
-                    18 分钟 读完 (大约 2636 个字)
+                    18 分钟 读完 (大约 2651 个字)
                 </span>
                 
                 
@@ -167,13 +171,13 @@ var _hmt = _hmt || [];
         <div class="content">
             <!-- TOC -->
 <ul>
-<li><a href="#1-介绍">1 介绍</a><ul>
-<li><a href="#写锁tryacquire">写锁(tryAcquire)</a></li>
-<li><a href="#读锁tryacquireshared">读锁(tryAcquireShared)</a></li>
+<li><a href="#1-%E4%BB%8B%E7%BB%8D">1 介绍</a><ul>
+<li><a href="#%E5%86%99%E9%94%81tryacquire">写锁(tryAcquire)</a></li>
+<li><a href="#%E8%AF%BB%E9%94%81tryacquireshared">读锁(tryAcquireShared)</a></li>
 </ul>
 </li>
-<li><a href="#2-源码分析">2 源码分析</a><ul>
-<li><a href="#sync属性">Sync属性</a></li>
+<li><a href="#2-%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90">2 源码分析</a><ul>
+<li><a href="#sync%E5%B1%9E%E6%80%A7">Sync属性</a></li>
 <li><a href="#synctryacquire">Sync#tryAcquire()</a></li>
 <li><a href="#syncwritershouldblock">Sync#writerShouldBlock()</a></li>
 <li><a href="#synctryrelease">Sync#tryRelease()</a></li>
@@ -193,7 +197,7 @@ var _hmt = _hmt || [];
 <li><a href="#reentrantreadwritelockwritelocktrylock">ReentrantReadWriteLock#WriteLock#tryLock()</a></li>
 </ul>
 </li>
-<li><a href="#3-锁降级">3 锁降级</a></li>
+<li><a href="#3-%E9%94%81%E9%99%8D%E7%BA%A7">3 锁降级</a></li>
 </ul>
 <!-- /TOC -->
 <h1 id="1-介绍"><a href="#1-介绍" class="headerlink" title="1 介绍"></a>1 介绍</h1><p>ReentrantReadWriteLock支持公平/非公平锁。写锁可以降级为读锁，但读锁不能升级为写锁。</p>
@@ -757,6 +761,109 @@ var _hmt = _hmt || [];
         <div class="column-right-shadow is-hidden-widescreen ">
         
             
+<div class="card widget" id="toc">
+    <div class="card-content">
+        <div class="menu">
+            <h3 class="menu-label">
+                目录
+            </h3>
+            <ul class="menu-list"><li>
+        <a class="is-flex" href="#1-介绍">
+        <span class="has-mr-6">1</span>
+        <span>1 介绍</span>
+        </a><ul class="menu-list"><li>
+        <a class="is-flex" href="#写锁-tryAcquire">
+        <span class="has-mr-6">1.1</span>
+        <span>写锁(tryAcquire)</span>
+        </a></li><li>
+        <a class="is-flex" href="#读锁-tryAcquireShared">
+        <span class="has-mr-6">1.2</span>
+        <span>读锁(tryAcquireShared)</span>
+        </a></li></ul></li><li>
+        <a class="is-flex" href="#2-源码分析">
+        <span class="has-mr-6">2</span>
+        <span>2 源码分析</span>
+        </a><ul class="menu-list"><li>
+        <a class="is-flex" href="#Sync属性">
+        <span class="has-mr-6">2.1</span>
+        <span>Sync属性</span>
+        </a></li><li>
+        <a class="is-flex" href="#Sync-tryAcquire">
+        <span class="has-mr-6">2.2</span>
+        <span>Sync#tryAcquire()</span>
+        </a></li><li>
+        <a class="is-flex" href="#Sync-writerShouldBlock">
+        <span class="has-mr-6">2.3</span>
+        <span>Sync#writerShouldBlock()</span>
+        </a></li><li>
+        <a class="is-flex" href="#Sync-tryRelease">
+        <span class="has-mr-6">2.4</span>
+        <span>Sync#tryRelease()</span>
+        </a></li><li>
+        <a class="is-flex" href="#Sync-HoldCounter">
+        <span class="has-mr-6">2.5</span>
+        <span>Sync#HoldCounter</span>
+        </a></li><li>
+        <a class="is-flex" href="#Sync-ThreadLocalHoldCounter">
+        <span class="has-mr-6">2.6</span>
+        <span>Sync#ThreadLocalHoldCounter</span>
+        </a></li><li>
+        <a class="is-flex" href="#Sync-tryAcquireShared">
+        <span class="has-mr-6">2.7</span>
+        <span>Sync#tryAcquireShared</span>
+        </a></li><li>
+        <a class="is-flex" href="#Sync-fullTryAcquireShared">
+        <span class="has-mr-6">2.8</span>
+        <span>Sync#fullTryAcquireShared</span>
+        </a></li><li>
+        <a class="is-flex" href="#Sync-tryReleaseShared">
+        <span class="has-mr-6">2.9</span>
+        <span>Sync#tryReleaseShared</span>
+        </a></li><li>
+        <a class="is-flex" href="#Sync-tryWriteLock">
+        <span class="has-mr-6">2.10</span>
+        <span>Sync#tryWriteLock</span>
+        </a></li><li>
+        <a class="is-flex" href="#Sync-tryReadLock">
+        <span class="has-mr-6">2.11</span>
+        <span>Sync#tryReadLock</span>
+        </a></li><li>
+        <a class="is-flex" href="#ReentrantReadWriteLock-FairSync">
+        <span class="has-mr-6">2.12</span>
+        <span>ReentrantReadWriteLock#FairSync</span>
+        </a></li><li>
+        <a class="is-flex" href="#ReentrantReadWriteLock-NonfairSync">
+        <span class="has-mr-6">2.13</span>
+        <span>ReentrantReadWriteLock#NonfairSync</span>
+        </a></li><li>
+        <a class="is-flex" href="#ReentrantReadWriteLock-ReadLock-lock">
+        <span class="has-mr-6">2.14</span>
+        <span>ReentrantReadWriteLock#ReadLock#lock()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ReentrantReadWriteLock-ReadLock-tryLock">
+        <span class="has-mr-6">2.15</span>
+        <span>ReentrantReadWriteLock#ReadLock#tryLock()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ReentrantReadWriteLock-ReadLock-newCondition">
+        <span class="has-mr-6">2.16</span>
+        <span>ReentrantReadWriteLock#ReadLock#newCondition()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ReentrantReadWriteLock-WriteLock-lock">
+        <span class="has-mr-6">2.17</span>
+        <span>ReentrantReadWriteLock#WriteLock#lock()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ReentrantReadWriteLock-WriteLock-tryLock">
+        <span class="has-mr-6">2.18</span>
+        <span>ReentrantReadWriteLock#WriteLock#tryLock()</span>
+        </a></li></ul></li><li>
+        <a class="is-flex" href="#3-锁降级">
+        <span class="has-mr-6">3</span>
+        <span>3 锁降级</span>
+        </a></li></ul>
+        </div>
+    </div>
+</div>
+
         
             
 <div class="card widget">
@@ -824,18 +931,18 @@ var _hmt = _hmt || [];
         
         <article class="media">
             <!-- 
-            <a href="/Python2ToPython3/" class="media-left">
+            <a href="/MySQL-Command/" class="media-left">
                 <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Python2切换Python3">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="MySQL基本命令">
                 </p>
             </a>
              -->
             <div class="media-content">
                 <div class="content">
                     <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
-                    <a href="/Python2ToPython3/" class="has-link-black-ter is-size-6">Python2切换Python3</a>
+                    <a href="/MySQL-Command/" class="has-link-black-ter is-size-6">MySQL基本命令</a>
                     <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
+                        <a class="has-link-grey -link" href="/categories/MySQL/">MySQL</a>
                     </p>
                 </div>
             </div>
@@ -843,18 +950,18 @@ var _hmt = _hmt || [];
         
         <article class="media">
             <!-- 
-            <a href="/SDCard-Read-Write/" class="media-left">
+            <a href="/Centos-Line/" class="media-left">
                 <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="SDCard文件读写权限">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Centos命令行图形界面切换">
                 </p>
             </a>
              -->
             <div class="media-content">
                 <div class="content">
                     <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
-                    <a href="/SDCard-Read-Write/" class="has-link-black-ter is-size-6">SDCard文件读写权限</a>
+                    <a href="/Centos-Line/" class="has-link-black-ter is-size-6">Centos命令行图形界面切换</a>
                     <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Android/">Android</a>
+                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
                     </p>
                 </div>
             </div>
@@ -1709,6 +1816,109 @@ var _hmt = _hmt || [];
 <div class="column is-4-tablet is-4-desktop is-3-widescreen is-hidden-touch is-hidden-desktop-only has-order-3 column-right ">
     
         
+<div class="card widget" id="toc">
+    <div class="card-content">
+        <div class="menu">
+            <h3 class="menu-label">
+                目录
+            </h3>
+            <ul class="menu-list"><li>
+        <a class="is-flex" href="#1-介绍">
+        <span class="has-mr-6">1</span>
+        <span>1 介绍</span>
+        </a><ul class="menu-list"><li>
+        <a class="is-flex" href="#写锁-tryAcquire">
+        <span class="has-mr-6">1.1</span>
+        <span>写锁(tryAcquire)</span>
+        </a></li><li>
+        <a class="is-flex" href="#读锁-tryAcquireShared">
+        <span class="has-mr-6">1.2</span>
+        <span>读锁(tryAcquireShared)</span>
+        </a></li></ul></li><li>
+        <a class="is-flex" href="#2-源码分析">
+        <span class="has-mr-6">2</span>
+        <span>2 源码分析</span>
+        </a><ul class="menu-list"><li>
+        <a class="is-flex" href="#Sync属性">
+        <span class="has-mr-6">2.1</span>
+        <span>Sync属性</span>
+        </a></li><li>
+        <a class="is-flex" href="#Sync-tryAcquire">
+        <span class="has-mr-6">2.2</span>
+        <span>Sync#tryAcquire()</span>
+        </a></li><li>
+        <a class="is-flex" href="#Sync-writerShouldBlock">
+        <span class="has-mr-6">2.3</span>
+        <span>Sync#writerShouldBlock()</span>
+        </a></li><li>
+        <a class="is-flex" href="#Sync-tryRelease">
+        <span class="has-mr-6">2.4</span>
+        <span>Sync#tryRelease()</span>
+        </a></li><li>
+        <a class="is-flex" href="#Sync-HoldCounter">
+        <span class="has-mr-6">2.5</span>
+        <span>Sync#HoldCounter</span>
+        </a></li><li>
+        <a class="is-flex" href="#Sync-ThreadLocalHoldCounter">
+        <span class="has-mr-6">2.6</span>
+        <span>Sync#ThreadLocalHoldCounter</span>
+        </a></li><li>
+        <a class="is-flex" href="#Sync-tryAcquireShared">
+        <span class="has-mr-6">2.7</span>
+        <span>Sync#tryAcquireShared</span>
+        </a></li><li>
+        <a class="is-flex" href="#Sync-fullTryAcquireShared">
+        <span class="has-mr-6">2.8</span>
+        <span>Sync#fullTryAcquireShared</span>
+        </a></li><li>
+        <a class="is-flex" href="#Sync-tryReleaseShared">
+        <span class="has-mr-6">2.9</span>
+        <span>Sync#tryReleaseShared</span>
+        </a></li><li>
+        <a class="is-flex" href="#Sync-tryWriteLock">
+        <span class="has-mr-6">2.10</span>
+        <span>Sync#tryWriteLock</span>
+        </a></li><li>
+        <a class="is-flex" href="#Sync-tryReadLock">
+        <span class="has-mr-6">2.11</span>
+        <span>Sync#tryReadLock</span>
+        </a></li><li>
+        <a class="is-flex" href="#ReentrantReadWriteLock-FairSync">
+        <span class="has-mr-6">2.12</span>
+        <span>ReentrantReadWriteLock#FairSync</span>
+        </a></li><li>
+        <a class="is-flex" href="#ReentrantReadWriteLock-NonfairSync">
+        <span class="has-mr-6">2.13</span>
+        <span>ReentrantReadWriteLock#NonfairSync</span>
+        </a></li><li>
+        <a class="is-flex" href="#ReentrantReadWriteLock-ReadLock-lock">
+        <span class="has-mr-6">2.14</span>
+        <span>ReentrantReadWriteLock#ReadLock#lock()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ReentrantReadWriteLock-ReadLock-tryLock">
+        <span class="has-mr-6">2.15</span>
+        <span>ReentrantReadWriteLock#ReadLock#tryLock()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ReentrantReadWriteLock-ReadLock-newCondition">
+        <span class="has-mr-6">2.16</span>
+        <span>ReentrantReadWriteLock#ReadLock#newCondition()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ReentrantReadWriteLock-WriteLock-lock">
+        <span class="has-mr-6">2.17</span>
+        <span>ReentrantReadWriteLock#WriteLock#lock()</span>
+        </a></li><li>
+        <a class="is-flex" href="#ReentrantReadWriteLock-WriteLock-tryLock">
+        <span class="has-mr-6">2.18</span>
+        <span>ReentrantReadWriteLock#WriteLock#tryLock()</span>
+        </a></li></ul></li><li>
+        <a class="is-flex" href="#3-锁降级">
+        <span class="has-mr-6">3</span>
+        <span>3 锁降级</span>
+        </a></li></ul>
+        </div>
+    </div>
+</div>
+
     
         
 <div class="card widget">
@@ -1776,18 +1986,18 @@ var _hmt = _hmt || [];
         
         <article class="media">
             <!-- 
-            <a href="/Python2ToPython3/" class="media-left">
+            <a href="/MySQL-Command/" class="media-left">
                 <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Python2切换Python3">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="MySQL基本命令">
                 </p>
             </a>
              -->
             <div class="media-content">
                 <div class="content">
                     <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
-                    <a href="/Python2ToPython3/" class="has-link-black-ter is-size-6">Python2切换Python3</a>
+                    <a href="/MySQL-Command/" class="has-link-black-ter is-size-6">MySQL基本命令</a>
                     <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
+                        <a class="has-link-grey -link" href="/categories/MySQL/">MySQL</a>
                     </p>
                 </div>
             </div>
@@ -1795,18 +2005,18 @@ var _hmt = _hmt || [];
         
         <article class="media">
             <!-- 
-            <a href="/SDCard-Read-Write/" class="media-left">
+            <a href="/Centos-Line/" class="media-left">
                 <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="SDCard文件读写权限">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Centos命令行图形界面切换">
                 </p>
             </a>
              -->
             <div class="media-content">
                 <div class="content">
                     <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
-                    <a href="/SDCard-Read-Write/" class="has-link-black-ter is-size-6">SDCard文件读写权限</a>
+                    <a href="/Centos-Line/" class="has-link-black-ter is-size-6">Centos命令行图形界面切换</a>
                     <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Android/">Android</a>
+                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
                     </p>
                 </div>
             </div>

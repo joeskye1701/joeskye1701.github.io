@@ -18,7 +18,7 @@
 <meta property="og:image" content="https://joeskye1701.github.io/JVM-3/jvm-3-1.jpg">
 <meta property="og:image" content="https://joeskye1701.github.io/JVM-3/jvm-3-2.jpg">
 <meta property="og:image" content="https://joeskye1701.github.io/JVM-3/jvm-3-3.jpg">
-<meta property="og:updated_time" content="2018-10-22T00:52:10.534Z">
+<meta property="og:updated_time" content="2019-03-06T19:34:17.325Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="JVM运行数据区(三)">
 <meta name="twitter:description" content="1 虚拟机栈 VM stack 2 本地方法栈 Native Method stack 3 程序计数器 Program Counter Register 4 方法区 Method Area 方法区内的常量池 - 运行时常量池（Runtime Constant Pool）   5 堆空间 Heap Young（年轻代） 伊甸园（ Eden space） 幸存者0区（ Survivor 0 spa">
@@ -127,6 +127,10 @@ var _hmt = _hmt || [];
             <div class="navbar-end">
                 
                 
+                <a class="navbar-item is-hidden-tablet catalogue" title="目录" href="javascript:;">
+                    <i class="fas fa-list-ul"></i>
+                </a>
+                
                 
                 <a class="navbar-item search" title="搜索" href="javascript:;">
                     <i class="fas fa-search"></i>
@@ -156,7 +160,7 @@ var _hmt = _hmt || [];
                 <span class="level-item has-text-grey">
                     
                     
-                    15 分钟 读完 (大约 2317 个字)
+                    16 分钟 读完 (大约 2391 个字)
                 </span>
                 
                 
@@ -171,20 +175,20 @@ var _hmt = _hmt || [];
         <div class="content">
             <!-- TOC -->
 <ul>
-<li><a href="#1-虚拟机栈-vm-stack">1 虚拟机栈 VM stack</a></li>
-<li><a href="#2-本地方法栈-native-method-stack">2 本地方法栈 Native Method stack</a></li>
-<li><a href="#3-程序计数器-program-counter-register">3 程序计数器 Program Counter Register</a></li>
-<li><a href="#4-方法区-method-area">4 方法区 Method Area</a><ul>
-<li><a href="#方法区内的常量池---运行时常量池runtime-constant-pool">方法区内的常量池 - 运行时常量池（Runtime Constant Pool）</a></li>
+<li><a href="#1-%E8%99%9A%E6%8B%9F%E6%9C%BA%E6%A0%88-vm-stack">1 虚拟机栈 VM stack</a></li>
+<li><a href="#2-%E6%9C%AC%E5%9C%B0%E6%96%B9%E6%B3%95%E6%A0%88-native-method-stack">2 本地方法栈 Native Method stack</a></li>
+<li><a href="#3-%E7%A8%8B%E5%BA%8F%E8%AE%A1%E6%95%B0%E5%99%A8-program-counter-register">3 程序计数器 Program Counter Register</a></li>
+<li><a href="#4-%E6%96%B9%E6%B3%95%E5%8C%BA-method-area">4 方法区 Method Area</a><ul>
+<li><a href="#%E6%96%B9%E6%B3%95%E5%8C%BA%E5%86%85%E7%9A%84%E5%B8%B8%E9%87%8F%E6%B1%A0---%E8%BF%90%E8%A1%8C%E6%97%B6%E5%B8%B8%E9%87%8F%E6%B1%A0runtime-constant-pool">方法区内的常量池 - 运行时常量池（Runtime Constant Pool）</a></li>
 </ul>
 </li>
-<li><a href="#5-堆空间-heap">5 堆空间 Heap</a><ul>
-<li><a href="#young年轻代">Young（年轻代）</a><ul>
-<li><a href="#伊甸园-eden-space">伊甸园（ Eden space）</a></li>
-<li><a href="#幸存者0区-survivor-0-space和幸存者1区-survivor1-space">幸存者0区（ Survivor 0 space）和幸存者1区（ Survivor1 space）</a></li>
+<li><a href="#5-%E5%A0%86%E7%A9%BA%E9%97%B4-heap">5 堆空间 Heap</a><ul>
+<li><a href="#young%E5%B9%B4%E8%BD%BB%E4%BB%A3">Young（年轻代）</a><ul>
+<li><a href="#%E4%BC%8A%E7%94%B8%E5%9B%AD-eden-space">伊甸园（ Eden space）</a></li>
+<li><a href="#%E5%B9%B8%E5%AD%98%E8%80%850%E5%8C%BA-survivor-0-space%E5%92%8C%E5%B9%B8%E5%AD%98%E8%80%851%E5%8C%BA-survivor1-space">幸存者0区（ Survivor 0 space）和幸存者1区（ Survivor1 space）</a></li>
 </ul>
 </li>
-<li><a href="#tenured老年代">Tenured（老年代）</a></li>
+<li><a href="#tenured%E8%80%81%E5%B9%B4%E4%BB%A3">Tenured（老年代）</a></li>
 </ul>
 </li>
 </ul>
@@ -658,6 +662,57 @@ var _hmt = _hmt || [];
         <div class="column-right-shadow is-hidden-widescreen ">
         
             
+<div class="card widget" id="toc">
+    <div class="card-content">
+        <div class="menu">
+            <h3 class="menu-label">
+                目录
+            </h3>
+            <ul class="menu-list"><li>
+        <a class="is-flex" href="#1-虚拟机栈-VM-stack">
+        <span class="has-mr-6">1</span>
+        <span>1 虚拟机栈 VM stack</span>
+        </a></li><li>
+        <a class="is-flex" href="#2-本地方法栈-Native-Method-stack">
+        <span class="has-mr-6">2</span>
+        <span>2 本地方法栈 Native Method stack</span>
+        </a></li><li>
+        <a class="is-flex" href="#3-程序计数器-Program-Counter-Register">
+        <span class="has-mr-6">3</span>
+        <span>3 程序计数器 Program Counter Register</span>
+        </a></li><li>
+        <a class="is-flex" href="#4-方法区-Method-Area">
+        <span class="has-mr-6">4</span>
+        <span>4 方法区 Method Area</span>
+        </a><ul class="menu-list"><li>
+        <a class="is-flex" href="#方法区内的常量池-运行时常量池（Runtime-Constant-Pool）">
+        <span class="has-mr-6">4.1</span>
+        <span>方法区内的常量池 - 运行时常量池（Runtime Constant Pool）</span>
+        </a></li></ul></li><li>
+        <a class="is-flex" href="#5-堆空间-Heap">
+        <span class="has-mr-6">5</span>
+        <span>5 堆空间 Heap</span>
+        </a><ul class="menu-list"><li>
+        <a class="is-flex" href="#Young（年轻代）">
+        <span class="has-mr-6">5.1</span>
+        <span>Young（年轻代）</span>
+        </a><ul class="menu-list"><li>
+        <a class="is-flex" href="#伊甸园（-Eden-space）">
+        <span class="has-mr-6">5.1.1</span>
+        <span>伊甸园（ Eden space）</span>
+        </a></li><li>
+        <a class="is-flex" href="#幸存者0区（-Survivor-0-space）和幸存者1区（-Survivor1-space）">
+        <span class="has-mr-6">5.1.2</span>
+        <span>幸存者0区（ Survivor 0 space）和幸存者1区（ Survivor1 space）</span>
+        </a></li></ul></li><li>
+        <a class="is-flex" href="#Tenured（老年代）">
+        <span class="has-mr-6">5.2</span>
+        <span>Tenured（老年代）</span>
+        </a></li></ul></li></ul>
+        </div>
+    </div>
+</div>
+
         
             
 <div class="card widget">
@@ -725,18 +780,18 @@ var _hmt = _hmt || [];
         
         <article class="media">
             <!-- 
-            <a href="/Python2ToPython3/" class="media-left">
+            <a href="/MySQL-Command/" class="media-left">
                 <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Python2切换Python3">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="MySQL基本命令">
                 </p>
             </a>
              -->
             <div class="media-content">
                 <div class="content">
                     <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
-                    <a href="/Python2ToPython3/" class="has-link-black-ter is-size-6">Python2切换Python3</a>
+                    <a href="/MySQL-Command/" class="has-link-black-ter is-size-6">MySQL基本命令</a>
                     <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
+                        <a class="has-link-grey -link" href="/categories/MySQL/">MySQL</a>
                     </p>
                 </div>
             </div>
@@ -744,18 +799,18 @@ var _hmt = _hmt || [];
         
         <article class="media">
             <!-- 
-            <a href="/SDCard-Read-Write/" class="media-left">
+            <a href="/Centos-Line/" class="media-left">
                 <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="SDCard文件读写权限">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Centos命令行图形界面切换">
                 </p>
             </a>
              -->
             <div class="media-content">
                 <div class="content">
                     <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
-                    <a href="/SDCard-Read-Write/" class="has-link-black-ter is-size-6">SDCard文件读写权限</a>
+                    <a href="/Centos-Line/" class="has-link-black-ter is-size-6">Centos命令行图形界面切换</a>
                     <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Android/">Android</a>
+                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
                     </p>
                 </div>
             </div>
@@ -1610,6 +1665,57 @@ var _hmt = _hmt || [];
 <div class="column is-4-tablet is-4-desktop is-3-widescreen is-hidden-touch is-hidden-desktop-only has-order-3 column-right ">
     
         
+<div class="card widget" id="toc">
+    <div class="card-content">
+        <div class="menu">
+            <h3 class="menu-label">
+                目录
+            </h3>
+            <ul class="menu-list"><li>
+        <a class="is-flex" href="#1-虚拟机栈-VM-stack">
+        <span class="has-mr-6">1</span>
+        <span>1 虚拟机栈 VM stack</span>
+        </a></li><li>
+        <a class="is-flex" href="#2-本地方法栈-Native-Method-stack">
+        <span class="has-mr-6">2</span>
+        <span>2 本地方法栈 Native Method stack</span>
+        </a></li><li>
+        <a class="is-flex" href="#3-程序计数器-Program-Counter-Register">
+        <span class="has-mr-6">3</span>
+        <span>3 程序计数器 Program Counter Register</span>
+        </a></li><li>
+        <a class="is-flex" href="#4-方法区-Method-Area">
+        <span class="has-mr-6">4</span>
+        <span>4 方法区 Method Area</span>
+        </a><ul class="menu-list"><li>
+        <a class="is-flex" href="#方法区内的常量池-运行时常量池（Runtime-Constant-Pool）">
+        <span class="has-mr-6">4.1</span>
+        <span>方法区内的常量池 - 运行时常量池（Runtime Constant Pool）</span>
+        </a></li></ul></li><li>
+        <a class="is-flex" href="#5-堆空间-Heap">
+        <span class="has-mr-6">5</span>
+        <span>5 堆空间 Heap</span>
+        </a><ul class="menu-list"><li>
+        <a class="is-flex" href="#Young（年轻代）">
+        <span class="has-mr-6">5.1</span>
+        <span>Young（年轻代）</span>
+        </a><ul class="menu-list"><li>
+        <a class="is-flex" href="#伊甸园（-Eden-space）">
+        <span class="has-mr-6">5.1.1</span>
+        <span>伊甸园（ Eden space）</span>
+        </a></li><li>
+        <a class="is-flex" href="#幸存者0区（-Survivor-0-space）和幸存者1区（-Survivor1-space）">
+        <span class="has-mr-6">5.1.2</span>
+        <span>幸存者0区（ Survivor 0 space）和幸存者1区（ Survivor1 space）</span>
+        </a></li></ul></li><li>
+        <a class="is-flex" href="#Tenured（老年代）">
+        <span class="has-mr-6">5.2</span>
+        <span>Tenured（老年代）</span>
+        </a></li></ul></li></ul>
+        </div>
+    </div>
+</div>
+
     
         
 <div class="card widget">
@@ -1677,18 +1783,18 @@ var _hmt = _hmt || [];
         
         <article class="media">
             <!-- 
-            <a href="/Python2ToPython3/" class="media-left">
+            <a href="/MySQL-Command/" class="media-left">
                 <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Python2切换Python3">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="MySQL基本命令">
                 </p>
             </a>
              -->
             <div class="media-content">
                 <div class="content">
                     <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
-                    <a href="/Python2ToPython3/" class="has-link-black-ter is-size-6">Python2切换Python3</a>
+                    <a href="/MySQL-Command/" class="has-link-black-ter is-size-6">MySQL基本命令</a>
                     <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
+                        <a class="has-link-grey -link" href="/categories/MySQL/">MySQL</a>
                     </p>
                 </div>
             </div>
@@ -1696,18 +1802,18 @@ var _hmt = _hmt || [];
         
         <article class="media">
             <!-- 
-            <a href="/SDCard-Read-Write/" class="media-left">
+            <a href="/Centos-Line/" class="media-left">
                 <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="SDCard文件读写权限">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Centos命令行图形界面切换">
                 </p>
             </a>
              -->
             <div class="media-content">
                 <div class="content">
                     <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
-                    <a href="/SDCard-Read-Write/" class="has-link-black-ter is-size-6">SDCard文件读写权限</a>
+                    <a href="/Centos-Line/" class="has-link-black-ter is-size-6">Centos命令行图形界面切换</a>
                     <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Android/">Android</a>
+                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
                     </p>
                 </div>
             </div>
