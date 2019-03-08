@@ -7,13 +7,13 @@
 
 
 
-    <meta name="description" content="1 基本场景 2 hash算法和单调性 3 consistent hashing算法的原理 环形hash空间 把对象映射到hash空间 把cache映射到hash空间 把对象映射到cache 考察cache的变动 移除cache 添加 cache     4 虚拟节点 平衡性   5 总结   转帖：一致性哈希算法 Consistent Hashing算法早在1997年就在论文《Consist">
+    <meta name="description" content="基本场景 hash算法和单调性 consistent hashing算法的原理 环形hash空间 把对象映射到hash空间 把cache映射到hash空间 把对象映射到cache 考察cache的变动 移除cache 添加 cache     虚拟节点 平衡性   总结   转帖：一致性哈希算法 Consistent Hashing算法早在1997年就在论文《Consistent hashin">
 <meta name="keywords" content="算法,一致性哈希算法">
 <meta property="og:type" content="article">
 <meta property="og:title" content="一致性哈希算法">
 <meta property="og:url" content="https://joeskye1701.github.io/Consistent-Hash-1/index.html">
 <meta property="og:site_name" content="Joe|博客">
-<meta property="og:description" content="1 基本场景 2 hash算法和单调性 3 consistent hashing算法的原理 环形hash空间 把对象映射到hash空间 把cache映射到hash空间 把对象映射到cache 考察cache的变动 移除cache 添加 cache     4 虚拟节点 平衡性   5 总结   转帖：一致性哈希算法 Consistent Hashing算法早在1997年就在论文《Consist">
+<meta property="og:description" content="基本场景 hash算法和单调性 consistent hashing算法的原理 环形hash空间 把对象映射到hash空间 把cache映射到hash空间 把对象映射到cache 考察cache的变动 移除cache 添加 cache     虚拟节点 平衡性   总结   转帖：一致性哈希算法 Consistent Hashing算法早在1997年就在论文《Consistent hashin">
 <meta property="og:locale" content="zh-CN">
 <meta property="og:image" content="https://joeskye1701.github.io/Consistent-Hash-1/arithmetic-consistency-hash-1.jpg">
 <meta property="og:image" content="https://joeskye1701.github.io/Consistent-Hash-1/arithmetic-consistency-hash-2.jpg">
@@ -22,10 +22,10 @@
 <meta property="og:image" content="https://joeskye1701.github.io/Consistent-Hash-1/arithmetic-consistency-hash-5.jpg">
 <meta property="og:image" content="https://joeskye1701.github.io/Consistent-Hash-1/arithmetic-consistency-hash-6.jpg">
 <meta property="og:image" content="https://joeskye1701.github.io/Consistent-Hash-1/arithmetic-consistency-hash-7.jpg">
-<meta property="og:updated_time" content="2019-03-06T19:27:51.147Z">
+<meta property="og:updated_time" content="2019-03-08T19:50:37.533Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="一致性哈希算法">
-<meta name="twitter:description" content="1 基本场景 2 hash算法和单调性 3 consistent hashing算法的原理 环形hash空间 把对象映射到hash空间 把cache映射到hash空间 把对象映射到cache 考察cache的变动 移除cache 添加 cache     4 虚拟节点 平衡性   5 总结   转帖：一致性哈希算法 Consistent Hashing算法早在1997年就在论文《Consist">
+<meta name="twitter:description" content="基本场景 hash算法和单调性 consistent hashing算法的原理 环形hash空间 把对象映射到hash空间 把cache映射到hash空间 把对象映射到cache 考察cache的变动 移除cache 添加 cache     虚拟节点 平衡性   总结   转帖：一致性哈希算法 Consistent Hashing算法早在1997年就在论文《Consistent hashin">
 <meta name="twitter:image" content="https://joeskye1701.github.io/Consistent-Hash-1/arithmetic-consistency-hash-1.jpg">
 
 
@@ -179,9 +179,9 @@ var _hmt = _hmt || [];
         <div class="content">
             <!-- TOC -->
 <ul>
-<li><a href="#1-基本场景">1 基本场景</a></li>
-<li><a href="#2-hash算法和单调性">2 hash算法和单调性</a></li>
-<li><a href="#3-consistent-hashing算法的原理">3 consistent hashing算法的原理</a><ul>
+<li><a href="#基本场景">基本场景</a></li>
+<li><a href="#hash算法和单调性">hash算法和单调性</a></li>
+<li><a href="#consistent-hashing算法的原理">consistent hashing算法的原理</a><ul>
 <li><a href="#环形hash空间">环形hash空间</a></li>
 <li><a href="#把对象映射到hash空间">把对象映射到hash空间</a></li>
 <li><a href="#把cache映射到hash空间">把cache映射到hash空间</a></li>
@@ -193,23 +193,23 @@ var _hmt = _hmt || [];
 </li>
 </ul>
 </li>
-<li><a href="#4-虚拟节点">4 虚拟节点</a><ul>
+<li><a href="#虚拟节点">虚拟节点</a><ul>
 <li><a href="#平衡性">平衡性</a></li>
 </ul>
 </li>
-<li><a href="#5-总结">5 总结</a></li>
+<li><a href="#总结">总结</a></li>
 </ul>
 <!-- /TOC -->
 <p>转帖：<a href="http://blog.csdn.net/sparkliang/article/details/5279393" target="_blank" rel="noopener">一致性哈希算法</a></p>
 <p>Consistent Hashing算法早在1997年就在论文《Consistent hashing and random trees》 (<a href="https://dl.acm.org/citation.cfm?id=258660)中被提出，目前在cache系统中应用越来越广泛。" target="_blank" rel="noopener">https://dl.acm.org/citation.cfm?id=258660)中被提出，目前在cache系统中应用越来越广泛。</a>  </p>
-<h1 id="1-基本场景"><a href="#1-基本场景" class="headerlink" title="1 基本场景"></a>1 基本场景</h1><p>比如你有N个cache服务器（后面简称cache），那么如何将一个对象object映射到N个cache 上呢，你很可能会采用类似下面的通用方法计算object的hash值，然后均匀的映射到到N个cache；<br><code>hash(object)%N</code><br>一切都运行正常，再考虑如下的两种情况；   </p>
+<h1 id="基本场景"><a href="#基本场景" class="headerlink" title="基本场景"></a>基本场景</h1><p>比如你有N个cache服务器（后面简称cache），那么如何将一个对象object映射到N个cache 上呢，你很可能会采用类似下面的通用方法计算object的hash值，然后均匀的映射到到N个cache；<br><code>hash(object)%N</code><br>一切都运行正常，再考虑如下的两种情况；   </p>
 <ul>
 <li>一个cache服务器m down掉了（在实际应用中必须要考虑这种情况），这样所有映射到cache m的对象都会失效，怎么办，需要把cache m从cache中移除，这时候cache是N-1台，映射公式变成了<code>hash(object)%(N-1)</code>。</li>
 <li>由于访问加重，需要添加cache，这时候cache是<code>N+1</code>台，映射公式变成了<code>hash(object)%(N+1)</code></li>
 </ul>
 <p>意味着什么？这意味着突然之间几乎所有的cache都失效了。对于服务器而言，这是一场灾难，洪水般的访问都会直接冲向后台服务器；<br>再来考虑第三个问题，由于硬件能力越来越强，你可能想让后面添加的节点多做点活，显然上面的 hash算法也做不到。<br>有什么方法可以改变这个状况呢，这就是Consistent Hashing。<br><a id="more"></a></p>
-<h1 id="2-hash算法和单调性"><a href="#2-hash算法和单调性" class="headerlink" title="2 hash算法和单调性"></a>2 hash算法和单调性</h1><p>Hash算法的一个衡量指标是单调性（Monotonicity），定义如下：<br>单调性是指如果已经有一些内容通过哈希分派到了相应的缓冲中，又有新的缓冲加入到系统中。哈希的结果应能够保证原有已分配的内容可以被映射到原有的缓存或者新的缓冲中去，而不会被映射到旧的缓冲集合中的其他缓冲区。（系统发生变化（新增，删除服务器）的时候，原来的对象可以映射到新的服务器）<br>容易看到，上面的简单hash算法<code>hash(object)%N</code>难以满足单调性要求。  </p>
-<h1 id="3-consistent-hashing算法的原理"><a href="#3-consistent-hashing算法的原理" class="headerlink" title="3 consistent hashing算法的原理"></a>3 consistent hashing算法的原理</h1><p>Consistent Hashing是一种hash算法，简单的说，在移除/添加一个cache时，它能够尽可能小的改变已存在key映射关系，尽可能的满足单调性的要求。<br>下面就来按照5个步骤简单讲讲consistent hashing算法的基本原理。  </p>
+<h1 id="hash算法和单调性"><a href="#hash算法和单调性" class="headerlink" title="hash算法和单调性"></a>hash算法和单调性</h1><p>Hash算法的一个衡量指标是单调性（Monotonicity），定义如下：<br>单调性是指如果已经有一些内容通过哈希分派到了相应的缓冲中，又有新的缓冲加入到系统中。哈希的结果应能够保证原有已分配的内容可以被映射到原有的缓存或者新的缓冲中去，而不会被映射到旧的缓冲集合中的其他缓冲区。（系统发生变化（新增，删除服务器）的时候，原来的对象可以映射到新的服务器）<br>容易看到，上面的简单hash算法<code>hash(object)%N</code>难以满足单调性要求。  </p>
+<h1 id="consistent-hashing算法的原理"><a href="#consistent-hashing算法的原理" class="headerlink" title="consistent hashing算法的原理"></a>consistent hashing算法的原理</h1><p>Consistent Hashing是一种hash算法，简单的说，在移除/添加一个cache时，它能够尽可能小的改变已存在key映射关系，尽可能的满足单调性的要求。<br>下面就来按照5个步骤简单讲讲consistent hashing算法的基本原理。  </p>
 <h2 id="环形hash空间"><a href="#环形hash空间" class="headerlink" title="环形hash空间"></a>环形hash空间</h2><p>考虑通常的hash算法都是将value映射到一个32为的key值，也即是0~$2^{32-1}$次方的数值空间；我们可以将这个空间想象成一个首（0）尾（$2^{32-1}$）相接的圆环，如下面图1所示的那样。<br><img src="./arithmetic-consistency-hash-1.jpg" alt="图1">  </p>
 <h2 id="把对象映射到hash空间"><a href="#把对象映射到hash空间" class="headerlink" title="把对象映射到hash空间"></a>把对象映射到hash空间</h2><p>接下来考虑4个对象<code>object1~object4</code>，通过hash函数计算出的hash值key在环上的分布如下图2所示。<br><code>hash(object1) = key1</code>;<br><code>hash(object4) = key4</code>;<br><img src="./arithmetic-consistency-hash-2.jpg" alt="图2">  </p>
 <h2 id="把cache映射到hash空间"><a href="#把cache映射到hash空间" class="headerlink" title="把cache映射到hash空间"></a>把cache映射到hash空间</h2><p>Consistent Hashing的基本思想就是将对象和cache都映射到同一个hash数值空间中，并且使用相同的hash算法。<br>假设当前有A,B和C共3台cache，那么其映射结果将下图3所示，他们在hash空间中，以对应的hash值排列。<br>hash(cache A) = key A;<br>hash(cache C) = key C;<br><img src="./arithmetic-consistency-hash-3.jpg" alt="图3"><br>说到这里，顺便提一下cache的hash计算，一般的方法可以使用cache机器的IP地址或者机器名作为hash输入。  </p>
@@ -217,9 +217,9 @@ var _hmt = _hmt || [];
 <h2 id="考察cache的变动"><a href="#考察cache的变动" class="headerlink" title="考察cache的变动"></a>考察cache的变动</h2><p>前面讲过，通过hash然后求余的方法带来的最大问题就在于不能满足单调性，当cache有所变动时，cache会失效，进而对后台服务器造成巨大的冲击，现在就来分析分析Consistent Hashing算法。</p>
 <h3 id="移除cache"><a href="#移除cache" class="headerlink" title="移除cache"></a>移除cache</h3><p>考虑假设<code>cache B</code>挂掉了，根据上面讲到的映射方法，这时受影响的将仅是那些沿<code>cache B</code>逆时针遍历直到下一个cache（<code>cache C</code>）之间的对象，也即是本来映射到<code>cache B</code>上的那些对象。<br>因此这里仅需要变动对象<code>object4</code>，将其重新映射到<code>cache C</code>上即可；参见下图4。<br><img src="./arithmetic-consistency-hash-4.jpg" alt="图4">  </p>
 <h3 id="添加-cache"><a href="#添加-cache" class="headerlink" title="添加 cache"></a>添加 cache</h3><p>再考虑添加一台新的<code>cache D</code>的情况，假设在这个环形hash空间中，<code>cache D</code>被映射在对象<code>object2</code>和<code>object3</code>之间。这时受影响的将仅是那些沿<code>cache D</code>逆时针遍历直到下一个cache（<code>cache B</code>）之间的对象（它们是也本来映射到<code>cache C</code>上对象的一部分），将这些对象重新映射到<code>cache D</code>上即可。<br>因此这里仅需要变动对象<code>object2</code>，将其重新映射到<code>cache D</code>上；参见下图5。<br><img src="./arithmetic-consistency-hash-5.jpg" alt="图5">  </p>
-<h1 id="4-虚拟节点"><a href="#4-虚拟节点" class="headerlink" title="4 虚拟节点"></a>4 虚拟节点</h1><p>考量Hash算法的另一个指标是平衡性(Balance) ，定义如下：  </p>
+<h1 id="虚拟节点"><a href="#虚拟节点" class="headerlink" title="虚拟节点"></a>虚拟节点</h1><p>考量Hash算法的另一个指标是平衡性(Balance) ，定义如下：  </p>
 <h2 id="平衡性"><a href="#平衡性" class="headerlink" title="平衡性"></a>平衡性</h2><p>平衡性是指哈希的结果能够尽可能分布到所有的缓冲中去，这样可以使得所有的缓冲空间都得到利用。<br>hash算法并不是保证绝对的平衡，如果cache较少的话，对象并不能被均匀的映射到cache上，比如在上面的例子中，仅部署<code>cache A</code>和<code>cache C</code>的情况下，在4个对象中，<code>cache A</code>仅存储<code>object1</code>，而<code>cache C</code>则存储<code>object2</code>、<code>object3</code>和<code>object4</code>；分布是很不均衡的。<br>为了解决这种情况，Consistent Hashing引入了“虚拟节点”的概念，它可以如下定义：<br>“虚拟节点”（virtual node）是实际节点在hash空间的复制品（replica），一实际个节点对应了若干个“虚拟节点”，这个对应个数也成为“复制个数”，“虚拟节点”在hash空间中以hash值排列。<br>仍以仅部署<code>cache A</code>和<code>cache C</code>的情况为例，在图4中我们已经看到，cache分布并不均匀。现在我们引入虚拟节点，并设置“复制个数”为2，这就意味着一共会存在4个“虚拟节点”，<code>cache A1</code>, <code>cache A2</code>代表<code>cache A</code>；<code>cache C1</code>, <code>cache C2</code>代表<code>cache C</code>；假设一种比较理想的情况，参见图6。<br><img src="./arithmetic-consistency-hash-6.jpg" alt="图6"><br>此时，对象到“虚拟节点”的映射关系为：<br><code>objec1-&gt;cache A2;</code><br><code>objec2-&gt;cache A1;</code><br><code>objec3-&gt;cache C1;</code><br><code>objec4-&gt;cache C2;</code><br>因此对象<code>object1</code>和<code>object2</code>都被映射到<code>cache A</code>上，而<code>object3</code>和<code>object4</code>映射到了<code>cache C</code>上；平衡性有了很大提高。<br>引入“虚拟节点”后，映射关系就从{对象-&gt;节点}转换到了{对象-&gt;虚拟节点} 。<br>查询物体所在cache时的映射关系如图7所示。<br><img src="./arithmetic-consistency-hash-7.jpg" alt="图7"><br>“虚拟节点”的hash计算可以采用对应节点的IP地址加数字后缀的方式。例如假设 cache A的IP地址为202.168.14.241。<br>引入“虚拟节点”前，计算cache A的hash值：Hash(“202.168.14.241”);<br>引入“虚拟节点”后，计算“虚拟节”点cache A1和cache A2的hash值：<br>Hash(“202.168.14.241#1”);  // cache A1<br>Hash(“202.168.14.241#2”);  // cache A2  </p>
-<h1 id="5-总结"><a href="#5-总结" class="headerlink" title="5 总结"></a>5 总结</h1><p>Consistent Hashing的基本原理就是这些，具体的分布性等理论分析应该是很复杂的，不过一般也用不到。<br><a href="http://weblogs.java.net/blog/2007/11/27/consistent-hashing" target="_blank" rel="noopener">http://weblogs.java.net/blog/2007/11/27/consistent-hashing</a> 上面有一个java版本的例子，可以参考。<br><a href="http://blog.csdn.net/mayongzhan/archive/2009/06/25/4298834.aspx" target="_blank" rel="noopener">http://blog.csdn.net/mayongzhan/archive/2009/06/25/4298834.aspx</a> 转载了一个PHP版的实现代码。<br><a href="http://www.codeproject.com/KB/recipes/lib-conhash.aspx" target="_blank" rel="noopener">http://www.codeproject.com/KB/recipes/lib-conhash.aspx</a> C语言版本<br>一些参考资料地址：<br><a href="http://portal.acm.org/citation.cfm?id=258660" target="_blank" rel="noopener">http://portal.acm.org/citation.cfm?id=258660</a><br><a href="http://en.wikipedia.org/wiki/Consistent_hashing" target="_blank" rel="noopener">http://en.wikipedia.org/wiki/Consistent_hashing</a><br><a href="http://www.spiteful.com/2008/03/17/programmers-toolbox-part-3-consistent-hashing/" target="_blank" rel="noopener">http://www.spiteful.com/2008/03/17/programmers-toolbox-part-3-consistent-hashing/</a><br><a href="http://weblogs.java.net/blog/2007/11/27/consistent-hashing" target="_blank" rel="noopener">http://weblogs.java.net/blog/2007/11/27/consistent-hashing</a><br><a href="http://tech.idv2.com/2008/07/24/memcached-004/" target="_blank" rel="noopener">http://tech.idv2.com/2008/07/24/memcached-004/</a><br><a href="http://blog.csdn.net/mayongzhan/archive/2009/06/25/4298834.aspx" target="_blank" rel="noopener">http://blog.csdn.net/mayongzhan/archive/2009/06/25/4298834.aspx</a>  </p>
+<h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><p>Consistent Hashing的基本原理就是这些，具体的分布性等理论分析应该是很复杂的，不过一般也用不到。<br><a href="http://weblogs.java.net/blog/2007/11/27/consistent-hashing" target="_blank" rel="noopener">http://weblogs.java.net/blog/2007/11/27/consistent-hashing</a> 上面有一个java版本的例子，可以参考。<br><a href="http://blog.csdn.net/mayongzhan/archive/2009/06/25/4298834.aspx" target="_blank" rel="noopener">http://blog.csdn.net/mayongzhan/archive/2009/06/25/4298834.aspx</a> 转载了一个PHP版的实现代码。<br><a href="http://www.codeproject.com/KB/recipes/lib-conhash.aspx" target="_blank" rel="noopener">http://www.codeproject.com/KB/recipes/lib-conhash.aspx</a> C语言版本<br>一些参考资料地址：<br><a href="http://portal.acm.org/citation.cfm?id=258660" target="_blank" rel="noopener">http://portal.acm.org/citation.cfm?id=258660</a><br><a href="http://en.wikipedia.org/wiki/Consistent_hashing" target="_blank" rel="noopener">http://en.wikipedia.org/wiki/Consistent_hashing</a><br><a href="http://www.spiteful.com/2008/03/17/programmers-toolbox-part-3-consistent-hashing/" target="_blank" rel="noopener">http://www.spiteful.com/2008/03/17/programmers-toolbox-part-3-consistent-hashing/</a><br><a href="http://weblogs.java.net/blog/2007/11/27/consistent-hashing" target="_blank" rel="noopener">http://weblogs.java.net/blog/2007/11/27/consistent-hashing</a><br><a href="http://tech.idv2.com/2008/07/24/memcached-004/" target="_blank" rel="noopener">http://tech.idv2.com/2008/07/24/memcached-004/</a><br><a href="http://blog.csdn.net/mayongzhan/archive/2009/06/25/4298834.aspx" target="_blank" rel="noopener">http://blog.csdn.net/mayongzhan/archive/2009/06/25/4298834.aspx</a>  </p>
 
         </div>
         
@@ -677,17 +677,17 @@ var _hmt = _hmt || [];
                 目录
             </h3>
             <ul class="menu-list"><li>
-        <a class="is-flex" href="#1-基本场景">
+        <a class="is-flex" href="#基本场景">
         <span class="has-mr-6">1</span>
-        <span>1 基本场景</span>
+        <span>基本场景</span>
         </a></li><li>
-        <a class="is-flex" href="#2-hash算法和单调性">
+        <a class="is-flex" href="#hash算法和单调性">
         <span class="has-mr-6">2</span>
-        <span>2 hash算法和单调性</span>
+        <span>hash算法和单调性</span>
         </a></li><li>
-        <a class="is-flex" href="#3-consistent-hashing算法的原理">
+        <a class="is-flex" href="#consistent-hashing算法的原理">
         <span class="has-mr-6">3</span>
-        <span>3 consistent hashing算法的原理</span>
+        <span>consistent hashing算法的原理</span>
         </a><ul class="menu-list"><li>
         <a class="is-flex" href="#环形hash空间">
         <span class="has-mr-6">3.1</span>
@@ -717,17 +717,17 @@ var _hmt = _hmt || [];
         <span class="has-mr-6">3.5.2</span>
         <span>添加 cache</span>
         </a></li></ul></li></ul></li><li>
-        <a class="is-flex" href="#4-虚拟节点">
+        <a class="is-flex" href="#虚拟节点">
         <span class="has-mr-6">4</span>
-        <span>4 虚拟节点</span>
+        <span>虚拟节点</span>
         </a><ul class="menu-list"><li>
         <a class="is-flex" href="#平衡性">
         <span class="has-mr-6">4.1</span>
         <span>平衡性</span>
         </a></li></ul></li><li>
-        <a class="is-flex" href="#5-总结">
+        <a class="is-flex" href="#总结">
         <span class="has-mr-6">5</span>
-        <span>5 总结</span>
+        <span>总结</span>
         </a></li></ul>
         </div>
     </div>
@@ -800,6 +800,25 @@ var _hmt = _hmt || [];
         
         <article class="media">
             <!-- 
+            <a href="/Python2ToPython3/" class="media-left">
+                <p class="image is-64x64">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Python2切换Python3">
+                </p>
+            </a>
+             -->
+            <div class="media-content">
+                <div class="content">
+                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
+                    <a href="/Python2ToPython3/" class="has-link-black-ter is-size-6">Python2切换Python3</a>
+                    <p class="is-size-7 is-uppercase">
+                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
+                    </p>
+                </div>
+            </div>
+        </article>
+        
+        <article class="media">
+            <!-- 
             <a href="/MySQL-Command/" class="media-left">
                 <p class="image is-64x64">
                     <img class="thumbnail" src="/images/thumbnail.svg" alt="MySQL基本命令">
@@ -812,25 +831,6 @@ var _hmt = _hmt || [];
                     <a href="/MySQL-Command/" class="has-link-black-ter is-size-6">MySQL基本命令</a>
                     <p class="is-size-7 is-uppercase">
                         <a class="has-link-grey -link" href="/categories/MySQL/">MySQL</a>
-                    </p>
-                </div>
-            </div>
-        </article>
-        
-        <article class="media">
-            <!-- 
-            <a href="/Centos-Line/" class="media-left">
-                <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Centos命令行图形界面切换">
-                </p>
-            </a>
-             -->
-            <div class="media-content">
-                <div class="content">
-                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
-                    <a href="/Centos-Line/" class="has-link-black-ter is-size-6">Centos命令行图形界面切换</a>
-                    <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
                     </p>
                 </div>
             </div>
@@ -1692,17 +1692,17 @@ var _hmt = _hmt || [];
                 目录
             </h3>
             <ul class="menu-list"><li>
-        <a class="is-flex" href="#1-基本场景">
+        <a class="is-flex" href="#基本场景">
         <span class="has-mr-6">1</span>
-        <span>1 基本场景</span>
+        <span>基本场景</span>
         </a></li><li>
-        <a class="is-flex" href="#2-hash算法和单调性">
+        <a class="is-flex" href="#hash算法和单调性">
         <span class="has-mr-6">2</span>
-        <span>2 hash算法和单调性</span>
+        <span>hash算法和单调性</span>
         </a></li><li>
-        <a class="is-flex" href="#3-consistent-hashing算法的原理">
+        <a class="is-flex" href="#consistent-hashing算法的原理">
         <span class="has-mr-6">3</span>
-        <span>3 consistent hashing算法的原理</span>
+        <span>consistent hashing算法的原理</span>
         </a><ul class="menu-list"><li>
         <a class="is-flex" href="#环形hash空间">
         <span class="has-mr-6">3.1</span>
@@ -1732,17 +1732,17 @@ var _hmt = _hmt || [];
         <span class="has-mr-6">3.5.2</span>
         <span>添加 cache</span>
         </a></li></ul></li></ul></li><li>
-        <a class="is-flex" href="#4-虚拟节点">
+        <a class="is-flex" href="#虚拟节点">
         <span class="has-mr-6">4</span>
-        <span>4 虚拟节点</span>
+        <span>虚拟节点</span>
         </a><ul class="menu-list"><li>
         <a class="is-flex" href="#平衡性">
         <span class="has-mr-6">4.1</span>
         <span>平衡性</span>
         </a></li></ul></li><li>
-        <a class="is-flex" href="#5-总结">
+        <a class="is-flex" href="#总结">
         <span class="has-mr-6">5</span>
-        <span>5 总结</span>
+        <span>总结</span>
         </a></li></ul>
         </div>
     </div>
@@ -1815,6 +1815,25 @@ var _hmt = _hmt || [];
         
         <article class="media">
             <!-- 
+            <a href="/Python2ToPython3/" class="media-left">
+                <p class="image is-64x64">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Python2切换Python3">
+                </p>
+            </a>
+             -->
+            <div class="media-content">
+                <div class="content">
+                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
+                    <a href="/Python2ToPython3/" class="has-link-black-ter is-size-6">Python2切换Python3</a>
+                    <p class="is-size-7 is-uppercase">
+                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
+                    </p>
+                </div>
+            </div>
+        </article>
+        
+        <article class="media">
+            <!-- 
             <a href="/MySQL-Command/" class="media-left">
                 <p class="image is-64x64">
                     <img class="thumbnail" src="/images/thumbnail.svg" alt="MySQL基本命令">
@@ -1827,25 +1846,6 @@ var _hmt = _hmt || [];
                     <a href="/MySQL-Command/" class="has-link-black-ter is-size-6">MySQL基本命令</a>
                     <p class="is-size-7 is-uppercase">
                         <a class="has-link-grey -link" href="/categories/MySQL/">MySQL</a>
-                    </p>
-                </div>
-            </div>
-        </article>
-        
-        <article class="media">
-            <!-- 
-            <a href="/Centos-Line/" class="media-left">
-                <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Centos命令行图形界面切换">
-                </p>
-            </a>
-             -->
-            <div class="media-content">
-                <div class="content">
-                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
-                    <a href="/Centos-Line/" class="has-link-black-ter is-size-6">Centos命令行图形界面切换</a>
-                    <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
                     </p>
                 </div>
             </div>

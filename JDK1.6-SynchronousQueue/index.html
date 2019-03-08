@@ -7,18 +7,18 @@
 
 
 
-    <meta name="description" content="1 介绍 2 源码分析 SynchronousQueue#Transferer SynchronousQueue#TransferStack 伪栈实现 SynchronousQueue#TransferStack#transfer() SynchronousQueue#TransferStack#snode() SynchronousQueue#TransferStack#awaitFulfi">
+    <meta name="description" content="介绍 源码分析 SynchronousQueue#Transferer SynchronousQueue#TransferStack 伪栈实现 SynchronousQueue#TransferStack#transfer() SynchronousQueue#TransferStack#snode() SynchronousQueue#TransferStack#awaitFulfill()">
 <meta name="keywords" content="JDK6 源码">
 <meta property="og:type" content="article">
 <meta property="og:title" content="JDK1.6 SynchronousQueue">
 <meta property="og:url" content="https://joeskye1701.github.io/JDK1.6-SynchronousQueue/index.html">
 <meta property="og:site_name" content="Joe|博客">
-<meta property="og:description" content="1 介绍 2 源码分析 SynchronousQueue#Transferer SynchronousQueue#TransferStack 伪栈实现 SynchronousQueue#TransferStack#transfer() SynchronousQueue#TransferStack#snode() SynchronousQueue#TransferStack#awaitFulfi">
+<meta property="og:description" content="介绍 源码分析 SynchronousQueue#Transferer SynchronousQueue#TransferStack 伪栈实现 SynchronousQueue#TransferStack#transfer() SynchronousQueue#TransferStack#snode() SynchronousQueue#TransferStack#awaitFulfill()">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:updated_time" content="2019-03-06T19:32:30.792Z">
+<meta property="og:updated_time" content="2019-03-08T19:17:03.750Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="JDK1.6 SynchronousQueue">
-<meta name="twitter:description" content="1 介绍 2 源码分析 SynchronousQueue#Transferer SynchronousQueue#TransferStack 伪栈实现 SynchronousQueue#TransferStack#transfer() SynchronousQueue#TransferStack#snode() SynchronousQueue#TransferStack#awaitFulfi">
+<meta name="twitter:description" content="介绍 源码分析 SynchronousQueue#Transferer SynchronousQueue#TransferStack 伪栈实现 SynchronousQueue#TransferStack#transfer() SynchronousQueue#TransferStack#snode() SynchronousQueue#TransferStack#awaitFulfill()">
 
 
 
@@ -171,8 +171,8 @@ var _hmt = _hmt || [];
         <div class="content">
             <!-- TOC -->
 <ul>
-<li><a href="#1-%E4%BB%8B%E7%BB%8D">1 介绍</a></li>
-<li><a href="#2-%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90">2 源码分析</a><ul>
+<li><a href="#%E4%BB%8B%E7%BB%8D">介绍</a></li>
+<li><a href="#%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90">源码分析</a><ul>
 <li><a href="#synchronousqueuetransferer">SynchronousQueue#Transferer</a></li>
 <li><a href="#synchronousqueuetransferstack-%E4%BC%AA%E6%A0%88%E5%AE%9E%E7%8E%B0">SynchronousQueue#TransferStack 伪栈实现</a></li>
 <li><a href="#synchronousqueuetransferstacktransfer">SynchronousQueue#TransferStack#transfer()</a></li>
@@ -194,12 +194,12 @@ var _hmt = _hmt || [];
 <li><a href="#%E6%80%BB%E7%BB%93">总结</a></li>
 </ul>
 <!-- /TOC -->
-<h1 id="1-介绍"><a href="#1-介绍" class="headerlink" title="1 介绍"></a>1 介绍</h1><ul>
+<h1 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h1><ul>
 <li>SynchronousQueue是一种特殊的阻塞队列，它本身没有容量，只有当一个线程从队列取数据的同时，另一个线程才能放一个数据到队列中，反之亦然。存取过程相当于一个线程把数据(安全的)交给另一个线程的过程。</li>
 <li>SynchronousQueue也支持公平和非公平模式。</li>
 </ul>
 <a id="more"></a>
-<h1 id="2-源码分析"><a href="#2-源码分析" class="headerlink" title="2 源码分析"></a>2 源码分析</h1><p>SynchronousQueue内部采用伪栈和伪队列来实现，分别对应非公平模式和公平模式。</p>
+<h1 id="源码分析"><a href="#源码分析" class="headerlink" title="源码分析"></a>源码分析</h1><p>SynchronousQueue内部采用伪栈和伪队列来实现，分别对应非公平模式和公平模式。</p>
 <h2 id="SynchronousQueue-Transferer"><a href="#SynchronousQueue-Transferer" class="headerlink" title="SynchronousQueue#Transferer"></a>SynchronousQueue#Transferer</h2><figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment"> * Shared internal API for dual stacks and queues.</span></span><br><span class="line"><span class="hljs-comment"> */</span></span><br><span class="line"><span class="hljs-comment">// 1</span></span><br><span class="line"><span class="hljs-keyword">static</span> <span class="hljs-keyword">abstract</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Transferer</span> </span>&#123;</span><br><span class="line">    <span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment">     * Performs a put or take.</span></span><br><span class="line"><span class="hljs-comment">     *</span></span><br><span class="line"><span class="hljs-comment">     * <span class="hljs-doctag">@param</span> e if non-null, the item to be handed to a consumer;</span></span><br><span class="line"><span class="hljs-comment">     *          if null, requests that transfer return an item</span></span><br><span class="line"><span class="hljs-comment">     *          offered by producer.</span></span><br><span class="line"><span class="hljs-comment">     // 2</span></span><br><span class="line"><span class="hljs-comment">     * <span class="hljs-doctag">@param</span> timed if this operation should timeout</span></span><br><span class="line"><span class="hljs-comment">     * <span class="hljs-doctag">@param</span> nanos the timeout, in nanoseconds</span></span><br><span class="line"><span class="hljs-comment">     * <span class="hljs-doctag">@return</span> if non-null, the item provided or received; if null,</span></span><br><span class="line"><span class="hljs-comment">     *         the operation failed due to timeout or interrupt --</span></span><br><span class="line"><span class="hljs-comment">     *         the caller can distinguish which of these occurred</span></span><br><span class="line"><span class="hljs-comment">     *         by checking Thread.interrupted.</span></span><br><span class="line"><span class="hljs-comment">     */</span></span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">abstract</span> Object <span class="hljs-title">transfer</span><span class="hljs-params">(Object e, <span class="hljs-keyword">boolean</span> timed, <span class="hljs-keyword">long</span> nanos)</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <p>伪栈和伪队列的公共基类。<br>标注代码分析</p>
 <ol>
@@ -422,16 +422,16 @@ var _hmt = _hmt || [];
     <div class="level post-navigation is-flex-wrap is-mobile">
         
         <div class="level-start">
-            <a class="level level-item has-link-grey  article-nav-prev" href="/JDK1.6-ThreadPoolExecutor/">
+            <a class="level level-item has-link-grey  article-nav-prev" href="/JDK1.6-ThreadLocal/">
                 <i class="level-item fas fa-chevron-left"></i>
-                <span class="level-item">JDK1.6 ThreadPoolExecutor</span>
+                <span class="level-item">JDK1.6 ThreadLocal</span>
             </a>
         </div>
         
         
         <div class="level-end">
-            <a class="level level-item has-link-grey  article-nav-next" href="/JDK1.6-ThreadLocal/">
-                <span class="level-item">JDK1.6 ThreadLocal</span>
+            <a class="level level-item has-link-grey  article-nav-next" href="/JDK1.6-ScheduledThreadPoolExecutor/">
+                <span class="level-item">JDK1.6 ScheduledThreadPoolExecutor</span>
                 <i class="level-item fas fa-chevron-right"></i>
             </a>
         </div>
@@ -821,13 +821,13 @@ var _hmt = _hmt || [];
                 目录
             </h3>
             <ul class="menu-list"><li>
-        <a class="is-flex" href="#1-介绍">
+        <a class="is-flex" href="#介绍">
         <span class="has-mr-6">1</span>
-        <span>1 介绍</span>
+        <span>介绍</span>
         </a></li><li>
-        <a class="is-flex" href="#2-源码分析">
+        <a class="is-flex" href="#源码分析">
         <span class="has-mr-6">2</span>
-        <span>2 源码分析</span>
+        <span>源码分析</span>
         </a><ul class="menu-list"><li>
         <a class="is-flex" href="#SynchronousQueue-Transferer">
         <span class="has-mr-6">2.1</span>
@@ -968,6 +968,25 @@ var _hmt = _hmt || [];
         
         <article class="media">
             <!-- 
+            <a href="/Python2ToPython3/" class="media-left">
+                <p class="image is-64x64">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Python2切换Python3">
+                </p>
+            </a>
+             -->
+            <div class="media-content">
+                <div class="content">
+                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
+                    <a href="/Python2ToPython3/" class="has-link-black-ter is-size-6">Python2切换Python3</a>
+                    <p class="is-size-7 is-uppercase">
+                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
+                    </p>
+                </div>
+            </div>
+        </article>
+        
+        <article class="media">
+            <!-- 
             <a href="/MySQL-Command/" class="media-left">
                 <p class="image is-64x64">
                     <img class="thumbnail" src="/images/thumbnail.svg" alt="MySQL基本命令">
@@ -980,25 +999,6 @@ var _hmt = _hmt || [];
                     <a href="/MySQL-Command/" class="has-link-black-ter is-size-6">MySQL基本命令</a>
                     <p class="is-size-7 is-uppercase">
                         <a class="has-link-grey -link" href="/categories/MySQL/">MySQL</a>
-                    </p>
-                </div>
-            </div>
-        </article>
-        
-        <article class="media">
-            <!-- 
-            <a href="/Centos-Line/" class="media-left">
-                <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Centos命令行图形界面切换">
-                </p>
-            </a>
-             -->
-            <div class="media-content">
-                <div class="content">
-                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
-                    <a href="/Centos-Line/" class="has-link-black-ter is-size-6">Centos命令行图形界面切换</a>
-                    <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
                     </p>
                 </div>
             </div>
@@ -1860,13 +1860,13 @@ var _hmt = _hmt || [];
                 目录
             </h3>
             <ul class="menu-list"><li>
-        <a class="is-flex" href="#1-介绍">
+        <a class="is-flex" href="#介绍">
         <span class="has-mr-6">1</span>
-        <span>1 介绍</span>
+        <span>介绍</span>
         </a></li><li>
-        <a class="is-flex" href="#2-源码分析">
+        <a class="is-flex" href="#源码分析">
         <span class="has-mr-6">2</span>
-        <span>2 源码分析</span>
+        <span>源码分析</span>
         </a><ul class="menu-list"><li>
         <a class="is-flex" href="#SynchronousQueue-Transferer">
         <span class="has-mr-6">2.1</span>
@@ -2007,6 +2007,25 @@ var _hmt = _hmt || [];
         
         <article class="media">
             <!-- 
+            <a href="/Python2ToPython3/" class="media-left">
+                <p class="image is-64x64">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Python2切换Python3">
+                </p>
+            </a>
+             -->
+            <div class="media-content">
+                <div class="content">
+                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
+                    <a href="/Python2ToPython3/" class="has-link-black-ter is-size-6">Python2切换Python3</a>
+                    <p class="is-size-7 is-uppercase">
+                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
+                    </p>
+                </div>
+            </div>
+        </article>
+        
+        <article class="media">
+            <!-- 
             <a href="/MySQL-Command/" class="media-left">
                 <p class="image is-64x64">
                     <img class="thumbnail" src="/images/thumbnail.svg" alt="MySQL基本命令">
@@ -2019,25 +2038,6 @@ var _hmt = _hmt || [];
                     <a href="/MySQL-Command/" class="has-link-black-ter is-size-6">MySQL基本命令</a>
                     <p class="is-size-7 is-uppercase">
                         <a class="has-link-grey -link" href="/categories/MySQL/">MySQL</a>
-                    </p>
-                </div>
-            </div>
-        </article>
-        
-        <article class="media">
-            <!-- 
-            <a href="/Centos-Line/" class="media-left">
-                <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Centos命令行图形界面切换">
-                </p>
-            </a>
-             -->
-            <div class="media-content">
-                <div class="content">
-                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
-                    <a href="/Centos-Line/" class="has-link-black-ter is-size-6">Centos命令行图形界面切换</a>
-                    <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
                     </p>
                 </div>
             </div>

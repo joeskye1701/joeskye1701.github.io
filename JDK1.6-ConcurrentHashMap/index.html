@@ -7,20 +7,20 @@
 
 
 
-    <meta name="description" content="1 简介 2 源码分析 ConcurrentMap#putIfAbsent() ConcurrentMap#remove() ConcurrentMap#replace(K key, V oldValue, V newValue) ConcurrentMap#replace(K key, V value) ConcurrentHashMap属性 ConcurrentHashMap#Segmen">
+    <meta name="description" content="简介 源码分析 ConcurrentMap#putIfAbsent() ConcurrentMap#remove() ConcurrentMap#replace(K key, V oldValue, V newValue) ConcurrentMap#replace(K key, V value) ConcurrentHashMap属性 ConcurrentHashMap#Segment&amp;lt">
 <meta name="keywords" content="JDK6 源码">
 <meta property="og:type" content="article">
 <meta property="og:title" content="JDK1.6 ConcurrentHashMap">
 <meta property="og:url" content="https://joeskye1701.github.io/JDK1.6-ConcurrentHashMap/index.html">
 <meta property="og:site_name" content="Joe|博客">
-<meta property="og:description" content="1 简介 2 源码分析 ConcurrentMap#putIfAbsent() ConcurrentMap#remove() ConcurrentMap#replace(K key, V oldValue, V newValue) ConcurrentMap#replace(K key, V value) ConcurrentHashMap属性 ConcurrentHashMap#Segmen">
+<meta property="og:description" content="简介 源码分析 ConcurrentMap#putIfAbsent() ConcurrentMap#remove() ConcurrentMap#replace(K key, V oldValue, V newValue) ConcurrentMap#replace(K key, V value) ConcurrentHashMap属性 ConcurrentHashMap#Segment&amp;lt">
 <meta property="og:locale" content="zh-CN">
 <meta property="og:image" content="https://joeskye1701.github.io/JDK1.6-ConcurrentHashMap/concirrentHashMap-1.jpg">
 <meta property="og:image" content="https://joeskye1701.github.io/JDK1.6-ConcurrentHashMap/concirrentHashMap-2.jpg">
-<meta property="og:updated_time" content="2019-03-06T19:31:37.905Z">
+<meta property="og:updated_time" content="2019-03-08T19:11:51.053Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="JDK1.6 ConcurrentHashMap">
-<meta name="twitter:description" content="1 简介 2 源码分析 ConcurrentMap#putIfAbsent() ConcurrentMap#remove() ConcurrentMap#replace(K key, V oldValue, V newValue) ConcurrentMap#replace(K key, V value) ConcurrentHashMap属性 ConcurrentHashMap#Segmen">
+<meta name="twitter:description" content="简介 源码分析 ConcurrentMap#putIfAbsent() ConcurrentMap#remove() ConcurrentMap#replace(K key, V oldValue, V newValue) ConcurrentMap#replace(K key, V value) ConcurrentHashMap属性 ConcurrentHashMap#Segment&amp;lt">
 <meta name="twitter:image" content="https://joeskye1701.github.io/JDK1.6-ConcurrentHashMap/concirrentHashMap-1.jpg">
 
 
@@ -174,8 +174,8 @@ var _hmt = _hmt || [];
         <div class="content">
             <!-- TOC -->
 <ul>
-<li><a href="#1-%E7%AE%80%E4%BB%8B">1 简介</a></li>
-<li><a href="#2-%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90">2 源码分析</a><ul>
+<li><a href="#%E7%AE%80%E4%BB%8B">简介</a></li>
+<li><a href="#%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90">源码分析</a><ul>
 <li><a href="#concurrentmapputifabsent">ConcurrentMap#putIfAbsent()</a></li>
 <li><a href="#concurrentmapremove">ConcurrentMap#remove()</a></li>
 <li><a href="#concurrentmapreplacek-key-v-oldvalue-v-newvalue">ConcurrentMap#replace(K key, V oldValue, V newValue)</a></li>
@@ -201,15 +201,15 @@ var _hmt = _hmt || [];
 <li><a href="#concurrenthashmapsize">ConcurrentHashMap#size()</a></li>
 </ul>
 </li>
-<li><a href="#3-%E6%80%BB%E7%BB%93">3 总结</a><ul>
+<li><a href="#%E6%80%BB%E7%BB%93">总结</a><ul>
 <li><a href="#count">count</a></li>
 <li><a href="#lock">lock()</a></li>
 </ul>
 </li>
 </ul>
 <!-- /TOC -->
-<h1 id="1-简介"><a href="#1-简介" class="headerlink" title="1 简介"></a>1 简介</h1><p>ConcurrentHashMap是一种线程安全的HashMap。相对于HashTable和Collections.synchronizedMap()，ConcurrentHashMap具有更好的性能和伸缩性，是由于其使用了分段锁的策略，将内部数据分为多个段，每个段单独加锁，而不是整个HashMap加锁，这样能减少很多不必要的锁争用。  </p>
-<h1 id="2-源码分析"><a href="#2-源码分析" class="headerlink" title="2 源码分析"></a>2 源码分析</h1><p>类结构图<br><img src="./concirrentHashMap-1.jpg" alt></p>
+<h1 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h1><p>ConcurrentHashMap是一种线程安全的HashMap。相对于HashTable和Collections.synchronizedMap()，ConcurrentHashMap具有更好的性能和伸缩性，是由于其使用了分段锁的策略，将内部数据分为多个段，每个段单独加锁，而不是整个HashMap加锁，这样能减少很多不必要的锁争用。  </p>
+<h1 id="源码分析"><a href="#源码分析" class="headerlink" title="源码分析"></a>源码分析</h1><p>类结构图<br><img src="./concirrentHashMap-1.jpg" alt></p>
 <h2 id="ConcurrentMap-putIfAbsent"><a href="#ConcurrentMap-putIfAbsent" class="headerlink" title="ConcurrentMap#putIfAbsent()"></a>ConcurrentMap#putIfAbsent()</h2><figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment">     * If the specified key is not already associated</span></span><br><span class="line"><span class="hljs-comment">     * with a value, associate it with the given value.</span></span><br><span class="line"><span class="hljs-comment">     * This is equivalent to</span></span><br><span class="line"><span class="hljs-comment">     * &lt;pre&gt;</span></span><br><span class="line"><span class="hljs-comment">     *   if (!map.containsKey(key))</span></span><br><span class="line"><span class="hljs-comment">     *       return map.put(key, value);</span></span><br><span class="line"><span class="hljs-comment">     *   else</span></span><br><span class="line"><span class="hljs-comment">     *       return map.get(key);&lt;/pre&gt;</span></span><br><span class="line"><span class="hljs-comment">     * except that the action is performed atomically.</span></span><br><span class="line"><span class="hljs-comment">     * ...</span></span><br><span class="line"><span class="hljs-comment">     * ...</span></span><br><span class="line"><span class="hljs-comment">     */</span></span><br><span class="line">    <span class="hljs-function">V <span class="hljs-title">putIfAbsent</span><span class="hljs-params">(K key, V value)</span></span>;</span><br></pre></td></tr></table></figure>
 <p>如果map中已经存在给定的key，返回map中key对应的value；如果不存在给定的key，插入给定的key和value。<br>这个是一个原子操作，逻辑相当于如下代码。<br><figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">if</span> (!map.containsKey(key))</span><br><span class="line">      <span class="hljs-keyword">return</span> map.put(key, value);</span><br><span class="line">  <span class="hljs-keyword">else</span></span><br><span class="line">      <span class="hljs-keyword">return</span> map.get(key);</span><br></pre></td></tr></table></figure></p>
 <a id="more"></a>
@@ -321,7 +321,7 @@ var _hmt = _hmt || [];
 <li>循环segment数组，计算sum、mcsum、mc。</li>
 <li>如果mcsum!=0，说明有segment#HashEntry数据变化，计算check。如果mc[]!=segment[]#modcount，segment#HashEntry数据又变化(modCount在ConcurrentHashMap#put()、ConcurrentHashMap#remove()、ConcurrentHashMap#clear()才会发生变化)，结束本次for循环，再执行for循环后面计算无意义。</li>
 <li>如果2次计算count一致，那么数量就一致，返回count。</li>
-<li>2次无锁统计count不一致，segment[]每个HashEntry对象都加锁，执行count统计。<h1 id="3-总结"><a href="#3-总结" class="headerlink" title="3 总结"></a>3 总结</h1><h2 id="count"><a href="#count" class="headerlink" title="count"></a>count</h2><blockquote>
+<li>2次无锁统计count不一致，segment[]每个HashEntry对象都加锁，执行count统计。<h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><h2 id="count"><a href="#count" class="headerlink" title="count"></a>count</h2><blockquote>
 <p>All (synchronized) write operations should write to the “count” field after structurally changing any bin.</p>
 </blockquote>
 </li>
@@ -785,13 +785,13 @@ var _hmt = _hmt || [];
                 目录
             </h3>
             <ul class="menu-list"><li>
-        <a class="is-flex" href="#1-简介">
+        <a class="is-flex" href="#简介">
         <span class="has-mr-6">1</span>
-        <span>1 简介</span>
+        <span>简介</span>
         </a></li><li>
-        <a class="is-flex" href="#2-源码分析">
+        <a class="is-flex" href="#源码分析">
         <span class="has-mr-6">2</span>
-        <span>2 源码分析</span>
+        <span>源码分析</span>
         </a><ul class="menu-list"><li>
         <a class="is-flex" href="#ConcurrentMap-putIfAbsent">
         <span class="has-mr-6">2.1</span>
@@ -885,9 +885,9 @@ var _hmt = _hmt || [];
         <span class="has-mr-6">2.23</span>
         <span>ConcurrentHashMap#size()</span>
         </a></li></ul></li><li>
-        <a class="is-flex" href="#3-总结">
+        <a class="is-flex" href="#总结">
         <span class="has-mr-6">3</span>
-        <span>3 总结</span>
+        <span>总结</span>
         </a><ul class="menu-list"><li>
         <a class="is-flex" href="#count">
         <span class="has-mr-6">3.1</span>
@@ -968,6 +968,25 @@ var _hmt = _hmt || [];
         
         <article class="media">
             <!-- 
+            <a href="/Python2ToPython3/" class="media-left">
+                <p class="image is-64x64">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Python2切换Python3">
+                </p>
+            </a>
+             -->
+            <div class="media-content">
+                <div class="content">
+                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
+                    <a href="/Python2ToPython3/" class="has-link-black-ter is-size-6">Python2切换Python3</a>
+                    <p class="is-size-7 is-uppercase">
+                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
+                    </p>
+                </div>
+            </div>
+        </article>
+        
+        <article class="media">
+            <!-- 
             <a href="/MySQL-Command/" class="media-left">
                 <p class="image is-64x64">
                     <img class="thumbnail" src="/images/thumbnail.svg" alt="MySQL基本命令">
@@ -980,25 +999,6 @@ var _hmt = _hmt || [];
                     <a href="/MySQL-Command/" class="has-link-black-ter is-size-6">MySQL基本命令</a>
                     <p class="is-size-7 is-uppercase">
                         <a class="has-link-grey -link" href="/categories/MySQL/">MySQL</a>
-                    </p>
-                </div>
-            </div>
-        </article>
-        
-        <article class="media">
-            <!-- 
-            <a href="/Centos-Line/" class="media-left">
-                <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Centos命令行图形界面切换">
-                </p>
-            </a>
-             -->
-            <div class="media-content">
-                <div class="content">
-                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
-                    <a href="/Centos-Line/" class="has-link-black-ter is-size-6">Centos命令行图形界面切换</a>
-                    <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
                     </p>
                 </div>
             </div>
@@ -1860,13 +1860,13 @@ var _hmt = _hmt || [];
                 目录
             </h3>
             <ul class="menu-list"><li>
-        <a class="is-flex" href="#1-简介">
+        <a class="is-flex" href="#简介">
         <span class="has-mr-6">1</span>
-        <span>1 简介</span>
+        <span>简介</span>
         </a></li><li>
-        <a class="is-flex" href="#2-源码分析">
+        <a class="is-flex" href="#源码分析">
         <span class="has-mr-6">2</span>
-        <span>2 源码分析</span>
+        <span>源码分析</span>
         </a><ul class="menu-list"><li>
         <a class="is-flex" href="#ConcurrentMap-putIfAbsent">
         <span class="has-mr-6">2.1</span>
@@ -1960,9 +1960,9 @@ var _hmt = _hmt || [];
         <span class="has-mr-6">2.23</span>
         <span>ConcurrentHashMap#size()</span>
         </a></li></ul></li><li>
-        <a class="is-flex" href="#3-总结">
+        <a class="is-flex" href="#总结">
         <span class="has-mr-6">3</span>
-        <span>3 总结</span>
+        <span>总结</span>
         </a><ul class="menu-list"><li>
         <a class="is-flex" href="#count">
         <span class="has-mr-6">3.1</span>
@@ -2043,6 +2043,25 @@ var _hmt = _hmt || [];
         
         <article class="media">
             <!-- 
+            <a href="/Python2ToPython3/" class="media-left">
+                <p class="image is-64x64">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Python2切换Python3">
+                </p>
+            </a>
+             -->
+            <div class="media-content">
+                <div class="content">
+                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
+                    <a href="/Python2ToPython3/" class="has-link-black-ter is-size-6">Python2切换Python3</a>
+                    <p class="is-size-7 is-uppercase">
+                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
+                    </p>
+                </div>
+            </div>
+        </article>
+        
+        <article class="media">
+            <!-- 
             <a href="/MySQL-Command/" class="media-left">
                 <p class="image is-64x64">
                     <img class="thumbnail" src="/images/thumbnail.svg" alt="MySQL基本命令">
@@ -2055,25 +2074,6 @@ var _hmt = _hmt || [];
                     <a href="/MySQL-Command/" class="has-link-black-ter is-size-6">MySQL基本命令</a>
                     <p class="is-size-7 is-uppercase">
                         <a class="has-link-grey -link" href="/categories/MySQL/">MySQL</a>
-                    </p>
-                </div>
-            </div>
-        </article>
-        
-        <article class="media">
-            <!-- 
-            <a href="/Centos-Line/" class="media-left">
-                <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Centos命令行图形界面切换">
-                </p>
-            </a>
-             -->
-            <div class="media-content">
-                <div class="content">
-                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
-                    <a href="/Centos-Line/" class="has-link-black-ter is-size-6">Centos命令行图形界面切换</a>
-                    <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
                     </p>
                 </div>
             </div>

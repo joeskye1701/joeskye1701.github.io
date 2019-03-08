@@ -7,18 +7,18 @@
 
 
 
-    <meta name="description" content="1 介绍 2 源码分析 CyclicBarrier#await() CyclicBarrier#dowait() CyclicBarrier#nextGeneration() CyclicBarrier#breakBarrier() CyclicBarrier   3 总结   1 介绍 CyclicBarrier是一种可重复使用的栅栏机制，可以让一组线程在某个点上相互等待，这个点就可以类比为">
+    <meta name="description" content="介绍 源码分析 CyclicBarrier#await() CyclicBarrier#dowait() CyclicBarrier#nextGeneration() CyclicBarrier#breakBarrier() CyclicBarrier   总结   介绍 CyclicBarrier是一种可重复使用的栅栏机制，可以让一组线程在某个点上相互等待，这个点就可以类比为栅栏。并且这个栅">
 <meta name="keywords" content="JDK6 源码">
 <meta property="og:type" content="article">
 <meta property="og:title" content="JDK1.6 CyclicBarrier">
 <meta property="og:url" content="https://joeskye1701.github.io/JDK1.6-CyclicBarrier/index.html">
 <meta property="og:site_name" content="Joe|博客">
-<meta property="og:description" content="1 介绍 2 源码分析 CyclicBarrier#await() CyclicBarrier#dowait() CyclicBarrier#nextGeneration() CyclicBarrier#breakBarrier() CyclicBarrier   3 总结   1 介绍 CyclicBarrier是一种可重复使用的栅栏机制，可以让一组线程在某个点上相互等待，这个点就可以类比为">
+<meta property="og:description" content="介绍 源码分析 CyclicBarrier#await() CyclicBarrier#dowait() CyclicBarrier#nextGeneration() CyclicBarrier#breakBarrier() CyclicBarrier   总结   介绍 CyclicBarrier是一种可重复使用的栅栏机制，可以让一组线程在某个点上相互等待，这个点就可以类比为栅栏。并且这个栅">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:updated_time" content="2019-03-06T19:31:57.334Z">
+<meta property="og:updated_time" content="2019-03-08T19:12:49.088Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="JDK1.6 CyclicBarrier">
-<meta name="twitter:description" content="1 介绍 2 源码分析 CyclicBarrier#await() CyclicBarrier#dowait() CyclicBarrier#nextGeneration() CyclicBarrier#breakBarrier() CyclicBarrier   3 总结   1 介绍 CyclicBarrier是一种可重复使用的栅栏机制，可以让一组线程在某个点上相互等待，这个点就可以类比为">
+<meta name="twitter:description" content="介绍 源码分析 CyclicBarrier#await() CyclicBarrier#dowait() CyclicBarrier#nextGeneration() CyclicBarrier#breakBarrier() CyclicBarrier   总结   介绍 CyclicBarrier是一种可重复使用的栅栏机制，可以让一组线程在某个点上相互等待，这个点就可以类比为栅栏。并且这个栅">
 
 
 
@@ -171,8 +171,8 @@ var _hmt = _hmt || [];
         <div class="content">
             <!-- TOC -->
 <ul>
-<li><a href="#1-%E4%BB%8B%E7%BB%8D">1 介绍</a></li>
-<li><a href="#2-%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90">2 源码分析</a><ul>
+<li><a href="#%E4%BB%8B%E7%BB%8D">介绍</a></li>
+<li><a href="#%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90">源码分析</a><ul>
 <li><a href="#cyclicbarrierawait">CyclicBarrier#await()</a></li>
 <li><a href="#cyclicbarrierdowait">CyclicBarrier#dowait()</a></li>
 <li><a href="#cyclicbarriernextgeneration">CyclicBarrier#nextGeneration()</a></li>
@@ -180,15 +180,15 @@ var _hmt = _hmt || [];
 <li><a href="#cyclicbarrier">CyclicBarrier</a></li>
 </ul>
 </li>
-<li><a href="#3-%E6%80%BB%E7%BB%93">3 总结</a></li>
+<li><a href="#%E6%80%BB%E7%BB%93">总结</a></li>
 </ul>
 <!-- /TOC -->
-<h1 id="1-介绍"><a href="#1-介绍" class="headerlink" title="1 介绍"></a>1 介绍</h1><ol>
+<h1 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h1><ol>
 <li>CyclicBarrier是一种可重复使用的栅栏机制，可以让一组线程在某个点上相互等待，这个点就可以类比为栅栏。并且这个栅栏是可重复使用的，这点可以和前面分析过的CountDownLatch做对比，CountDownLatch只能用一次。</li>
 <li>CyclicBarrier还支持在所有线程到达栅栏之后，在所有线程从等待状态转到可运行状态之前，执行一个命令(或者说是动作)。当然，在某些情况下，栅栏可以被打破。比如某个线程无法在规定的时间内到达栅栏。</li>
 </ol>
 <a id="more"></a>
-<h1 id="2-源码分析"><a href="#2-源码分析" class="headerlink" title="2 源码分析"></a>2 源码分析</h1><figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment"> * A synchronization aid that allows a set of threads to all wait for</span></span><br><span class="line"><span class="hljs-comment"> * each other to reach a common barrier point.  CyclicBarriers are</span></span><br><span class="line"><span class="hljs-comment"> * useful in programs involving a fixed sized party of threads that</span></span><br><span class="line"><span class="hljs-comment"> * must occasionally wait for each other. The barrier is called</span></span><br><span class="line"><span class="hljs-comment"> * &lt;em&gt;cyclic&lt;/em&gt; because it can be re-used after the waiting threads</span></span><br><span class="line"><span class="hljs-comment"> * are released.</span></span><br><span class="line"><span class="hljs-comment"> *</span></span><br><span class="line"><span class="hljs-comment"> * ....</span></span><br><span class="line"><span class="hljs-comment"> *</span></span><br><span class="line"><span class="hljs-comment"> * <span class="hljs-doctag">@since</span> 1.5</span></span><br><span class="line"><span class="hljs-comment"> * <span class="hljs-doctag">@see</span> CountDownLatch</span></span><br><span class="line"><span class="hljs-comment"> *</span></span><br><span class="line"><span class="hljs-comment"> * <span class="hljs-doctag">@author</span> Doug Lea</span></span><br><span class="line"><span class="hljs-comment"> */</span></span><br><span class="line"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">CyclicBarrier</span> </span>&#123;</span><br><span class="line">    <span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment">     * Each use of the barrier is represented as a generation instance.</span></span><br><span class="line"><span class="hljs-comment">     * The generation changes whenever the barrier is tripped, or</span></span><br><span class="line"><span class="hljs-comment">     * is reset. There can be many generations associated with threads</span></span><br><span class="line"><span class="hljs-comment">     * using the barrier - due to the non-deterministic way the lock</span></span><br><span class="line"><span class="hljs-comment">     * may be allocated to waiting threads - but only one of these</span></span><br><span class="line"><span class="hljs-comment">     * can be active at a time (the one to which &lt;tt&gt;count&lt;/tt&gt; applies)</span></span><br><span class="line"><span class="hljs-comment">     * and all the rest are either broken or tripped.</span></span><br><span class="line"><span class="hljs-comment">     * There need not be an active generation if there has been a break</span></span><br><span class="line"><span class="hljs-comment">     * but no subsequent reset.</span></span><br><span class="line"><span class="hljs-comment">     */</span></span><br><span class="line">    <span class="hljs-comment">// 1</span></span><br><span class="line">    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Generation</span> </span>&#123;</span><br><span class="line">        <span class="hljs-keyword">boolean</span> broken = <span class="hljs-keyword">false</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-comment">/** The lock for guarding barrier entry */</span></span><br><span class="line">    <span class="hljs-comment">// 2</span></span><br><span class="line">    <span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> ReentrantLock lock = <span class="hljs-keyword">new</span> ReentrantLock();</span><br><span class="line">    <span class="hljs-comment">/** Condition to wait on until tripped */</span></span><br><span class="line">    <span class="hljs-comment">// 3</span></span><br><span class="line">    <span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> Condition trip = lock.newCondition();</span><br><span class="line">    <span class="hljs-comment">/** The number of parties */</span></span><br><span class="line">    <span class="hljs-comment">// 4</span></span><br><span class="line">    <span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">int</span> parties;</span><br><span class="line">    <span class="hljs-comment">/* The command to run when tripped */</span></span><br><span class="line">    <span class="hljs-comment">// 5</span></span><br><span class="line">    <span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> Runnable barrierCommand;</span><br><span class="line">    <span class="hljs-comment">/** The current generation */</span></span><br><span class="line">    <span class="hljs-keyword">private</span> Generation generation = <span class="hljs-keyword">new</span> Generation();</span><br><span class="line"></span><br><span class="line">    <span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment">     * Number of parties still waiting. Counts down from parties to 0</span></span><br><span class="line"><span class="hljs-comment">     * on each generation.  It is reset to parties on each new</span></span><br><span class="line"><span class="hljs-comment">     * generation or when broken.</span></span><br><span class="line"><span class="hljs-comment">     */</span></span><br><span class="line">    <span class="hljs-comment">// 6</span></span><br><span class="line">    <span class="hljs-keyword">private</span> <span class="hljs-keyword">int</span> count;</span><br></pre></td></tr></table></figure>
+<h1 id="源码分析"><a href="#源码分析" class="headerlink" title="源码分析"></a>源码分析</h1><figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment"> * A synchronization aid that allows a set of threads to all wait for</span></span><br><span class="line"><span class="hljs-comment"> * each other to reach a common barrier point.  CyclicBarriers are</span></span><br><span class="line"><span class="hljs-comment"> * useful in programs involving a fixed sized party of threads that</span></span><br><span class="line"><span class="hljs-comment"> * must occasionally wait for each other. The barrier is called</span></span><br><span class="line"><span class="hljs-comment"> * &lt;em&gt;cyclic&lt;/em&gt; because it can be re-used after the waiting threads</span></span><br><span class="line"><span class="hljs-comment"> * are released.</span></span><br><span class="line"><span class="hljs-comment"> *</span></span><br><span class="line"><span class="hljs-comment"> * ....</span></span><br><span class="line"><span class="hljs-comment"> *</span></span><br><span class="line"><span class="hljs-comment"> * <span class="hljs-doctag">@since</span> 1.5</span></span><br><span class="line"><span class="hljs-comment"> * <span class="hljs-doctag">@see</span> CountDownLatch</span></span><br><span class="line"><span class="hljs-comment"> *</span></span><br><span class="line"><span class="hljs-comment"> * <span class="hljs-doctag">@author</span> Doug Lea</span></span><br><span class="line"><span class="hljs-comment"> */</span></span><br><span class="line"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">CyclicBarrier</span> </span>&#123;</span><br><span class="line">    <span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment">     * Each use of the barrier is represented as a generation instance.</span></span><br><span class="line"><span class="hljs-comment">     * The generation changes whenever the barrier is tripped, or</span></span><br><span class="line"><span class="hljs-comment">     * is reset. There can be many generations associated with threads</span></span><br><span class="line"><span class="hljs-comment">     * using the barrier - due to the non-deterministic way the lock</span></span><br><span class="line"><span class="hljs-comment">     * may be allocated to waiting threads - but only one of these</span></span><br><span class="line"><span class="hljs-comment">     * can be active at a time (the one to which &lt;tt&gt;count&lt;/tt&gt; applies)</span></span><br><span class="line"><span class="hljs-comment">     * and all the rest are either broken or tripped.</span></span><br><span class="line"><span class="hljs-comment">     * There need not be an active generation if there has been a break</span></span><br><span class="line"><span class="hljs-comment">     * but no subsequent reset.</span></span><br><span class="line"><span class="hljs-comment">     */</span></span><br><span class="line">    <span class="hljs-comment">// 1</span></span><br><span class="line">    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Generation</span> </span>&#123;</span><br><span class="line">        <span class="hljs-keyword">boolean</span> broken = <span class="hljs-keyword">false</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-comment">/** The lock for guarding barrier entry */</span></span><br><span class="line">    <span class="hljs-comment">// 2</span></span><br><span class="line">    <span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> ReentrantLock lock = <span class="hljs-keyword">new</span> ReentrantLock();</span><br><span class="line">    <span class="hljs-comment">/** Condition to wait on until tripped */</span></span><br><span class="line">    <span class="hljs-comment">// 3</span></span><br><span class="line">    <span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> Condition trip = lock.newCondition();</span><br><span class="line">    <span class="hljs-comment">/** The number of parties */</span></span><br><span class="line">    <span class="hljs-comment">// 4</span></span><br><span class="line">    <span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">int</span> parties;</span><br><span class="line">    <span class="hljs-comment">/* The command to run when tripped */</span></span><br><span class="line">    <span class="hljs-comment">// 5</span></span><br><span class="line">    <span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> Runnable barrierCommand;</span><br><span class="line">    <span class="hljs-comment">/** The current generation */</span></span><br><span class="line">    <span class="hljs-keyword">private</span> Generation generation = <span class="hljs-keyword">new</span> Generation();</span><br><span class="line"></span><br><span class="line">    <span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment">     * Number of parties still waiting. Counts down from parties to 0</span></span><br><span class="line"><span class="hljs-comment">     * on each generation.  It is reset to parties on each new</span></span><br><span class="line"><span class="hljs-comment">     * generation or when broken.</span></span><br><span class="line"><span class="hljs-comment">     */</span></span><br><span class="line">    <span class="hljs-comment">// 6</span></span><br><span class="line">    <span class="hljs-keyword">private</span> <span class="hljs-keyword">int</span> count;</span><br></pre></td></tr></table></figure>
 <p>标注代码分析</p>
 <ol>
 <li>每次对栅栏的使用可以表示为一个generation。栅栏每次开放或者重置，generation都会发生改变。使用栅栏的线程可以关联多个generations，由于等待线程可能会以多种方式请求锁，但是在特定的时间只有一个是可用的，其他的要么被打破，要么开放。如果一个栅栏已经被打破。且没有后续的重置动作，那么可以不存在可用的generation。</li>
@@ -251,7 +251,7 @@ var _hmt = _hmt || [];
 <li>重置逻辑，先打破当前的栅栏，然后建立一个新的。</li>
 <li>获取在栅栏处等待的使用方(线程)数量。</li>
 </ol>
-<h1 id="3-总结"><a href="#3-总结" class="headerlink" title="3 总结"></a>3 总结</h1><ol>
+<h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><ol>
 <li>当建立一个使用方数量为n的栅栏时，栅栏内部有一个为n的计数。当使用方调用await方法时，如果其他n-1个使用方没有全部到达await方法(内部计数减1后，不等于0)，那么使用方(线程)阻塞等待。</li>
 <li>当第n个使用方调用await时，栅栏开放(内部计数减1后等于0)，会唤醒所有在await方法上等待着的使用方(线程)，大家一起通过栅栏，然后重置栅栏(内部计数又变成n)，栅栏变成新建后的状态，可以再次使用。</li>
 </ol>
@@ -712,13 +712,13 @@ var _hmt = _hmt || [];
                 目录
             </h3>
             <ul class="menu-list"><li>
-        <a class="is-flex" href="#1-介绍">
+        <a class="is-flex" href="#介绍">
         <span class="has-mr-6">1</span>
-        <span>1 介绍</span>
+        <span>介绍</span>
         </a></li><li>
-        <a class="is-flex" href="#2-源码分析">
+        <a class="is-flex" href="#源码分析">
         <span class="has-mr-6">2</span>
-        <span>2 源码分析</span>
+        <span>源码分析</span>
         </a><ul class="menu-list"><li>
         <a class="is-flex" href="#CyclicBarrier-await">
         <span class="has-mr-6">2.1</span>
@@ -740,9 +740,9 @@ var _hmt = _hmt || [];
         <span class="has-mr-6">2.5</span>
         <span>CyclicBarrier</span>
         </a></li></ul></li><li>
-        <a class="is-flex" href="#3-总结">
+        <a class="is-flex" href="#总结">
         <span class="has-mr-6">3</span>
-        <span>3 总结</span>
+        <span>总结</span>
         </a></li></ul>
         </div>
     </div>
@@ -815,6 +815,25 @@ var _hmt = _hmt || [];
         
         <article class="media">
             <!-- 
+            <a href="/Python2ToPython3/" class="media-left">
+                <p class="image is-64x64">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Python2切换Python3">
+                </p>
+            </a>
+             -->
+            <div class="media-content">
+                <div class="content">
+                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
+                    <a href="/Python2ToPython3/" class="has-link-black-ter is-size-6">Python2切换Python3</a>
+                    <p class="is-size-7 is-uppercase">
+                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
+                    </p>
+                </div>
+            </div>
+        </article>
+        
+        <article class="media">
+            <!-- 
             <a href="/MySQL-Command/" class="media-left">
                 <p class="image is-64x64">
                     <img class="thumbnail" src="/images/thumbnail.svg" alt="MySQL基本命令">
@@ -827,25 +846,6 @@ var _hmt = _hmt || [];
                     <a href="/MySQL-Command/" class="has-link-black-ter is-size-6">MySQL基本命令</a>
                     <p class="is-size-7 is-uppercase">
                         <a class="has-link-grey -link" href="/categories/MySQL/">MySQL</a>
-                    </p>
-                </div>
-            </div>
-        </article>
-        
-        <article class="media">
-            <!-- 
-            <a href="/Centos-Line/" class="media-left">
-                <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Centos命令行图形界面切换">
-                </p>
-            </a>
-             -->
-            <div class="media-content">
-                <div class="content">
-                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
-                    <a href="/Centos-Line/" class="has-link-black-ter is-size-6">Centos命令行图形界面切换</a>
-                    <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
                     </p>
                 </div>
             </div>
@@ -1707,13 +1707,13 @@ var _hmt = _hmt || [];
                 目录
             </h3>
             <ul class="menu-list"><li>
-        <a class="is-flex" href="#1-介绍">
+        <a class="is-flex" href="#介绍">
         <span class="has-mr-6">1</span>
-        <span>1 介绍</span>
+        <span>介绍</span>
         </a></li><li>
-        <a class="is-flex" href="#2-源码分析">
+        <a class="is-flex" href="#源码分析">
         <span class="has-mr-6">2</span>
-        <span>2 源码分析</span>
+        <span>源码分析</span>
         </a><ul class="menu-list"><li>
         <a class="is-flex" href="#CyclicBarrier-await">
         <span class="has-mr-6">2.1</span>
@@ -1735,9 +1735,9 @@ var _hmt = _hmt || [];
         <span class="has-mr-6">2.5</span>
         <span>CyclicBarrier</span>
         </a></li></ul></li><li>
-        <a class="is-flex" href="#3-总结">
+        <a class="is-flex" href="#总结">
         <span class="has-mr-6">3</span>
-        <span>3 总结</span>
+        <span>总结</span>
         </a></li></ul>
         </div>
     </div>
@@ -1810,6 +1810,25 @@ var _hmt = _hmt || [];
         
         <article class="media">
             <!-- 
+            <a href="/Python2ToPython3/" class="media-left">
+                <p class="image is-64x64">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Python2切换Python3">
+                </p>
+            </a>
+             -->
+            <div class="media-content">
+                <div class="content">
+                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
+                    <a href="/Python2ToPython3/" class="has-link-black-ter is-size-6">Python2切换Python3</a>
+                    <p class="is-size-7 is-uppercase">
+                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
+                    </p>
+                </div>
+            </div>
+        </article>
+        
+        <article class="media">
+            <!-- 
             <a href="/MySQL-Command/" class="media-left">
                 <p class="image is-64x64">
                     <img class="thumbnail" src="/images/thumbnail.svg" alt="MySQL基本命令">
@@ -1822,25 +1841,6 @@ var _hmt = _hmt || [];
                     <a href="/MySQL-Command/" class="has-link-black-ter is-size-6">MySQL基本命令</a>
                     <p class="is-size-7 is-uppercase">
                         <a class="has-link-grey -link" href="/categories/MySQL/">MySQL</a>
-                    </p>
-                </div>
-            </div>
-        </article>
-        
-        <article class="media">
-            <!-- 
-            <a href="/Centos-Line/" class="media-left">
-                <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Centos命令行图形界面切换">
-                </p>
-            </a>
-             -->
-            <div class="media-content">
-                <div class="content">
-                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
-                    <a href="/Centos-Line/" class="has-link-black-ter is-size-6">Centos命令行图形界面切换</a>
-                    <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
                     </p>
                 </div>
             </div>

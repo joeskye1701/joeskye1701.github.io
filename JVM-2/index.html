@@ -7,20 +7,20 @@
 
 
 
-    <meta name="description" content="1 类加载器的模型 类加载器双亲委派模型 双亲委派模型的优点   2 类加载器的类型 Bootstrap ClassLoader 启动类加载器 Extension ClassLoader 扩展类加载器 Application ClassLoader 应用程序类加载器 User-Defined ClassLoader 用户自定义类加载器   3 类的加载的过程 加载 连接 验证 准备 解析">
+    <meta name="description" content="类加载器的模型 类加载器双亲委派模型 双亲委派模型的优点   类加载器的类型 Bootstrap ClassLoader 启动类加载器 Extension ClassLoader 扩展类加载器 Application ClassLoader 应用程序类加载器 User-Defined ClassLoader 用户自定义类加载器   类的加载的过程 加载 连接 验证 准备 解析   初始化">
 <meta name="keywords" content="Java,JVM">
 <meta property="og:type" content="article">
 <meta property="og:title" content="JVM类加载器(二)">
 <meta property="og:url" content="https://joeskye1701.github.io/JVM-2/index.html">
 <meta property="og:site_name" content="Joe|博客">
-<meta property="og:description" content="1 类加载器的模型 类加载器双亲委派模型 双亲委派模型的优点   2 类加载器的类型 Bootstrap ClassLoader 启动类加载器 Extension ClassLoader 扩展类加载器 Application ClassLoader 应用程序类加载器 User-Defined ClassLoader 用户自定义类加载器   3 类的加载的过程 加载 连接 验证 准备 解析">
+<meta property="og:description" content="类加载器的模型 类加载器双亲委派模型 双亲委派模型的优点   类加载器的类型 Bootstrap ClassLoader 启动类加载器 Extension ClassLoader 扩展类加载器 Application ClassLoader 应用程序类加载器 User-Defined ClassLoader 用户自定义类加载器   类的加载的过程 加载 连接 验证 准备 解析   初始化">
 <meta property="og:locale" content="zh-CN">
 <meta property="og:image" content="https://joeskye1701.github.io/JVM-2/jvm-2-1.jpg">
 <meta property="og:image" content="https://joeskye1701.github.io/JVM-2/jvm-2-2.jpg">
-<meta property="og:updated_time" content="2019-03-06T19:34:14.370Z">
+<meta property="og:updated_time" content="2019-03-08T18:17:46.494Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="JVM类加载器(二)">
-<meta name="twitter:description" content="1 类加载器的模型 类加载器双亲委派模型 双亲委派模型的优点   2 类加载器的类型 Bootstrap ClassLoader 启动类加载器 Extension ClassLoader 扩展类加载器 Application ClassLoader 应用程序类加载器 User-Defined ClassLoader 用户自定义类加载器   3 类的加载的过程 加载 连接 验证 准备 解析">
+<meta name="twitter:description" content="类加载器的模型 类加载器双亲委派模型 双亲委派模型的优点   类加载器的类型 Bootstrap ClassLoader 启动类加载器 Extension ClassLoader 扩展类加载器 Application ClassLoader 应用程序类加载器 User-Defined ClassLoader 用户自定义类加载器   类的加载的过程 加载 连接 验证 准备 解析   初始化">
 <meta name="twitter:image" content="https://joeskye1701.github.io/JVM-2/jvm-2-1.jpg">
 
 
@@ -174,19 +174,19 @@ var _hmt = _hmt || [];
         <div class="content">
             <!-- TOC -->
 <ul>
-<li><a href="#1-类加载器的模型">1 类加载器的模型</a><ul>
+<li><a href="#类加载器的模型">类加载器的模型</a><ul>
 <li><a href="#类加载器双亲委派模型">类加载器双亲委派模型</a></li>
 <li><a href="#双亲委派模型的优点">双亲委派模型的优点</a></li>
 </ul>
 </li>
-<li><a href="#2-类加载器的类型">2 类加载器的类型</a><ul>
+<li><a href="#类加载器的类型">类加载器的类型</a><ul>
 <li><a href="#bootstrap-classloader-启动类加载器">Bootstrap ClassLoader 启动类加载器</a></li>
 <li><a href="#extension-classloader-扩展类加载器">Extension ClassLoader 扩展类加载器</a></li>
 <li><a href="#application-classloader-应用程序类加载器">Application ClassLoader 应用程序类加载器</a></li>
 <li><a href="#user-defined-classloader-用户自定义类加载器">User-Defined ClassLoader 用户自定义类加载器</a></li>
 </ul>
 </li>
-<li><a href="#3-类的加载的过程">3 类的加载的过程</a><ul>
+<li><a href="#类的加载的过程">类的加载的过程</a><ul>
 <li><a href="#加载">加载</a></li>
 <li><a href="#连接">连接</a><ul>
 <li><a href="#验证">验证</a></li>
@@ -200,14 +200,14 @@ var _hmt = _hmt || [];
 </ul>
 <!-- /TOC -->
 <p>类加载器负责加载Java类的字节代码到Java虚拟机中，可以根据指定的类名(如<code>java.lang.Object</code>)来装载class文件的内容到Runtime Data Area中的Method Area(方法区域)。Java程序员可以<code>extends java.lang.ClassLoader</code>类来写自己的<code>Class loader</code>。  </p>
-<h1 id="1-类加载器的模型"><a href="#1-类加载器的模型" class="headerlink" title="1 类加载器的模型"></a>1 类加载器的模型</h1><h2 id="类加载器双亲委派模型"><a href="#类加载器双亲委派模型" class="headerlink" title="类加载器双亲委派模型"></a>类加载器双亲委派模型</h2><p>如果一个类加载器接收到了类加载的请求，它首先把这个请求委托给他的父类加载器去完成，每个层次的类加载器都是如此，因此所有的加载请求都应该传送到顶层的启动类加载器中，只有当父加载器反馈自己无法完成这个加载请求（它在搜索范围中没有找到所需的类）时，子加载器才会尝试自己去加载。</p>
+<h1 id="类加载器的模型"><a href="#类加载器的模型" class="headerlink" title="类加载器的模型"></a>类加载器的模型</h1><h2 id="类加载器双亲委派模型"><a href="#类加载器双亲委派模型" class="headerlink" title="类加载器双亲委派模型"></a>类加载器双亲委派模型</h2><p>如果一个类加载器接收到了类加载的请求，它首先把这个请求委托给他的父类加载器去完成，每个层次的类加载器都是如此，因此所有的加载请求都应该传送到顶层的启动类加载器中，只有当父加载器反馈自己无法完成这个加载请求（它在搜索范围中没有找到所需的类）时，子加载器才会尝试自己去加载。</p>
 <h2 id="双亲委派模型的优点"><a href="#双亲委派模型的优点" class="headerlink" title="双亲委派模型的优点"></a>双亲委派模型的优点</h2><p>Java类随着它的类加载器一起具备了一种带有优先级的层次关系。例如类<code>java.lang.Object</code>，它存放在<code>tools.jar</code>中，无论哪个类加载器要加载这个类，最终都会委派给启动类加载器进行加载，因此<code>Object</code>类在程序的各种类加载器环境中都是同一个类。相反，如果用户自己写了一个名为<code>java.lang.Object</code>的类，并放在程序的<code>Classpath</code>中，那系统中将会出现多个不同的<code>Object</code>类，Java类型体系中最基础的行为也无法保证，应用程序也会变得一片混乱。<br><img src="./jvm-2-1.jpg" alt><br><a id="more"></a></p>
-<h1 id="2-类加载器的类型"><a href="#2-类加载器的类型" class="headerlink" title="2 类加载器的类型"></a>2 类加载器的类型</h1><p>站在JVM的角度讲，主要有两种类型加载器：启动类加载器和其它的类加载器。启动类加载器是JVM实现的一部分，使用C++语言实现，其它类加载器都由Java语言实现 ，独立于虚拟机外部，并且全部继承抽象类<code>java.lang.ClassLoader</code>。 </p>
+<h1 id="类加载器的类型"><a href="#类加载器的类型" class="headerlink" title="类加载器的类型"></a>类加载器的类型</h1><p>站在JVM的角度讲，主要有两种类型加载器：启动类加载器和其它的类加载器。启动类加载器是JVM实现的一部分，使用C++语言实现，其它类加载器都由Java语言实现 ，独立于虚拟机外部，并且全部继承抽象类<code>java.lang.ClassLoader</code>。 </p>
 <h2 id="Bootstrap-ClassLoader-启动类加载器"><a href="#Bootstrap-ClassLoader-启动类加载器" class="headerlink" title="Bootstrap ClassLoader 启动类加载器"></a>Bootstrap ClassLoader 启动类加载器</h2><p>这是JVM的根<code>ClassLoader</code>，它是用C++实现的，JVM启动时初始化此<code>ClassLoader</code>，并由此<code>ClassLoader</code>完成<code>$JAVA_HOME$</code>中<code>jre\lib\rt.jar</code>（Sun JDK的实现）中所有<code>class</code>文件的加载，这个jar中包含了Java规范定义的所有接口以及实现（加载可信的类，包括Java的API）。启动类加载器无法被Java程序直接引用，Java程序在它开始运行之前并非被完全加载，其各个部分是在必需时才加载。  </p>
 <h2 id="Extension-ClassLoader-扩展类加载器"><a href="#Extension-ClassLoader-扩展类加载器" class="headerlink" title="Extension ClassLoader 扩展类加载器"></a>Extension ClassLoader 扩展类加载器</h2><p>扩展类加载器负责加载<code>&lt;JAVA＿HOME&gt;\lib\ext</code>目录中或者<code>java.ext.dirs</code>系统变量所指定的所有类库，开发者可以直接使用扩展类加载器。  </p>
 <h2 id="Application-ClassLoader-应用程序类加载器"><a href="#Application-ClassLoader-应用程序类加载器" class="headerlink" title="Application ClassLoader 应用程序类加载器"></a>Application ClassLoader 应用程序类加载器</h2><p>JVM用此<code>classloader</code>来加载用户类路径 (<code>Classpath</code>)上所指定的类库，包含指定的jar包以及目录，该加载器有时也称为系统类加载器。开发者可以直接使用这个类加载器，如果应用程序中没有自定义过自己的类加载器，一般情况下这个就是程序中默认的类加载器。  </p>
 <h2 id="User-Defined-ClassLoader-用户自定义类加载器"><a href="#User-Defined-ClassLoader-用户自定义类加载器" class="headerlink" title="User-Defined ClassLoader 用户自定义类加载器"></a>User-Defined ClassLoader 用户自定义类加载器</h2><p><code>User-DefinedClassLoader</code>是Java开发人员继承<code>ClassLoader</code>抽象类自行实现的<code>ClassLoader</code>，基于自定义的<code>ClassLoader</code>可用于加载非<code>Classpath</code>中的jar以及目录。  </p>
-<h1 id="3-类的加载的过程"><a href="#3-类的加载的过程" class="headerlink" title="3 类的加载的过程"></a>3 类的加载的过程</h1><p><img src="./jvm-2-2.jpg" alt><br>类的加载过程：加载，链接，初始化。  </p>
+<h1 id="类的加载的过程"><a href="#类的加载的过程" class="headerlink" title="类的加载的过程"></a>类的加载的过程</h1><p><img src="./jvm-2-2.jpg" alt><br>类的加载过程：加载，链接，初始化。  </p>
 <h2 id="加载"><a href="#加载" class="headerlink" title="加载"></a>加载</h2><p>加载过程负责找到二进制字节码并加载至JVM中，JVM通过类名、类所在的包名通过<code>ClassLoader</code>来完成类的加载。</p>
 <h2 id="连接"><a href="#连接" class="headerlink" title="连接"></a>连接</h2><p>链接过程负责对二进制字节码的格式进行校验、初始化装载类中的静态变量以及解析类中调用的接口、类。</p>
 <h3 id="验证"><a href="#验证" class="headerlink" title="验证"></a>验证</h3><p>确保被导入类的正确性。</p>
@@ -671,9 +671,9 @@ var _hmt = _hmt || [];
                 目录
             </h3>
             <ul class="menu-list"><li>
-        <a class="is-flex" href="#1-类加载器的模型">
+        <a class="is-flex" href="#类加载器的模型">
         <span class="has-mr-6">1</span>
-        <span>1 类加载器的模型</span>
+        <span>类加载器的模型</span>
         </a><ul class="menu-list"><li>
         <a class="is-flex" href="#类加载器双亲委派模型">
         <span class="has-mr-6">1.1</span>
@@ -683,9 +683,9 @@ var _hmt = _hmt || [];
         <span class="has-mr-6">1.2</span>
         <span>双亲委派模型的优点</span>
         </a></li></ul></li><li>
-        <a class="is-flex" href="#2-类加载器的类型">
+        <a class="is-flex" href="#类加载器的类型">
         <span class="has-mr-6">2</span>
-        <span>2 类加载器的类型</span>
+        <span>类加载器的类型</span>
         </a><ul class="menu-list"><li>
         <a class="is-flex" href="#Bootstrap-ClassLoader-启动类加载器">
         <span class="has-mr-6">2.1</span>
@@ -703,9 +703,9 @@ var _hmt = _hmt || [];
         <span class="has-mr-6">2.4</span>
         <span>User-Defined ClassLoader 用户自定义类加载器</span>
         </a></li></ul></li><li>
-        <a class="is-flex" href="#3-类的加载的过程">
+        <a class="is-flex" href="#类的加载的过程">
         <span class="has-mr-6">3</span>
-        <span>3 类的加载的过程</span>
+        <span>类的加载的过程</span>
         </a><ul class="menu-list"><li>
         <a class="is-flex" href="#加载">
         <span class="has-mr-6">3.1</span>
@@ -802,6 +802,25 @@ var _hmt = _hmt || [];
         
         <article class="media">
             <!-- 
+            <a href="/Python2ToPython3/" class="media-left">
+                <p class="image is-64x64">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Python2切换Python3">
+                </p>
+            </a>
+             -->
+            <div class="media-content">
+                <div class="content">
+                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
+                    <a href="/Python2ToPython3/" class="has-link-black-ter is-size-6">Python2切换Python3</a>
+                    <p class="is-size-7 is-uppercase">
+                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
+                    </p>
+                </div>
+            </div>
+        </article>
+        
+        <article class="media">
+            <!-- 
             <a href="/MySQL-Command/" class="media-left">
                 <p class="image is-64x64">
                     <img class="thumbnail" src="/images/thumbnail.svg" alt="MySQL基本命令">
@@ -814,25 +833,6 @@ var _hmt = _hmt || [];
                     <a href="/MySQL-Command/" class="has-link-black-ter is-size-6">MySQL基本命令</a>
                     <p class="is-size-7 is-uppercase">
                         <a class="has-link-grey -link" href="/categories/MySQL/">MySQL</a>
-                    </p>
-                </div>
-            </div>
-        </article>
-        
-        <article class="media">
-            <!-- 
-            <a href="/Centos-Line/" class="media-left">
-                <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Centos命令行图形界面切换">
-                </p>
-            </a>
-             -->
-            <div class="media-content">
-                <div class="content">
-                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
-                    <a href="/Centos-Line/" class="has-link-black-ter is-size-6">Centos命令行图形界面切换</a>
-                    <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
                     </p>
                 </div>
             </div>
@@ -1694,9 +1694,9 @@ var _hmt = _hmt || [];
                 目录
             </h3>
             <ul class="menu-list"><li>
-        <a class="is-flex" href="#1-类加载器的模型">
+        <a class="is-flex" href="#类加载器的模型">
         <span class="has-mr-6">1</span>
-        <span>1 类加载器的模型</span>
+        <span>类加载器的模型</span>
         </a><ul class="menu-list"><li>
         <a class="is-flex" href="#类加载器双亲委派模型">
         <span class="has-mr-6">1.1</span>
@@ -1706,9 +1706,9 @@ var _hmt = _hmt || [];
         <span class="has-mr-6">1.2</span>
         <span>双亲委派模型的优点</span>
         </a></li></ul></li><li>
-        <a class="is-flex" href="#2-类加载器的类型">
+        <a class="is-flex" href="#类加载器的类型">
         <span class="has-mr-6">2</span>
-        <span>2 类加载器的类型</span>
+        <span>类加载器的类型</span>
         </a><ul class="menu-list"><li>
         <a class="is-flex" href="#Bootstrap-ClassLoader-启动类加载器">
         <span class="has-mr-6">2.1</span>
@@ -1726,9 +1726,9 @@ var _hmt = _hmt || [];
         <span class="has-mr-6">2.4</span>
         <span>User-Defined ClassLoader 用户自定义类加载器</span>
         </a></li></ul></li><li>
-        <a class="is-flex" href="#3-类的加载的过程">
+        <a class="is-flex" href="#类的加载的过程">
         <span class="has-mr-6">3</span>
-        <span>3 类的加载的过程</span>
+        <span>类的加载的过程</span>
         </a><ul class="menu-list"><li>
         <a class="is-flex" href="#加载">
         <span class="has-mr-6">3.1</span>
@@ -1825,6 +1825,25 @@ var _hmt = _hmt || [];
         
         <article class="media">
             <!-- 
+            <a href="/Python2ToPython3/" class="media-left">
+                <p class="image is-64x64">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Python2切换Python3">
+                </p>
+            </a>
+             -->
+            <div class="media-content">
+                <div class="content">
+                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
+                    <a href="/Python2ToPython3/" class="has-link-black-ter is-size-6">Python2切换Python3</a>
+                    <p class="is-size-7 is-uppercase">
+                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
+                    </p>
+                </div>
+            </div>
+        </article>
+        
+        <article class="media">
+            <!-- 
             <a href="/MySQL-Command/" class="media-left">
                 <p class="image is-64x64">
                     <img class="thumbnail" src="/images/thumbnail.svg" alt="MySQL基本命令">
@@ -1837,25 +1856,6 @@ var _hmt = _hmt || [];
                     <a href="/MySQL-Command/" class="has-link-black-ter is-size-6">MySQL基本命令</a>
                     <p class="is-size-7 is-uppercase">
                         <a class="has-link-grey -link" href="/categories/MySQL/">MySQL</a>
-                    </p>
-                </div>
-            </div>
-        </article>
-        
-        <article class="media">
-            <!-- 
-            <a href="/Centos-Line/" class="media-left">
-                <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Centos命令行图形界面切换">
-                </p>
-            </a>
-             -->
-            <div class="media-content">
-                <div class="content">
-                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
-                    <a href="/Centos-Line/" class="has-link-black-ter is-size-6">Centos命令行图形界面切换</a>
-                    <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
                     </p>
                 </div>
             </div>

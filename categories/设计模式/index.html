@@ -174,33 +174,33 @@ var _hmt = _hmt || [];
         <div class="content">
             <!-- TOC -->
 <ul>
-<li><a href="#1-%E4%BB%80%E4%B9%88%E6%98%AFfork-join">1 什么是Fork-Join</a></li>
-<li><a href="#2-work-stealing%E7%AE%97%E6%B3%95">2 work-stealing算法</a></li>
-<li><a href="#3-fork-join%E6%A1%86%E6%9E%B6">3 Fork-Join框架</a><ul>
-<li><a href="#31-forkjointask">3.1 ForkJoinTask</a><ul>
+<li><a href="#%E4%BB%80%E4%B9%88%E6%98%AFfork-join">什么是Fork-Join</a></li>
+<li><a href="#work-stealing%E7%AE%97%E6%B3%95">work-stealing算法</a></li>
+<li><a href="#fork-join%E6%A1%86%E6%9E%B6">Fork-Join框架</a><ul>
+<li><a href="#forkjointask">ForkJoinTask</a><ul>
 <li><a href="#fork">fork()</a></li>
 <li><a href="#join">join()</a></li>
 </ul>
 </li>
-<li><a href="#32-forkjoinpool">3.2 ForkJoinPool</a></li>
-<li><a href="#33-%E6%B3%A8%E6%84%8F">3.3 注意</a></li>
+<li><a href="#forkjoinpool">ForkJoinPool</a></li>
+<li><a href="#%E6%B3%A8%E6%84%8F">注意</a></li>
 </ul>
 </li>
-<li><a href="#4-fork-join%E6%A1%86%E6%9E%B6%E4%BD%BF%E7%94%A8">4 Fork-Join框架使用</a><ul>
-<li><a href="#41-extends-recursivetask">4.1 extends RecursiveTask</a></li>
-<li><a href="#42-%E4%BE%8B%E5%AD%90">4.2 例子</a></li>
-<li><a href="#43-%E8%87%AA%E5%AE%9A%E4%B9%89forkjoin%E4%BB%BB%E5%8A%A1%E7%B1%BB">4.3 自定义forkjoin任务类</a></li>
-<li><a href="#44-%E5%88%9B%E5%BB%BA%E7%BA%BF%E7%A8%8B%E6%B1%A0">4.4 创建线程池</a></li>
+<li><a href="#fork-join%E6%A1%86%E6%9E%B6%E4%BD%BF%E7%94%A8">Fork-Join框架使用</a><ul>
+<li><a href="#extends-recursivetask">extends RecursiveTask</a></li>
+<li><a href="#%E4%BE%8B%E5%AD%90">例子</a></li>
+<li><a href="#%E8%87%AA%E5%AE%9A%E4%B9%89forkjoin%E4%BB%BB%E5%8A%A1%E7%B1%BB">自定义forkjoin任务类</a></li>
+<li><a href="#%E5%88%9B%E5%BB%BA%E7%BA%BF%E7%A8%8B%E6%B1%A0">创建线程池</a></li>
 </ul>
 </li>
-<li><a href="#5-fork-join%E6%A1%86%E6%9E%B6%E7%9A%84%E5%BC%82%E5%B8%B8%E5%A4%84%E7%90%86">5 Fork-Join框架的异常处理</a></li>
-<li><a href="#6-fork-join%E6%A1%86%E6%9E%B6%E7%9A%84%E6%80%A7%E8%83%BD%E6%B5%8B%E8%AF%95">6 Fork-Join框架的性能测试</a><ul>
-<li><a href="#61-%E4%BE%8B1">6.1 例1</a></li>
+<li><a href="#fork-join%E6%A1%86%E6%9E%B6%E7%9A%84%E5%BC%82%E5%B8%B8%E5%A4%84%E7%90%86">Fork-Join框架的异常处理</a></li>
+<li><a href="#fork-join%E6%A1%86%E6%9E%B6%E7%9A%84%E6%80%A7%E8%83%BD%E6%B5%8B%E8%AF%95">Fork-Join框架的性能测试</a><ul>
+<li><a href="#%E4%BE%8B1">例1</a></li>
 </ul>
 </li>
 </ul>
 <!-- /TOC -->
-<h1 id="1-什么是Fork-Join"><a href="#1-什么是Fork-Join" class="headerlink" title="1 什么是Fork-Join"></a>1 什么是Fork-Join</h1><p>“分治”问题可以很容易地通过<code>Callable</code>线程的<code>Executor</code>接口来解决。通过为每个任务实例化一 个<code>Callable</code>实例，并在<code>ExecutorService</code>类中汇总计算结果来得出最终结果可以实现这一目的。那么自然而然想到的问题就是，如果这接口已经做得不错了，我们为什么还需要Java 7的其他框架？<br>使用<code>ExecutorService</code>和<code>Callable</code>的主要问题是，<code>Callable</code>实例在本质上是阻塞的。一旦一个<code>Callable</code>实例开始执行，其他所有<code>Callable</code>都会被阻塞。由于队列后面的<code>Callable</code>实例在前一实例未执行完成的时候不会被执行，因此许多资源无法得到利用。Fork-Join框架被引入来解决这一并行问题，而<code>Executor</code>解决的是并发问题(译者注：并发和并行的区别就是一个处理器同时处理多个任务和多个处理器或者是多核的处理器同时处理多个不同的任务)。<br>Fork-Join模式，分而治之，然后合并结果，这么一种编程模式。(注：Fork-Join是一个单机框架，类似的分布式的框架有Hadoop这类的，它们的计算模型是MapReduce，体现了和Fork-Join一样的思想-分而治之。)<br>Fork-Join框架是一个”多核友好的、轻量级并行框架”，它支持并行编程风格，将问题递归拆分成多个更小片断，以并行和调配的方式解决。Fork-join融合了分而治之技术；获取问题后，递归地将它分成多个子问题，直到每个子问题都足够小，以至于可以高效地串行地解决它们。递归的过程将会把问题分成两个或者多个子问题，然后把这些问题放入队列中等待处理（fork步骤），接下来等待所有子问题的结果（join步骤），把多个结果合并到一起。<br>Fork-Join模式有自己的适用范围。如果一个应用能被分解成多个子任务，并且组合多个子任务的结果就能够获得最终的答案，那么这个应用就适合用Fork-Join模式来解决。<br>一个Fork-Join模式的示意图，位于图上部的Task依赖于位于其下的Task的执行，只有当所有的子任务都完成之后，调用者才能获得<code>Task 0</code>的返回结果。如下图。<br><img src="./forkjoin-1-1.jpg" alt><br><img src="./forkjoin-1-2.jpg" alt><br>Fork-Join模式能够解决很多种类的并行问题。通过使用Doug Lea提供的Fork-Join框架，软件开发人员只需要关注任务的划分和中间结果的组合就能充分利用并行平台的优良性能。其他和并行相关的诸多难于处理的问题，例如负载平衡、同步等，都可以由框架采用统一的方式解决。这样，我们就能够轻松地获得并行的好处而避免了并行编程的困难且容易出错的缺点。<br></p>
+<h1 id="什么是Fork-Join"><a href="#什么是Fork-Join" class="headerlink" title="什么是Fork-Join"></a>什么是Fork-Join</h1><p>“分治”问题可以很容易地通过<code>Callable</code>线程的<code>Executor</code>接口来解决。通过为每个任务实例化一 个<code>Callable</code>实例，并在<code>ExecutorService</code>类中汇总计算结果来得出最终结果可以实现这一目的。那么自然而然想到的问题就是，如果这接口已经做得不错了，我们为什么还需要Java 7的其他框架？<br>使用<code>ExecutorService</code>和<code>Callable</code>的主要问题是，<code>Callable</code>实例在本质上是阻塞的。一旦一个<code>Callable</code>实例开始执行，其他所有<code>Callable</code>都会被阻塞。由于队列后面的<code>Callable</code>实例在前一实例未执行完成的时候不会被执行，因此许多资源无法得到利用。Fork-Join框架被引入来解决这一并行问题，而<code>Executor</code>解决的是并发问题(译者注：并发和并行的区别就是一个处理器同时处理多个任务和多个处理器或者是多核的处理器同时处理多个不同的任务)。<br>Fork-Join模式，分而治之，然后合并结果，这么一种编程模式。(注：Fork-Join是一个单机框架，类似的分布式的框架有Hadoop这类的，它们的计算模型是MapReduce，体现了和Fork-Join一样的思想-分而治之。)<br>Fork-Join框架是一个”多核友好的、轻量级并行框架”，它支持并行编程风格，将问题递归拆分成多个更小片断，以并行和调配的方式解决。Fork-join融合了分而治之技术；获取问题后，递归地将它分成多个子问题，直到每个子问题都足够小，以至于可以高效地串行地解决它们。递归的过程将会把问题分成两个或者多个子问题，然后把这些问题放入队列中等待处理（fork步骤），接下来等待所有子问题的结果（join步骤），把多个结果合并到一起。<br>Fork-Join模式有自己的适用范围。如果一个应用能被分解成多个子任务，并且组合多个子任务的结果就能够获得最终的答案，那么这个应用就适合用Fork-Join模式来解决。<br>一个Fork-Join模式的示意图，位于图上部的Task依赖于位于其下的Task的执行，只有当所有的子任务都完成之后，调用者才能获得<code>Task 0</code>的返回结果。如下图。<br><img src="./forkjoin-1-1.jpg" alt><br><img src="./forkjoin-1-2.jpg" alt><br>Fork-Join模式能够解决很多种类的并行问题。通过使用Doug Lea提供的Fork-Join框架，软件开发人员只需要关注任务的划分和中间结果的组合就能充分利用并行平台的优良性能。其他和并行相关的诸多难于处理的问题，例如负载平衡、同步等，都可以由框架采用统一的方式解决。这样，我们就能够轻松地获得并行的好处而避免了并行编程的困难且容易出错的缺点。<br></p>
         </div>
         
         
@@ -642,6 +642,25 @@ var _hmt = _hmt || [];
         
         <article class="media">
             <!-- 
+            <a href="/Python2ToPython3/" class="media-left">
+                <p class="image is-64x64">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Python2切换Python3">
+                </p>
+            </a>
+             -->
+            <div class="media-content">
+                <div class="content">
+                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
+                    <a href="/Python2ToPython3/" class="has-link-black-ter is-size-6">Python2切换Python3</a>
+                    <p class="is-size-7 is-uppercase">
+                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
+                    </p>
+                </div>
+            </div>
+        </article>
+        
+        <article class="media">
+            <!-- 
             <a href="/MySQL-Command/" class="media-left">
                 <p class="image is-64x64">
                     <img class="thumbnail" src="/images/thumbnail.svg" alt="MySQL基本命令">
@@ -654,25 +673,6 @@ var _hmt = _hmt || [];
                     <a href="/MySQL-Command/" class="has-link-black-ter is-size-6">MySQL基本命令</a>
                     <p class="is-size-7 is-uppercase">
                         <a class="has-link-grey -link" href="/categories/MySQL/">MySQL</a>
-                    </p>
-                </div>
-            </div>
-        </article>
-        
-        <article class="media">
-            <!-- 
-            <a href="/Centos-Line/" class="media-left">
-                <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Centos命令行图形界面切换">
-                </p>
-            </a>
-             -->
-            <div class="media-content">
-                <div class="content">
-                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
-                    <a href="/Centos-Line/" class="has-link-black-ter is-size-6">Centos命令行图形界面切换</a>
-                    <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
                     </p>
                 </div>
             </div>
@@ -1594,6 +1594,25 @@ var _hmt = _hmt || [];
         
         <article class="media">
             <!-- 
+            <a href="/Python2ToPython3/" class="media-left">
+                <p class="image is-64x64">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Python2切换Python3">
+                </p>
+            </a>
+             -->
+            <div class="media-content">
+                <div class="content">
+                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
+                    <a href="/Python2ToPython3/" class="has-link-black-ter is-size-6">Python2切换Python3</a>
+                    <p class="is-size-7 is-uppercase">
+                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
+                    </p>
+                </div>
+            </div>
+        </article>
+        
+        <article class="media">
+            <!-- 
             <a href="/MySQL-Command/" class="media-left">
                 <p class="image is-64x64">
                     <img class="thumbnail" src="/images/thumbnail.svg" alt="MySQL基本命令">
@@ -1606,25 +1625,6 @@ var _hmt = _hmt || [];
                     <a href="/MySQL-Command/" class="has-link-black-ter is-size-6">MySQL基本命令</a>
                     <p class="is-size-7 is-uppercase">
                         <a class="has-link-grey -link" href="/categories/MySQL/">MySQL</a>
-                    </p>
-                </div>
-            </div>
-        </article>
-        
-        <article class="media">
-            <!-- 
-            <a href="/Centos-Line/" class="media-left">
-                <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Centos命令行图形界面切换">
-                </p>
-            </a>
-             -->
-            <div class="media-content">
-                <div class="content">
-                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
-                    <a href="/Centos-Line/" class="has-link-black-ter is-size-6">Centos命令行图形界面切换</a>
-                    <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
                     </p>
                 </div>
             </div>

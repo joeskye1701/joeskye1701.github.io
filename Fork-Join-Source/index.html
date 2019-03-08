@@ -7,18 +7,18 @@
 
 
 
-    <meta name="description" content="1 Fork ForkJoinTask#fork() ForkJoinWorkerThread#pushTask() ForkJoinWorkerThread#growQueue()   2 Join ForkJoinTask#doJoin() ForkJoinWorkerThread#unpushTask() ForkJoinWorkerThread#joinTask() ForkJoinW">
+    <meta name="description" content="Fork ForkJoinTask#fork() ForkJoinWorkerThread#pushTask() ForkJoinWorkerThread#growQueue()   Join ForkJoinTask#doJoin() ForkJoinWorkerThread#unpushTask() ForkJoinWorkerThread#joinTask() ForkJoinWorke">
 <meta name="keywords" content="Java,JDK7 源码,设计模式">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Fork-Join源码分析">
 <meta property="og:url" content="https://joeskye1701.github.io/Fork-Join-Source/index.html">
 <meta property="og:site_name" content="Joe|博客">
-<meta property="og:description" content="1 Fork ForkJoinTask#fork() ForkJoinWorkerThread#pushTask() ForkJoinWorkerThread#growQueue()   2 Join ForkJoinTask#doJoin() ForkJoinWorkerThread#unpushTask() ForkJoinWorkerThread#joinTask() ForkJoinW">
+<meta property="og:description" content="Fork ForkJoinTask#fork() ForkJoinWorkerThread#pushTask() ForkJoinWorkerThread#growQueue()   Join ForkJoinTask#doJoin() ForkJoinWorkerThread#unpushTask() ForkJoinWorkerThread#joinTask() ForkJoinWorke">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:updated_time" content="2019-03-06T19:28:51.437Z">
+<meta property="og:updated_time" content="2019-03-08T19:10:55.845Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Fork-Join源码分析">
-<meta name="twitter:description" content="1 Fork ForkJoinTask#fork() ForkJoinWorkerThread#pushTask() ForkJoinWorkerThread#growQueue()   2 Join ForkJoinTask#doJoin() ForkJoinWorkerThread#unpushTask() ForkJoinWorkerThread#joinTask() ForkJoinW">
+<meta name="twitter:description" content="Fork ForkJoinTask#fork() ForkJoinWorkerThread#pushTask() ForkJoinWorkerThread#growQueue()   Join ForkJoinTask#doJoin() ForkJoinWorkerThread#unpushTask() ForkJoinWorkerThread#joinTask() ForkJoinWorke">
 
 
 
@@ -171,13 +171,13 @@ var _hmt = _hmt || [];
         <div class="content">
             <!-- TOC -->
 <ul>
-<li><a href="#1-fork">1 Fork</a><ul>
+<li><a href="#fork">Fork</a><ul>
 <li><a href="#forkjointaskfork">ForkJoinTask#fork()</a></li>
 <li><a href="#forkjoinworkerthreadpushtask">ForkJoinWorkerThread#pushTask()</a></li>
 <li><a href="#forkjoinworkerthreadgrowqueue">ForkJoinWorkerThread#growQueue()</a></li>
 </ul>
 </li>
-<li><a href="#2-join">2 Join</a><ul>
+<li><a href="#join">Join</a><ul>
 <li><a href="#forkjointaskdojoin">ForkJoinTask#doJoin()</a></li>
 <li><a href="#forkjoinworkerthreadunpushtask">ForkJoinWorkerThread#unpushTask()</a></li>
 <li><a href="#forkjoinworkerthreadjointask">ForkJoinWorkerThread#joinTask()</a></li>
@@ -197,11 +197,11 @@ var _hmt = _hmt || [];
 <li><a href="#forkjointaskreportresult">ForkJoinTask#reportResult()</a></li>
 </ul>
 </li>
-<li><a href="#3-%E6%80%BB%E7%BB%93">3 总结</a></li>
+<li><a href="#%E6%80%BB%E7%BB%93">总结</a></li>
 </ul>
 <!-- /TOC -->
 <p>这篇源码分析基于JDK7。</p>
-<h1 id="1-Fork"><a href="#1-Fork" class="headerlink" title="1 Fork"></a>1 Fork</h1><p>通过分析一个Fork-Join任务的执行过程来分析Fork-Join的相关代码，主要侧重于分裂(Fork)/合并(Join)过程。  </p>
+<h1 id="Fork"><a href="#Fork" class="headerlink" title="Fork"></a>Fork</h1><p>通过分析一个Fork-Join任务的执行过程来分析Fork-Join的相关代码，主要侧重于分裂(Fork)/合并(Join)过程。  </p>
 <p>SumTask<br><figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">SumTask</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">RecursiveTask</span>&lt;<span class="hljs-title">Long</span>&gt;</span>&#123;  </span><br><span class="line">    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">int</span> THRESHOLD = <span class="hljs-number">10</span>;  </span><br><span class="line">      </span><br><span class="line">    <span class="hljs-keyword">private</span> <span class="hljs-keyword">long</span> start;  </span><br><span class="line">    <span class="hljs-keyword">private</span> <span class="hljs-keyword">long</span> end;  </span><br><span class="line">      </span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-title">SumTask</span><span class="hljs-params">(<span class="hljs-keyword">long</span> n)</span> </span>&#123;  </span><br><span class="line">        <span class="hljs-keyword">this</span>(<span class="hljs-number">1</span>,n);  </span><br><span class="line">    &#125;  </span><br><span class="line">      </span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">private</span> <span class="hljs-title">SumTask</span><span class="hljs-params">(<span class="hljs-keyword">long</span> start, <span class="hljs-keyword">long</span> end)</span> </span>&#123;  </span><br><span class="line">        <span class="hljs-keyword">this</span>.start = start;  </span><br><span class="line">        <span class="hljs-keyword">this</span>.end = end;  </span><br><span class="line">    &#125;  </span><br><span class="line">    <span class="hljs-meta">@Override</span>  </span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">protected</span> Long <span class="hljs-title">compute</span><span class="hljs-params">()</span> </span>&#123;  </span><br><span class="line">        <span class="hljs-keyword">long</span> sum = <span class="hljs-number">0</span>;  </span><br><span class="line">        <span class="hljs-keyword">if</span>((end - start) &lt;= THRESHOLD)&#123;  </span><br><span class="line">            <span class="hljs-keyword">for</span>(<span class="hljs-keyword">long</span> l = start; l &lt;= end; l++)&#123;  </span><br><span class="line">                sum += l;  </span><br><span class="line">            &#125;  </span><br><span class="line">        &#125;<span class="hljs-keyword">else</span>&#123;  </span><br><span class="line">            <span class="hljs-keyword">long</span> mid = (start + end) &gt;&gt;&gt; <span class="hljs-number">1</span>;  </span><br><span class="line">            SumTask left = <span class="hljs-keyword">new</span> SumTask(start, mid);  </span><br><span class="line">            SumTask right = <span class="hljs-keyword">new</span> SumTask(mid + <span class="hljs-number">1</span>, end);  </span><br><span class="line">            left.fork();  </span><br><span class="line">            right.fork();  </span><br><span class="line">            sum = left.join() + right.join();  </span><br><span class="line">        &#125;  </span><br><span class="line">        <span class="hljs-keyword">return</span> sum;  </span><br><span class="line">    &#125;  </span><br><span class="line">    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">long</span> serialVersionUID = <span class="hljs-number">1L</span>;  </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
 <h2 id="ForkJoinTask-fork"><a href="#ForkJoinTask-fork" class="headerlink" title="ForkJoinTask#fork()"></a>ForkJoinTask#fork()</h2><figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment">    * Arranges to asynchronously execute this task.  While it is not</span></span><br><span class="line"><span class="hljs-comment">    * necessarily enforced, it is a usage error to fork a task more</span></span><br><span class="line"><span class="hljs-comment">    * than once unless it has completed and been reinitialized.</span></span><br><span class="line"><span class="hljs-comment">    * Subsequent modifications to the state of this task or any data</span></span><br><span class="line"><span class="hljs-comment">    * it operates on are not necessarily consistently observable by</span></span><br><span class="line"><span class="hljs-comment">    * any thread other than the one executing it unless preceded by a</span></span><br><span class="line"><span class="hljs-comment">    * call to &#123;<span class="hljs-doctag">@link</span> #join&#125; or related methods, or a call to &#123;<span class="hljs-doctag">@link</span></span></span><br><span class="line"><span class="hljs-comment">    * #isDone&#125; returning &#123;<span class="hljs-doctag">@code</span> true&#125;.</span></span><br><span class="line"><span class="hljs-comment">    *</span></span><br><span class="line"><span class="hljs-comment">    * &lt;p&gt;This method may be invoked only from within &#123;<span class="hljs-doctag">@code</span></span></span><br><span class="line"><span class="hljs-comment">    * ForkJoinPool&#125; computations (as may be determined using method</span></span><br><span class="line"><span class="hljs-comment">    * &#123;<span class="hljs-doctag">@link</span> #inForkJoinPool&#125;).  Attempts to invoke in other contexts</span></span><br><span class="line"><span class="hljs-comment">    * result in exceptions or errors, possibly including &#123;<span class="hljs-doctag">@code</span></span></span><br><span class="line"><span class="hljs-comment">    * ClassCastException&#125;.</span></span><br><span class="line"><span class="hljs-comment">    *</span></span><br><span class="line"><span class="hljs-comment">    * <span class="hljs-doctag">@return</span> &#123;<span class="hljs-doctag">@code</span> this&#125;, to simplify usage</span></span><br><span class="line"><span class="hljs-comment">    */</span></span><br><span class="line">   <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">final</span> ForkJoinTask&lt;V&gt; <span class="hljs-title">fork</span><span class="hljs-params">()</span> </span>&#123;</span><br><span class="line">       ((ForkJoinWorkerThread) Thread.currentThread())</span><br><span class="line">           .pushTask(<span class="hljs-keyword">this</span>);</span><br><span class="line">       <span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>;</span><br><span class="line">   &#125;</span><br></pre></td></tr></table></figure>
 <h2 id="ForkJoinWorkerThread-pushTask"><a href="#ForkJoinWorkerThread-pushTask" class="headerlink" title="ForkJoinWorkerThread#pushTask()"></a>ForkJoinWorkerThread#pushTask()</h2><figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment">  * Pushes a task. Call only from this thread.</span></span><br><span class="line"><span class="hljs-comment">  *</span></span><br><span class="line"><span class="hljs-comment">  * <span class="hljs-doctag">@param</span> t the task. Caller must ensure non-null.</span></span><br><span class="line"><span class="hljs-comment">  */</span></span><br><span class="line"> <span class="hljs-function"><span class="hljs-keyword">final</span> <span class="hljs-keyword">void</span> <span class="hljs-title">pushTask</span><span class="hljs-params">(ForkJoinTask&lt;?&gt; t)</span> </span>&#123;</span><br><span class="line">     ForkJoinTask&lt;?&gt;[] q; <span class="hljs-keyword">int</span> s, m;</span><br><span class="line">     <span class="hljs-keyword">if</span> ((q = queue) != <span class="hljs-keyword">null</span>) &#123;    <span class="hljs-comment">// ignore if queue removed</span></span><br><span class="line">         <span class="hljs-comment">// 1</span></span><br><span class="line">         <span class="hljs-keyword">long</span> u = (((s = queueTop) &amp; (m = q.length - <span class="hljs-number">1</span>)) &lt;&lt; ASHIFT) + ABASE;</span><br><span class="line">         <span class="hljs-comment">// 2</span></span><br><span class="line">         UNSAFE.putOrderedObject(q, u, t);</span><br><span class="line">         <span class="hljs-comment">// 3</span></span><br><span class="line">         queueTop = s + <span class="hljs-number">1</span>;         <span class="hljs-comment">// or use putOrderedInt</span></span><br><span class="line">         <span class="hljs-keyword">if</span> ((s -= queueBase) &lt;= <span class="hljs-number">2</span>)</span><br><span class="line">             pool.signalWork();</span><br><span class="line">         <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (s == m)</span><br><span class="line">             <span class="hljs-comment">// 4</span></span><br><span class="line">             growQueue();</span><br><span class="line">     &#125;</span><br><span class="line"> &#125;</span><br></pre></td></tr></table></figure>
@@ -219,7 +219,7 @@ var _hmt = _hmt || [];
 <li>最小为<code>INITIAL_QUEUE_CAPACITY(1 &lt;&lt; 13)</code>。</li>
 </ol>
 <a id="more"></a>
-<h1 id="2-Join"><a href="#2-Join" class="headerlink" title="2 Join"></a>2 Join</h1><figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment"> * Returns the result of the computation when it &#123;<span class="hljs-doctag">@link</span> #isDone is</span></span><br><span class="line"><span class="hljs-comment"> * done&#125;.  This method differs from &#123;<span class="hljs-doctag">@link</span> #get()&#125; in that</span></span><br><span class="line"><span class="hljs-comment"> * abnormal completion results in &#123;<span class="hljs-doctag">@code</span> RuntimeException&#125; or</span></span><br><span class="line"><span class="hljs-comment"> * &#123;<span class="hljs-doctag">@code</span> Error&#125;, not &#123;<span class="hljs-doctag">@code</span> ExecutionException&#125;, and that</span></span><br><span class="line"><span class="hljs-comment"> * interrupts of the calling thread do &lt;em&gt;not&lt;/em&gt; cause the</span></span><br><span class="line"><span class="hljs-comment"> * method to abruptly return by throwing &#123;<span class="hljs-doctag">@code</span></span></span><br><span class="line"><span class="hljs-comment"> * InterruptedException&#125;.</span></span><br><span class="line"><span class="hljs-comment"> *</span></span><br><span class="line"><span class="hljs-comment"> * <span class="hljs-doctag">@return</span> the computed result</span></span><br><span class="line"><span class="hljs-comment"> */</span></span><br><span class="line"><span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">final</span> V <span class="hljs-title">join</span><span class="hljs-params">()</span> </span>&#123;</span><br><span class="line">    <span class="hljs-comment">// 1</span></span><br><span class="line">    <span class="hljs-keyword">if</span> (doJoin() != NORMAL)</span><br><span class="line">        <span class="hljs-keyword">return</span> reportResult();</span><br><span class="line">    <span class="hljs-keyword">else</span></span><br><span class="line">        <span class="hljs-keyword">return</span> getRawResult();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h1 id="Join"><a href="#Join" class="headerlink" title="Join"></a>Join</h1><figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment"> * Returns the result of the computation when it &#123;<span class="hljs-doctag">@link</span> #isDone is</span></span><br><span class="line"><span class="hljs-comment"> * done&#125;.  This method differs from &#123;<span class="hljs-doctag">@link</span> #get()&#125; in that</span></span><br><span class="line"><span class="hljs-comment"> * abnormal completion results in &#123;<span class="hljs-doctag">@code</span> RuntimeException&#125; or</span></span><br><span class="line"><span class="hljs-comment"> * &#123;<span class="hljs-doctag">@code</span> Error&#125;, not &#123;<span class="hljs-doctag">@code</span> ExecutionException&#125;, and that</span></span><br><span class="line"><span class="hljs-comment"> * interrupts of the calling thread do &lt;em&gt;not&lt;/em&gt; cause the</span></span><br><span class="line"><span class="hljs-comment"> * method to abruptly return by throwing &#123;<span class="hljs-doctag">@code</span></span></span><br><span class="line"><span class="hljs-comment"> * InterruptedException&#125;.</span></span><br><span class="line"><span class="hljs-comment"> *</span></span><br><span class="line"><span class="hljs-comment"> * <span class="hljs-doctag">@return</span> the computed result</span></span><br><span class="line"><span class="hljs-comment"> */</span></span><br><span class="line"><span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">final</span> V <span class="hljs-title">join</span><span class="hljs-params">()</span> </span>&#123;</span><br><span class="line">    <span class="hljs-comment">// 1</span></span><br><span class="line">    <span class="hljs-keyword">if</span> (doJoin() != NORMAL)</span><br><span class="line">        <span class="hljs-keyword">return</span> reportResult();</span><br><span class="line">    <span class="hljs-keyword">else</span></span><br><span class="line">        <span class="hljs-keyword">return</span> getRawResult();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <p>标注代码分析</p>
 <ol>
 <li>先调用<code>doJoin()</code>，如果<code>doJoin()</code>返回<code>NORMAL</code>，那么通过<code>getRawResult()</code>来获取结果；否则会调用<code>reportResult()</code>来处理和获取结果。<h2 id="ForkJoinTask-doJoin"><a href="#ForkJoinTask-doJoin" class="headerlink" title="ForkJoinTask#doJoin()"></a>ForkJoinTask#doJoin()</h2><figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment">  * Primary mechanics for join, get, quietlyJoin.</span></span><br><span class="line"><span class="hljs-comment">  * <span class="hljs-doctag">@return</span> status upon completion</span></span><br><span class="line"><span class="hljs-comment">  */</span></span><br><span class="line"> <span class="hljs-function"><span class="hljs-keyword">private</span> <span class="hljs-keyword">int</span> <span class="hljs-title">doJoin</span><span class="hljs-params">()</span> </span>&#123;</span><br><span class="line">     Thread t; ForkJoinWorkerThread w; <span class="hljs-keyword">int</span> s; <span class="hljs-keyword">boolean</span> completed;</span><br><span class="line">     <span class="hljs-keyword">if</span> ((t = Thread.currentThread()) <span class="hljs-keyword">instanceof</span> ForkJoinWorkerThread) &#123;</span><br><span class="line">         <span class="hljs-comment">// 1</span></span><br><span class="line">         <span class="hljs-keyword">if</span> ((s = status) &lt; <span class="hljs-number">0</span>)</span><br><span class="line">             <span class="hljs-keyword">return</span> s;</span><br><span class="line">         <span class="hljs-comment">// 2</span></span><br><span class="line">         <span class="hljs-keyword">if</span> ((w = (ForkJoinWorkerThread)t).unpushTask(<span class="hljs-keyword">this</span>)) &#123;</span><br><span class="line">             <span class="hljs-keyword">try</span> &#123;</span><br><span class="line">                 completed = exec();</span><br><span class="line">             &#125; <span class="hljs-keyword">catch</span> (Throwable rex) &#123;</span><br><span class="line">                 <span class="hljs-keyword">return</span> setExceptionalCompletion(rex);</span><br><span class="line">             &#125;</span><br><span class="line">             <span class="hljs-keyword">if</span> (completed)</span><br><span class="line">                 <span class="hljs-keyword">return</span> setCompletion(NORMAL);</span><br><span class="line">         &#125;</span><br><span class="line">         <span class="hljs-comment">// 3</span></span><br><span class="line">         <span class="hljs-keyword">return</span> w.joinTask(<span class="hljs-keyword">this</span>);</span><br><span class="line">     &#125;</span><br><span class="line">     <span class="hljs-keyword">else</span></span><br><span class="line">         <span class="hljs-comment">// 4</span></span><br><span class="line">         <span class="hljs-keyword">return</span> externalAwaitDone();</span><br><span class="line"> &#125;</span><br></pre></td></tr></table></figure>
@@ -316,7 +316,7 @@ var _hmt = _hmt || [];
 <p>如果<code>ForkJoinTask#join()</code>中，任务非正常结束，会调用<code>reportResult()</code>。<br>标注代码分析</p>
 <ol>
 <li>如果任务状态为取消，抛出取消异常；</li>
-<li>如果任务状态是异常结束，会从异常表中获取异常，获取到的话，抛出异常。<h1 id="3-总结"><a href="#3-总结" class="headerlink" title="3 总结"></a>3 总结</h1></li>
+<li>如果任务状态是异常结束，会从异常表中获取异常，获取到的话，抛出异常。<h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1></li>
 </ol>
 <ul>
 <li><code>fork()</code>会将任务添加到当前工作线程的任务队列的里面。</li>
@@ -779,9 +779,9 @@ var _hmt = _hmt || [];
                 目录
             </h3>
             <ul class="menu-list"><li>
-        <a class="is-flex" href="#1-Fork">
+        <a class="is-flex" href="#Fork">
         <span class="has-mr-6">1</span>
-        <span>1 Fork</span>
+        <span>Fork</span>
         </a><ul class="menu-list"><li>
         <a class="is-flex" href="#ForkJoinTask-fork">
         <span class="has-mr-6">1.1</span>
@@ -795,9 +795,9 @@ var _hmt = _hmt || [];
         <span class="has-mr-6">1.3</span>
         <span>ForkJoinWorkerThread#growQueue()</span>
         </a></li></ul></li><li>
-        <a class="is-flex" href="#2-Join">
+        <a class="is-flex" href="#Join">
         <span class="has-mr-6">2</span>
-        <span>2 Join</span>
+        <span>Join</span>
         </a><ul class="menu-list"><li>
         <a class="is-flex" href="#ForkJoinTask-doJoin">
         <span class="has-mr-6">2.1</span>
@@ -859,9 +859,9 @@ var _hmt = _hmt || [];
         <span class="has-mr-6">2.14</span>
         <span>ForkJoinTask#reportResult()</span>
         </a></li></ul></li><li>
-        <a class="is-flex" href="#3-总结">
+        <a class="is-flex" href="#总结">
         <span class="has-mr-6">3</span>
-        <span>3 总结</span>
+        <span>总结</span>
         </a></li></ul>
         </div>
     </div>
@@ -934,6 +934,25 @@ var _hmt = _hmt || [];
         
         <article class="media">
             <!-- 
+            <a href="/Python2ToPython3/" class="media-left">
+                <p class="image is-64x64">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Python2切换Python3">
+                </p>
+            </a>
+             -->
+            <div class="media-content">
+                <div class="content">
+                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
+                    <a href="/Python2ToPython3/" class="has-link-black-ter is-size-6">Python2切换Python3</a>
+                    <p class="is-size-7 is-uppercase">
+                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
+                    </p>
+                </div>
+            </div>
+        </article>
+        
+        <article class="media">
+            <!-- 
             <a href="/MySQL-Command/" class="media-left">
                 <p class="image is-64x64">
                     <img class="thumbnail" src="/images/thumbnail.svg" alt="MySQL基本命令">
@@ -946,25 +965,6 @@ var _hmt = _hmt || [];
                     <a href="/MySQL-Command/" class="has-link-black-ter is-size-6">MySQL基本命令</a>
                     <p class="is-size-7 is-uppercase">
                         <a class="has-link-grey -link" href="/categories/MySQL/">MySQL</a>
-                    </p>
-                </div>
-            </div>
-        </article>
-        
-        <article class="media">
-            <!-- 
-            <a href="/Centos-Line/" class="media-left">
-                <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Centos命令行图形界面切换">
-                </p>
-            </a>
-             -->
-            <div class="media-content">
-                <div class="content">
-                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
-                    <a href="/Centos-Line/" class="has-link-black-ter is-size-6">Centos命令行图形界面切换</a>
-                    <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
                     </p>
                 </div>
             </div>
@@ -1826,9 +1826,9 @@ var _hmt = _hmt || [];
                 目录
             </h3>
             <ul class="menu-list"><li>
-        <a class="is-flex" href="#1-Fork">
+        <a class="is-flex" href="#Fork">
         <span class="has-mr-6">1</span>
-        <span>1 Fork</span>
+        <span>Fork</span>
         </a><ul class="menu-list"><li>
         <a class="is-flex" href="#ForkJoinTask-fork">
         <span class="has-mr-6">1.1</span>
@@ -1842,9 +1842,9 @@ var _hmt = _hmt || [];
         <span class="has-mr-6">1.3</span>
         <span>ForkJoinWorkerThread#growQueue()</span>
         </a></li></ul></li><li>
-        <a class="is-flex" href="#2-Join">
+        <a class="is-flex" href="#Join">
         <span class="has-mr-6">2</span>
-        <span>2 Join</span>
+        <span>Join</span>
         </a><ul class="menu-list"><li>
         <a class="is-flex" href="#ForkJoinTask-doJoin">
         <span class="has-mr-6">2.1</span>
@@ -1906,9 +1906,9 @@ var _hmt = _hmt || [];
         <span class="has-mr-6">2.14</span>
         <span>ForkJoinTask#reportResult()</span>
         </a></li></ul></li><li>
-        <a class="is-flex" href="#3-总结">
+        <a class="is-flex" href="#总结">
         <span class="has-mr-6">3</span>
-        <span>3 总结</span>
+        <span>总结</span>
         </a></li></ul>
         </div>
     </div>
@@ -1981,6 +1981,25 @@ var _hmt = _hmt || [];
         
         <article class="media">
             <!-- 
+            <a href="/Python2ToPython3/" class="media-left">
+                <p class="image is-64x64">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Python2切换Python3">
+                </p>
+            </a>
+             -->
+            <div class="media-content">
+                <div class="content">
+                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
+                    <a href="/Python2ToPython3/" class="has-link-black-ter is-size-6">Python2切换Python3</a>
+                    <p class="is-size-7 is-uppercase">
+                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
+                    </p>
+                </div>
+            </div>
+        </article>
+        
+        <article class="media">
+            <!-- 
             <a href="/MySQL-Command/" class="media-left">
                 <p class="image is-64x64">
                     <img class="thumbnail" src="/images/thumbnail.svg" alt="MySQL基本命令">
@@ -1993,25 +2012,6 @@ var _hmt = _hmt || [];
                     <a href="/MySQL-Command/" class="has-link-black-ter is-size-6">MySQL基本命令</a>
                     <p class="is-size-7 is-uppercase">
                         <a class="has-link-grey -link" href="/categories/MySQL/">MySQL</a>
-                    </p>
-                </div>
-            </div>
-        </article>
-        
-        <article class="media">
-            <!-- 
-            <a href="/Centos-Line/" class="media-left">
-                <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Centos命令行图形界面切换">
-                </p>
-            </a>
-             -->
-            <div class="media-content">
-                <div class="content">
-                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
-                    <a href="/Centos-Line/" class="has-link-black-ter is-size-6">Centos命令行图形界面切换</a>
-                    <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
                     </p>
                 </div>
             </div>

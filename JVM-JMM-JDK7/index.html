@@ -7,20 +7,20 @@
 
 
 
-    <meta name="description" content="1 问题 2 编写对GC友好，不会泄露的代码 使用更多生命周期短的、小的、不改变指向(immutable)的对象，编写清晰的代码 将用完的对象设为NULL其实没什么作用 避免显式GC(System.gc()) finalize() 内存泄漏   3 Java内存回收机制 静态集合类引起内存泄露 覆写hashcode 例1 结果   监听器 各种连接 内部类和外部模块等的引用 单例模式 本地变量">
+    <meta name="description" content="问题 编写对GC友好，不会泄露的代码 使用更多生命周期短的、小的、不改变指向(immutable)的对象，编写清晰的代码 将用完的对象设为NULL其实没什么作用 避免显式GC(System.gc()) finalize() 内存泄漏   Java内存回收机制 静态集合类引起内存泄露 覆写hashcode 例1 结果   监听器 各种连接 内部类和外部模块等的引用 单例模式 本地变量     问">
 <meta name="keywords" content="Java,JVM,内存泄漏">
 <meta property="og:type" content="article">
 <meta property="og:title" content="JVM内存泄漏分析">
 <meta property="og:url" content="https://joeskye1701.github.io/JVM-JMM-JDK7/index.html">
 <meta property="og:site_name" content="Joe|博客">
-<meta property="og:description" content="1 问题 2 编写对GC友好，不会泄露的代码 使用更多生命周期短的、小的、不改变指向(immutable)的对象，编写清晰的代码 将用完的对象设为NULL其实没什么作用 避免显式GC(System.gc()) finalize() 内存泄漏   3 Java内存回收机制 静态集合类引起内存泄露 覆写hashcode 例1 结果   监听器 各种连接 内部类和外部模块等的引用 单例模式 本地变量">
+<meta property="og:description" content="问题 编写对GC友好，不会泄露的代码 使用更多生命周期短的、小的、不改变指向(immutable)的对象，编写清晰的代码 将用完的对象设为NULL其实没什么作用 避免显式GC(System.gc()) finalize() 内存泄漏   Java内存回收机制 静态集合类引起内存泄露 覆写hashcode 例1 结果   监听器 各种连接 内部类和外部模块等的引用 单例模式 本地变量     问">
 <meta property="og:locale" content="zh-CN">
 <meta property="og:image" content="https://joeskye1701.github.io/JVM-JMM-JDK7/jmm-log-1.jpg">
 <meta property="og:image" content="https://joeskye1701.github.io/JVM-JMM-JDK7/jmm-log-2.jpg">
-<meta property="og:updated_time" content="2019-03-06T19:34:37.219Z">
+<meta property="og:updated_time" content="2019-03-08T18:16:24.361Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="JVM内存泄漏分析">
-<meta name="twitter:description" content="1 问题 2 编写对GC友好，不会泄露的代码 使用更多生命周期短的、小的、不改变指向(immutable)的对象，编写清晰的代码 将用完的对象设为NULL其实没什么作用 避免显式GC(System.gc()) finalize() 内存泄漏   3 Java内存回收机制 静态集合类引起内存泄露 覆写hashcode 例1 结果   监听器 各种连接 内部类和外部模块等的引用 单例模式 本地变量">
+<meta name="twitter:description" content="问题 编写对GC友好，不会泄露的代码 使用更多生命周期短的、小的、不改变指向(immutable)的对象，编写清晰的代码 将用完的对象设为NULL其实没什么作用 避免显式GC(System.gc()) finalize() 内存泄漏   Java内存回收机制 静态集合类引起内存泄露 覆写hashcode 例1 结果   监听器 各种连接 内部类和外部模块等的引用 单例模式 本地变量     问">
 <meta name="twitter:image" content="https://joeskye1701.github.io/JVM-JMM-JDK7/jmm-log-1.jpg">
 
 
@@ -174,8 +174,8 @@ var _hmt = _hmt || [];
         <div class="content">
             <!-- TOC -->
 <ul>
-<li><a href="#1-问题">1 问题</a></li>
-<li><a href="#2-编写对gc友好不会泄露的代码">2 编写对GC友好，不会泄露的代码</a><ul>
+<li><a href="#问题">问题</a></li>
+<li><a href="#编写对gc友好不会泄露的代码">编写对GC友好，不会泄露的代码</a><ul>
 <li><a href="#使用更多生命周期短的小的不改变指向immutable的对象编写清晰的代码">使用更多生命周期短的、小的、不改变指向(immutable)的对象，编写清晰的代码</a></li>
 <li><a href="#将用完的对象设为null其实没什么作用">将用完的对象设为NULL其实没什么作用</a></li>
 <li><a href="#避免显式gcsystemgc">避免显式GC(System.gc())</a></li>
@@ -183,7 +183,7 @@ var _hmt = _hmt || [];
 <li><a href="#内存泄漏">内存泄漏</a></li>
 </ul>
 </li>
-<li><a href="#3-java内存回收机制">3 Java内存回收机制</a><ul>
+<li><a href="#java内存回收机制">Java内存回收机制</a><ul>
 <li><a href="#静态集合类引起内存泄露">静态集合类引起内存泄露</a></li>
 <li><a href="#覆写hashcode">覆写hashcode</a><ul>
 <li><a href="#例1">例1</a></li>
@@ -199,7 +199,7 @@ var _hmt = _hmt || [];
 </li>
 </ul>
 <!-- /TOC -->
-<h1 id="1-问题"><a href="#1-问题" class="headerlink" title="1 问题"></a>1 问题</h1><p>Java线程是JVM基础的一部分。你的Java堆空间内存占用不仅仅是由于静态对象和长生命的对象导致，还有可能因为短生命对象。<br>OutOfMemoryError问题经常被误认为是内存泄露引起。我们经常忽略错误的线程执行模型和它们持有的JVM里的短生命对象，直到它们的执行完成我们才发现。<br>在这种问题情形下：</p>
+<h1 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h1><p>Java线程是JVM基础的一部分。你的Java堆空间内存占用不仅仅是由于静态对象和长生命的对象导致，还有可能因为短生命对象。<br>OutOfMemoryError问题经常被误认为是内存泄露引起。我们经常忽略错误的线程执行模型和它们持有的JVM里的短生命对象，直到它们的执行完成我们才发现。<br>在这种问题情形下：</p>
 <ul>
 <li>程序中短生命/无状态对象（XML,JSON数据负载等）被线程持有的时间会变得很长(线程锁争用，大量数据负载，远程系统的慢响应时间等)。</li>
 <li>这种短生命对象会因为垃圾收集而晋升到长生命空间，比如老年代空间。</li>
@@ -207,7 +207,7 @@ var _hmt = _hmt || [];
 <li>由于这种严重的情况，它将导致更多的GC垃圾收集，增加JVM暂停时间和最终的OutOfMemoryError:Java堆空间。</li>
 </ul>
 <p>你的应用此时被停掉，你很疑惑到底怎么回事。最后，你考虑增加Java堆空间或者寻找哪里有内存泄露，你真的找对路了么？<br>避免在线程栈大小（虚拟机栈）和Java堆内存占用之间产生混淆是非常重要的。线程栈（虚拟机栈）大小是一种特殊的内存空间，它被JVM用于存储每个方法调用。当一个线程调用方法A，它将这个调用入栈。如果方法A调用方法B，同样也会入栈。一旦方法执行完毕，这个调用便从栈里出栈。<br>这种线程方法调用会导致Java对象产生，并分配在Java堆里。增加线程栈的大小是没有任何效果的（对象最终在堆得年轻代（Eden）产生）。而调整线程栈大小通常是要处理<code>java.lang.stackoverflowerror</code>错误或者<code>OutOfMemoryError: unable to create new native thread</code>错误的时候才会需要。<br><a id="more"></a></p>
-<h1 id="2-编写对GC友好，不会泄露的代码"><a href="#2-编写对GC友好，不会泄露的代码" class="headerlink" title="2 编写对GC友好，不会泄露的代码"></a>2 编写对GC友好，不会泄露的代码</h1><h2 id="使用更多生命周期短的、小的、不改变指向-immutable-的对象，编写清晰的代码"><a href="#使用更多生命周期短的、小的、不改变指向-immutable-的对象，编写清晰的代码" class="headerlink" title="使用更多生命周期短的、小的、不改变指向(immutable)的对象，编写清晰的代码"></a>使用更多生命周期短的、小的、不改变指向(immutable)的对象，编写清晰的代码</h2><p>出于懒惰也好，朴素的节俭意识也好，我们都习惯对一个变量重用再重用。但是，Java的垃圾收集器喜欢短生命周期的对象，对象如果在新生代内，在垃圾收集发生前就死掉了，垃圾收集器就什么都不用做了。现代JVM构建一个新对象只需要10个本地CPU指令，并不弱于C/C++。但垃圾收集没有压缩算法时会稍慢，更频繁的New对象也导致更频繁的GC。大对象的分配效率更低，而且对非压缩算法的垃圾收集器，更容易造成碎片。对象重用增加了代码的复杂度，降低了可读性。</p>
+<h1 id="编写对GC友好，不会泄露的代码"><a href="#编写对GC友好，不会泄露的代码" class="headerlink" title="编写对GC友好，不会泄露的代码"></a>编写对GC友好，不会泄露的代码</h1><h2 id="使用更多生命周期短的、小的、不改变指向-immutable-的对象，编写清晰的代码"><a href="#使用更多生命周期短的、小的、不改变指向-immutable-的对象，编写清晰的代码" class="headerlink" title="使用更多生命周期短的、小的、不改变指向(immutable)的对象，编写清晰的代码"></a>使用更多生命周期短的、小的、不改变指向(immutable)的对象，编写清晰的代码</h2><p>出于懒惰也好，朴素的节俭意识也好，我们都习惯对一个变量重用再重用。但是，Java的垃圾收集器喜欢短生命周期的对象，对象如果在新生代内，在垃圾收集发生前就死掉了，垃圾收集器就什么都不用做了。现代JVM构建一个新对象只需要10个本地CPU指令，并不弱于C/C++。但垃圾收集没有压缩算法时会稍慢，更频繁的New对象也导致更频繁的GC。大对象的分配效率更低，而且对非压缩算法的垃圾收集器，更容易造成碎片。对象重用增加了代码的复杂度，降低了可读性。</p>
 <h2 id="将用完的对象设为NULL其实没什么作用"><a href="#将用完的对象设为NULL其实没什么作用" class="headerlink" title="将用完的对象设为NULL其实没什么作用"></a>将用完的对象设为NULL其实没什么作用</h2><p>把对象主动设为Null的”好习惯”其实没什么用，JIT Compiler会自动分析<code>local</code>变量的生命周期。<br>只有一个例外情况，就是<code>String[1024] foo</code>这种赤裸裸的数组，你需要主动的<code>foo[100]=null</code>释放第100号元素，所以最好还是直接用<code>ArrayList</code>这些标准库算了。  </p>
 <h2 id="避免显式GC-System-gc"><a href="#避免显式GC-System-gc" class="headerlink" title="避免显式GC(System.gc())"></a>避免显式GC(System.gc())</h2><p>大家都知道<code>System.gc()</code>不好，<code>full-gc</code>浪费巨大，GC的时机把握不一定对等等，甚至有<code>-XX:+DisableExplicitGC</code>的JVM参数来禁止它。<br>但我还不会用<code>System.gc()</code>呢，不怕不怕。真的不怕吗？<br>先用FindBugs查一下所用到的全部第三方类库吧。<br>至少RMI 就会老实不客气的执行<code>System.gc()</code>来实现分布式GC算法。但我也不会用RMI啊。那EJB呢，EJB可是建在RMI上的。<br>如果无可避免，用<code>-Dsun.rmi.dgc.client.gcInterval=3600000</code>，<code>-Dsun.rmi.dgc.server.gcInterval=3600000</code> (单位为微妙) 增大大GC的间隔(原默认值为1分钟)，<code>-XX:+ExplicitGCInvokesConcurrent</code>让<code>System.gc()</code>也CMS并发执行。  </p>
 <h2 id="finalize"><a href="#finalize" class="headerlink" title="finalize()"></a>finalize()</h2><p>大家也都知道<code>finalize()</code>不好，分配代价昂贵，释放代价更昂贵(要多走一个循环，而且他们死得慢，和他们相关联的对象也跟着死得慢了)，又不确定能否被调用(JVM开始关闭时，就不会再进行垃圾收集)，又不确定何时被调用(GC时间不定，即使<code>system.gc()</code>也只是提醒而不是强迫GC，又不确定以什么样的顺序调用，所以<code>finalize</code>不是C++的析构函数，也不像C++的析构函数。<br>我们都知道啊，所以我从来都没使用。都是在显式的维护那些外部资源，比如在<code>finally{}</code>里释放。</p>
@@ -217,7 +217,7 @@ var _hmt = _hmt || [];
 <li>这些集合类的生命周期通常极长，而且是一个辅助管理性质的对象，在一个业务事务运行完后，如果没有将某个业务对象主动的从中清除的话，这个集合就会吃越来越多内存，可以用<code>WeakReference</code>，如<code>WeakHashMap</code>，使得它持有的对象不增加对象的引用数。</li>
 <li><code>Scope</code>定义不对，这个很简单了，方法的局部变量定义成类的变量，类的静态变量等。</li>
 <li>异常时没有加<code>finally{}</code>来释放某些资源，JDBC时代也是很普遍的事情。</li>
-<li>另外一些我了解不深的原因，如：<code>Swing</code>里的<code>Listener</code>没有显式<code>remove</code>；内部类持有外部对象的隐式引用；<code>Finalizers</code>造成关联对象没有被及时清空等。<h1 id="3-Java内存回收机制"><a href="#3-Java内存回收机制" class="headerlink" title="3 Java内存回收机制"></a>3 Java内存回收机制</h1>不论哪种语言的内存分配方式，都需要返回所分配内存的真实地址，也就是返回一个指针到内存块的首地址。Java中对象是采用new或者反射的方法创建的，这些对象的创建都是在堆（Heap）中分配的，所有对象的回收都是由Java虚拟机通过垃圾回收机制完成的。<br>Java中对内存对象的访问，使用的是引用的方式。在Java代码中我们维护一个内存对象的引用变量，通过这个引用变量的值，我们可以访问到对应的内存地址中的内存对象空间。在Java程序中，这个引用变量本身既可以存放堆内存中，又可以放在代码栈的内存中（与基本数据类型相同）。GC线程会从代码栈中的引用变量开始跟踪，从而判定哪些内存是正在使用的。如果GC线程通过这种方式，无法跟踪到某一块堆内存，那么GC就认为这块内存将不再使用了（因为代码中已经无法访问这块内存了）。<br>GC为了能够正确释放对象，会监控每个对象的运行状况，对他们的申请、引用、被引用、赋值等状况进行监控，Java会使用有向图的方法进行管理内存，实时监控对象是否可以达到，如果不可到达，则就将其回收，这样也可以消除引用循环的问题。<br>在Java语言中，判断一个内存空间是否符合垃圾收集标准有两个：一个是给对象赋予了空值null，以下再没有调用过，另一个是给对象赋予了新值，这样重新分配了内存空间。<br>内存泄露是指无用对象（不再使用的对象）持续占有内存或无用对象的内存得不到及时释放，从而造成的内存空间的浪费称为内存泄露。内存泄露有时不严重且不易察觉，这样开发者就不知道存在内存泄露，但有时也会很严重，会提示<code>Out of memory</code>。<br>那么，Java内存泄露根本原因是什么呢？长生命周期的对象持有短生命周期对象的引用就很可能发生内存泄露，尽管短生命周期对象已经不再需要，但是因为长生命周期对象持有它的引用而导致不能被回收，这就是java中内存泄露的发生场景。具体主要有如下几大类： <h2 id="静态集合类引起内存泄露"><a href="#静态集合类引起内存泄露" class="headerlink" title="静态集合类引起内存泄露"></a>静态集合类引起内存泄露</h2>像<code>HashMap</code>、<code>Vector</code>等的使用最容易出现内存泄露，这些静态变量的生命周期和应用程序一致，他们所引用的所有的对象<code>Object</code>也不能被释放，因为他们也将一直被<code>Vector</code>等引用着。<br><strong>例:</strong><figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">Static Vector v = <span class="hljs-keyword">new</span> Vector(<span class="hljs-number">10</span>); </span><br><span class="line"><span class="hljs-keyword">for</span> (<span class="hljs-keyword">int</span> i = <span class="hljs-number">1</span>; i&lt;<span class="hljs-number">100</span>; i++) </span><br><span class="line">&#123; </span><br><span class="line">   Object o = <span class="hljs-keyword">new</span> Object(); </span><br><span class="line">   v.add(o); </span><br><span class="line">   o = <span class="hljs-keyword">null</span>; <span class="hljs-comment">//只是当前引用被赋予null，对象o依然是有值</span></span><br><span class="line">&#125;<span class="hljs-comment">//</span></span><br></pre></td></tr></table></figure>
+<li>另外一些我了解不深的原因，如：<code>Swing</code>里的<code>Listener</code>没有显式<code>remove</code>；内部类持有外部对象的隐式引用；<code>Finalizers</code>造成关联对象没有被及时清空等。<h1 id="Java内存回收机制"><a href="#Java内存回收机制" class="headerlink" title="Java内存回收机制"></a>Java内存回收机制</h1>不论哪种语言的内存分配方式，都需要返回所分配内存的真实地址，也就是返回一个指针到内存块的首地址。Java中对象是采用new或者反射的方法创建的，这些对象的创建都是在堆（Heap）中分配的，所有对象的回收都是由Java虚拟机通过垃圾回收机制完成的。<br>Java中对内存对象的访问，使用的是引用的方式。在Java代码中我们维护一个内存对象的引用变量，通过这个引用变量的值，我们可以访问到对应的内存地址中的内存对象空间。在Java程序中，这个引用变量本身既可以存放堆内存中，又可以放在代码栈的内存中（与基本数据类型相同）。GC线程会从代码栈中的引用变量开始跟踪，从而判定哪些内存是正在使用的。如果GC线程通过这种方式，无法跟踪到某一块堆内存，那么GC就认为这块内存将不再使用了（因为代码中已经无法访问这块内存了）。<br>GC为了能够正确释放对象，会监控每个对象的运行状况，对他们的申请、引用、被引用、赋值等状况进行监控，Java会使用有向图的方法进行管理内存，实时监控对象是否可以达到，如果不可到达，则就将其回收，这样也可以消除引用循环的问题。<br>在Java语言中，判断一个内存空间是否符合垃圾收集标准有两个：一个是给对象赋予了空值null，以下再没有调用过，另一个是给对象赋予了新值，这样重新分配了内存空间。<br>内存泄露是指无用对象（不再使用的对象）持续占有内存或无用对象的内存得不到及时释放，从而造成的内存空间的浪费称为内存泄露。内存泄露有时不严重且不易察觉，这样开发者就不知道存在内存泄露，但有时也会很严重，会提示<code>Out of memory</code>。<br>那么，Java内存泄露根本原因是什么呢？长生命周期的对象持有短生命周期对象的引用就很可能发生内存泄露，尽管短生命周期对象已经不再需要，但是因为长生命周期对象持有它的引用而导致不能被回收，这就是java中内存泄露的发生场景。具体主要有如下几大类： <h2 id="静态集合类引起内存泄露"><a href="#静态集合类引起内存泄露" class="headerlink" title="静态集合类引起内存泄露"></a>静态集合类引起内存泄露</h2>像<code>HashMap</code>、<code>Vector</code>等的使用最容易出现内存泄露，这些静态变量的生命周期和应用程序一致，他们所引用的所有的对象<code>Object</code>也不能被释放，因为他们也将一直被<code>Vector</code>等引用着。<br><strong>例:</strong><figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">Static Vector v = <span class="hljs-keyword">new</span> Vector(<span class="hljs-number">10</span>); </span><br><span class="line"><span class="hljs-keyword">for</span> (<span class="hljs-keyword">int</span> i = <span class="hljs-number">1</span>; i&lt;<span class="hljs-number">100</span>; i++) </span><br><span class="line">&#123; </span><br><span class="line">   Object o = <span class="hljs-keyword">new</span> Object(); </span><br><span class="line">   v.add(o); </span><br><span class="line">   o = <span class="hljs-keyword">null</span>; <span class="hljs-comment">//只是当前引用被赋予null，对象o依然是有值</span></span><br><span class="line">&#125;<span class="hljs-comment">//</span></span><br></pre></td></tr></table></figure>
 </li>
 </ul>
 <p>在这个例子中，循环申请<code>Object</code>对象，并将所申请的对象放入一个<code>Vector</code>中，如果仅仅释放引用本身（o=null），那么<code>Vector</code>仍然引用该对象，所以这个对象对GC来说是不可回收的。因为，GC在跟踪代码栈中的引用时，会发现v引用，而继续往下跟踪，就会发现v引用指向的内存空间中又存在指向<code>Object</code>对象的引用。也就是说尽管o引用已经被置空，但是<code>Object</code>对象仍然存在其他的引用，是可以被访问到的，所以GC无法将其释放掉。因此，如果对象加入到<code>Vector</code>后，还必须从<code>Vector</code>中删除，最简单的方法就是将<code>Vector</code>对象设置为null。<br><img src="./jmm-log-1.jpg" alt></p>
@@ -700,13 +700,13 @@ var _hmt = _hmt || [];
                 目录
             </h3>
             <ul class="menu-list"><li>
-        <a class="is-flex" href="#1-问题">
+        <a class="is-flex" href="#问题">
         <span class="has-mr-6">1</span>
-        <span>1 问题</span>
+        <span>问题</span>
         </a></li><li>
-        <a class="is-flex" href="#2-编写对GC友好，不会泄露的代码">
+        <a class="is-flex" href="#编写对GC友好，不会泄露的代码">
         <span class="has-mr-6">2</span>
-        <span>2 编写对GC友好，不会泄露的代码</span>
+        <span>编写对GC友好，不会泄露的代码</span>
         </a><ul class="menu-list"><li>
         <a class="is-flex" href="#使用更多生命周期短的、小的、不改变指向-immutable-的对象，编写清晰的代码">
         <span class="has-mr-6">2.1</span>
@@ -728,9 +728,9 @@ var _hmt = _hmt || [];
         <span class="has-mr-6">2.5</span>
         <span>内存泄漏</span>
         </a></li></ul></li><li>
-        <a class="is-flex" href="#3-Java内存回收机制">
+        <a class="is-flex" href="#Java内存回收机制">
         <span class="has-mr-6">3</span>
-        <span>3 Java内存回收机制</span>
+        <span>Java内存回收机制</span>
         </a><ul class="menu-list"><li>
         <a class="is-flex" href="#静态集合类引起内存泄露">
         <span class="has-mr-6">3.1</span>
@@ -839,6 +839,25 @@ var _hmt = _hmt || [];
         
         <article class="media">
             <!-- 
+            <a href="/Python2ToPython3/" class="media-left">
+                <p class="image is-64x64">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Python2切换Python3">
+                </p>
+            </a>
+             -->
+            <div class="media-content">
+                <div class="content">
+                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
+                    <a href="/Python2ToPython3/" class="has-link-black-ter is-size-6">Python2切换Python3</a>
+                    <p class="is-size-7 is-uppercase">
+                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
+                    </p>
+                </div>
+            </div>
+        </article>
+        
+        <article class="media">
+            <!-- 
             <a href="/MySQL-Command/" class="media-left">
                 <p class="image is-64x64">
                     <img class="thumbnail" src="/images/thumbnail.svg" alt="MySQL基本命令">
@@ -851,25 +870,6 @@ var _hmt = _hmt || [];
                     <a href="/MySQL-Command/" class="has-link-black-ter is-size-6">MySQL基本命令</a>
                     <p class="is-size-7 is-uppercase">
                         <a class="has-link-grey -link" href="/categories/MySQL/">MySQL</a>
-                    </p>
-                </div>
-            </div>
-        </article>
-        
-        <article class="media">
-            <!-- 
-            <a href="/Centos-Line/" class="media-left">
-                <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Centos命令行图形界面切换">
-                </p>
-            </a>
-             -->
-            <div class="media-content">
-                <div class="content">
-                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
-                    <a href="/Centos-Line/" class="has-link-black-ter is-size-6">Centos命令行图形界面切换</a>
-                    <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
                     </p>
                 </div>
             </div>
@@ -1731,13 +1731,13 @@ var _hmt = _hmt || [];
                 目录
             </h3>
             <ul class="menu-list"><li>
-        <a class="is-flex" href="#1-问题">
+        <a class="is-flex" href="#问题">
         <span class="has-mr-6">1</span>
-        <span>1 问题</span>
+        <span>问题</span>
         </a></li><li>
-        <a class="is-flex" href="#2-编写对GC友好，不会泄露的代码">
+        <a class="is-flex" href="#编写对GC友好，不会泄露的代码">
         <span class="has-mr-6">2</span>
-        <span>2 编写对GC友好，不会泄露的代码</span>
+        <span>编写对GC友好，不会泄露的代码</span>
         </a><ul class="menu-list"><li>
         <a class="is-flex" href="#使用更多生命周期短的、小的、不改变指向-immutable-的对象，编写清晰的代码">
         <span class="has-mr-6">2.1</span>
@@ -1759,9 +1759,9 @@ var _hmt = _hmt || [];
         <span class="has-mr-6">2.5</span>
         <span>内存泄漏</span>
         </a></li></ul></li><li>
-        <a class="is-flex" href="#3-Java内存回收机制">
+        <a class="is-flex" href="#Java内存回收机制">
         <span class="has-mr-6">3</span>
-        <span>3 Java内存回收机制</span>
+        <span>Java内存回收机制</span>
         </a><ul class="menu-list"><li>
         <a class="is-flex" href="#静态集合类引起内存泄露">
         <span class="has-mr-6">3.1</span>
@@ -1870,6 +1870,25 @@ var _hmt = _hmt || [];
         
         <article class="media">
             <!-- 
+            <a href="/Python2ToPython3/" class="media-left">
+                <p class="image is-64x64">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Python2切换Python3">
+                </p>
+            </a>
+             -->
+            <div class="media-content">
+                <div class="content">
+                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
+                    <a href="/Python2ToPython3/" class="has-link-black-ter is-size-6">Python2切换Python3</a>
+                    <p class="is-size-7 is-uppercase">
+                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
+                    </p>
+                </div>
+            </div>
+        </article>
+        
+        <article class="media">
+            <!-- 
             <a href="/MySQL-Command/" class="media-left">
                 <p class="image is-64x64">
                     <img class="thumbnail" src="/images/thumbnail.svg" alt="MySQL基本命令">
@@ -1882,25 +1901,6 @@ var _hmt = _hmt || [];
                     <a href="/MySQL-Command/" class="has-link-black-ter is-size-6">MySQL基本命令</a>
                     <p class="is-size-7 is-uppercase">
                         <a class="has-link-grey -link" href="/categories/MySQL/">MySQL</a>
-                    </p>
-                </div>
-            </div>
-        </article>
-        
-        <article class="media">
-            <!-- 
-            <a href="/Centos-Line/" class="media-left">
-                <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Centos命令行图形界面切换">
-                </p>
-            </a>
-             -->
-            <div class="media-content">
-                <div class="content">
-                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
-                    <a href="/Centos-Line/" class="has-link-black-ter is-size-6">Centos命令行图形界面切换</a>
-                    <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
                     </p>
                 </div>
             </div>

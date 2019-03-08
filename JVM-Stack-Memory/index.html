@@ -7,18 +7,18 @@
 
 
 
-    <meta name="description" content="1、概念 堆内存 堆外内存 堆外内存优点 堆外内存缺点   2、堆外内存释放 2.1 ByteBuffer ByteBuffer释放堆外内存，源码查看   2.2 Unsafe     1、概念JVM可以使用的内存分外2种：堆内存和堆外内存。 堆内存由JVM负责分配和释放，如果程序没有缺陷代码导致内存泄露，那么就不会遇到java.lang.OutOfMemoryError（OOM）这个错误。">
+    <meta name="description" content="概念 堆内存 堆外内存 堆外内存优点 堆外内存缺点   堆外内存释放 ByteBuffer ByteBuffer释放堆外内存，源码查看   Unsafe     概念JVM可以使用的内存分外2种：堆内存和堆外内存。 堆内存由JVM负责分配和释放，如果程序没有缺陷代码导致内存泄露，那么就不会遇到java.lang.OutOfMemoryError（OOM）这个错误。 堆外内存直接分配和释放内存，">
 <meta name="keywords" content="JVM">
 <meta property="og:type" content="article">
 <meta property="og:title" content="JVM堆内存,堆外内存">
 <meta property="og:url" content="https://joeskye1701.github.io/JVM-Stack-Memory/index.html">
 <meta property="og:site_name" content="Joe|博客">
-<meta property="og:description" content="1、概念 堆内存 堆外内存 堆外内存优点 堆外内存缺点   2、堆外内存释放 2.1 ByteBuffer ByteBuffer释放堆外内存，源码查看   2.2 Unsafe     1、概念JVM可以使用的内存分外2种：堆内存和堆外内存。 堆内存由JVM负责分配和释放，如果程序没有缺陷代码导致内存泄露，那么就不会遇到java.lang.OutOfMemoryError（OOM）这个错误。">
+<meta property="og:description" content="概念 堆内存 堆外内存 堆外内存优点 堆外内存缺点   堆外内存释放 ByteBuffer ByteBuffer释放堆外内存，源码查看   Unsafe     概念JVM可以使用的内存分外2种：堆内存和堆外内存。 堆内存由JVM负责分配和释放，如果程序没有缺陷代码导致内存泄露，那么就不会遇到java.lang.OutOfMemoryError（OOM）这个错误。 堆外内存直接分配和释放内存，">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:updated_time" content="2019-03-06T19:34:40.162Z">
+<meta property="og:updated_time" content="2019-03-08T18:17:29.702Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="JVM堆内存,堆外内存">
-<meta name="twitter:description" content="1、概念 堆内存 堆外内存 堆外内存优点 堆外内存缺点   2、堆外内存释放 2.1 ByteBuffer ByteBuffer释放堆外内存，源码查看   2.2 Unsafe     1、概念JVM可以使用的内存分外2种：堆内存和堆外内存。 堆内存由JVM负责分配和释放，如果程序没有缺陷代码导致内存泄露，那么就不会遇到java.lang.OutOfMemoryError（OOM）这个错误。">
+<meta name="twitter:description" content="概念 堆内存 堆外内存 堆外内存优点 堆外内存缺点   堆外内存释放 ByteBuffer ByteBuffer释放堆外内存，源码查看   Unsafe     概念JVM可以使用的内存分外2种：堆内存和堆外内存。 堆内存由JVM负责分配和释放，如果程序没有缺陷代码导致内存泄露，那么就不会遇到java.lang.OutOfMemoryError（OOM）这个错误。 堆外内存直接分配和释放内存，">
 
 
 
@@ -156,7 +156,7 @@ var _hmt = _hmt || [];
                 <span class="level-item has-text-grey">
                     
                     
-                    9 分钟 读完 (大约 1300 个字)
+                    9 分钟 读完 (大约 1296 个字)
                 </span>
                 
                 
@@ -171,24 +171,24 @@ var _hmt = _hmt || [];
         <div class="content">
             <!-- TOC -->
 <ul>
-<li><a href="#1概念">1、概念</a><ul>
+<li><a href="#概念">概念</a><ul>
 <li><a href="#堆内存">堆内存</a></li>
 <li><a href="#堆外内存">堆外内存</a></li>
 <li><a href="#堆外内存优点">堆外内存优点</a></li>
 <li><a href="#堆外内存缺点">堆外内存缺点</a></li>
 </ul>
 </li>
-<li><a href="#2堆外内存释放">2、堆外内存释放</a><ul>
-<li><a href="#21-bytebuffer">2.1 ByteBuffer</a><ul>
+<li><a href="#堆外内存释放">堆外内存释放</a><ul>
+<li><a href="#bytebuffer">ByteBuffer</a><ul>
 <li><a href="#bytebuffer释放堆外内存源码查看">ByteBuffer释放堆外内存，源码查看</a></li>
 </ul>
 </li>
-<li><a href="#22-unsafe">2.2 Unsafe</a></li>
+<li><a href="#unsafe">Unsafe</a></li>
 </ul>
 </li>
 </ul>
 <!-- /TOC -->
-<h1 id="1、概念"><a href="#1、概念" class="headerlink" title="1、概念"></a>1、概念</h1><p>JVM可以使用的内存分外2种：堆内存和堆外内存。</p>
+<h1 id="概念"><a href="#概念" class="headerlink" title="概念"></a>概念</h1><p>JVM可以使用的内存分外2种：堆内存和堆外内存。</p>
 <h2 id="堆内存"><a href="#堆内存" class="headerlink" title="堆内存"></a>堆内存</h2><p>由JVM负责分配和释放，如果程序没有缺陷代码导致内存泄露，那么就不会遇到<code>java.lang.OutOfMemoryError（OOM）</code>这个错误。</p>
 <h2 id="堆外内存"><a href="#堆外内存" class="headerlink" title="堆外内存"></a>堆外内存</h2><p>直接分配和释放内存，提高效率。堆外内存意味着把内存对象分配在Java虚拟机的堆以外的内存，这些内存直接受操作系统管理（而不是虚拟机）。这样做的结果就是能保持一个较小的堆，以减少垃圾收集对应用的影响。JDK5.0之后，代码中能直接操作本地内存的方式有2种：使用未公开的<code>Unsafe</code>和<code>NIO</code>的<code>ByteBuffer</code>。存储对象生命周期比较长，对象数据结构比较单一。</p>
 <h2 id="堆外内存优点"><a href="#堆外内存优点" class="headerlink" title="堆外内存优点"></a>堆外内存优点</h2><ul>
@@ -199,7 +199,7 @@ var _hmt = _hmt || [];
 <li>堆外内存难以控制，如果内存泄漏，那么很难排查。</li>
 <li>数据结构不能复杂化，结构单一，最好是基础类型。使用序列化和反序列化，性能比堆内对象还差。</li>
 <li>使用堆外内存，不用考虑JVM内存限制，但需要考虑磁盘系统。（HDD或者SSD）<a id="more"></a>
-<h1 id="2、堆外内存释放"><a href="#2、堆外内存释放" class="headerlink" title="2、堆外内存释放"></a>2、堆外内存释放</h1><h2 id="2-1-ByteBuffer"><a href="#2-1-ByteBuffer" class="headerlink" title="2.1 ByteBuffer"></a>2.1 ByteBuffer</h2><code>ByteBuffer.allocateDirect</code>分配的堆外内存不需要我们手动释放，GC会自己执行，而且<code>ByteBuffer</code>中也没有提供手动释放的API。也即是说，使用<code>ByteBuffer</code>不用担心堆外内存的释放问题，除非堆内存中的<code>ByteBuffer</code>对象由于错误编码而出现内存泄露。<br><strong>ByteBuffer#allocateDirect()</strong><figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment">  * Allocates a new direct byte buffer.</span></span><br><span class="line"><span class="hljs-comment">  *</span></span><br><span class="line"><span class="hljs-comment">  * &lt;p&gt; The new buffer's position will be zero, its limit will be its</span></span><br><span class="line"><span class="hljs-comment">  * capacity, its mark will be undefined, and each of its elements will be</span></span><br><span class="line"><span class="hljs-comment">  * initialized to zero.  Whether or not it has a</span></span><br><span class="line"><span class="hljs-comment">  * &#123;<span class="hljs-doctag">@link</span> #hasArray &lt;/code&gt;backing array&lt;code&gt;&#125; is unspecified.</span></span><br><span class="line"><span class="hljs-comment">  *</span></span><br><span class="line"><span class="hljs-comment">  * <span class="hljs-doctag">@param</span>  capacity</span></span><br><span class="line"><span class="hljs-comment">  *         The new buffer's capacity, in bytes</span></span><br><span class="line"><span class="hljs-comment">  *</span></span><br><span class="line"><span class="hljs-comment">  * <span class="hljs-doctag">@return</span>  The new byte buffer</span></span><br><span class="line"><span class="hljs-comment">  *</span></span><br><span class="line"><span class="hljs-comment">  * <span class="hljs-doctag">@throws</span>  IllegalArgumentException</span></span><br><span class="line"><span class="hljs-comment">  *          If the &lt;tt&gt;capacity&lt;/tt&gt; is a negative integer</span></span><br><span class="line"><span class="hljs-comment">  */</span></span><br><span class="line"> <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> ByteBuffer <span class="hljs-title">allocateDirect</span><span class="hljs-params">(<span class="hljs-keyword">int</span> capacity)</span> </span>&#123;</span><br><span class="line">     <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> DirectByteBuffer(capacity);</span><br><span class="line"> &#125;</span><br></pre></td></tr></table></figure>
+<h1 id="堆外内存释放"><a href="#堆外内存释放" class="headerlink" title="堆外内存释放"></a>堆外内存释放</h1><h2 id="ByteBuffer"><a href="#ByteBuffer" class="headerlink" title="ByteBuffer"></a>ByteBuffer</h2><code>ByteBuffer.allocateDirect</code>分配的堆外内存不需要我们手动释放，GC会自己执行，而且<code>ByteBuffer</code>中也没有提供手动释放的API。也即是说，使用<code>ByteBuffer</code>不用担心堆外内存的释放问题，除非堆内存中的<code>ByteBuffer</code>对象由于错误编码而出现内存泄露。<br><strong>ByteBuffer#allocateDirect()</strong><figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment">  * Allocates a new direct byte buffer.</span></span><br><span class="line"><span class="hljs-comment">  *</span></span><br><span class="line"><span class="hljs-comment">  * &lt;p&gt; The new buffer's position will be zero, its limit will be its</span></span><br><span class="line"><span class="hljs-comment">  * capacity, its mark will be undefined, and each of its elements will be</span></span><br><span class="line"><span class="hljs-comment">  * initialized to zero.  Whether or not it has a</span></span><br><span class="line"><span class="hljs-comment">  * &#123;<span class="hljs-doctag">@link</span> #hasArray &lt;/code&gt;backing array&lt;code&gt;&#125; is unspecified.</span></span><br><span class="line"><span class="hljs-comment">  *</span></span><br><span class="line"><span class="hljs-comment">  * <span class="hljs-doctag">@param</span>  capacity</span></span><br><span class="line"><span class="hljs-comment">  *         The new buffer's capacity, in bytes</span></span><br><span class="line"><span class="hljs-comment">  *</span></span><br><span class="line"><span class="hljs-comment">  * <span class="hljs-doctag">@return</span>  The new byte buffer</span></span><br><span class="line"><span class="hljs-comment">  *</span></span><br><span class="line"><span class="hljs-comment">  * <span class="hljs-doctag">@throws</span>  IllegalArgumentException</span></span><br><span class="line"><span class="hljs-comment">  *          If the &lt;tt&gt;capacity&lt;/tt&gt; is a negative integer</span></span><br><span class="line"><span class="hljs-comment">  */</span></span><br><span class="line"> <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> ByteBuffer <span class="hljs-title">allocateDirect</span><span class="hljs-params">(<span class="hljs-keyword">int</span> capacity)</span> </span>&#123;</span><br><span class="line">     <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> DirectByteBuffer(capacity);</span><br><span class="line"> &#125;</span><br></pre></td></tr></table></figure>
 </li>
 </ul>
 <p>测试程序<br><figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title">main</span><span class="hljs-params">(String[] args)</span> <span class="hljs-keyword">throws</span> Exception </span>&#123;</span><br><span class="line">	<span class="hljs-keyword">while</span> (<span class="hljs-keyword">true</span>) &#123;</span><br><span class="line">		ByteBuffer buffer = ByteBuffer.allocateDirect(<span class="hljs-number">10</span> * <span class="hljs-number">1024</span> * <span class="hljs-number">1024</span>);</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
@@ -213,7 +213,7 @@ var _hmt = _hmt || [];
 <h3 id="ByteBuffer释放堆外内存，源码查看"><a href="#ByteBuffer释放堆外内存，源码查看" class="headerlink" title="ByteBuffer释放堆外内存，源码查看"></a>ByteBuffer释放堆外内存，源码查看</h3><p><code>ByteBuffer.allocateDirect(10 * 1024 * 1024)</code>分配内存，进入 <code>DirectByteBuffer(int cap)</code> ，此方法里有调用这个方法 <code>Bits.reserveMemory(size, cap)</code>，这个方法是分配内存和释放垃圾对象。该方法里先执行内存分配，然后释放垃圾对象，进行GC；这个方法后面有段代码<code>cleaner = Cleaner.create(this, new Deallocator(base, size, cap))</code>，这个是创建清理外部内存线程的方法，<code>new Deallocator(base, size, cap)</code>是一个任务实例。<br><strong>DirectByteBuffer#DirectByteBuffer</strong><br><figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line">DirectByteBuffer(<span class="hljs-keyword">int</span> cap) &#123;                   <span class="hljs-comment">// package-private</span></span><br><span class="line">    <span class="hljs-keyword">super</span>(-<span class="hljs-number">1</span>, <span class="hljs-number">0</span>, cap, cap);</span><br><span class="line">    <span class="hljs-keyword">boolean</span> pa = VM.isDirectMemoryPageAligned();</span><br><span class="line">    <span class="hljs-keyword">int</span> ps = Bits.pageSize();</span><br><span class="line">    <span class="hljs-keyword">long</span> size = Math.max(<span class="hljs-number">1L</span>, (<span class="hljs-keyword">long</span>)cap + (pa ? ps : <span class="hljs-number">0</span>));</span><br><span class="line">    Bits.reserveMemory(size, cap);</span><br><span class="line"></span><br><span class="line">    <span class="hljs-keyword">long</span> base = <span class="hljs-number">0</span>;</span><br><span class="line">    <span class="hljs-keyword">try</span> &#123;</span><br><span class="line">        base = unsafe.allocateMemory(size);</span><br><span class="line">    &#125; <span class="hljs-keyword">catch</span> (OutOfMemoryError x) &#123;</span><br><span class="line">        Bits.unreserveMemory(size, cap);</span><br><span class="line">        <span class="hljs-keyword">throw</span> x;</span><br><span class="line">    &#125;</span><br><span class="line">    unsafe.setMemory(base, size, (<span class="hljs-keyword">byte</span>) <span class="hljs-number">0</span>);</span><br><span class="line">    <span class="hljs-keyword">if</span> (pa &amp;&amp; (base % ps != <span class="hljs-number">0</span>)) &#123;</span><br><span class="line">        <span class="hljs-comment">// Round up to page boundary</span></span><br><span class="line">        address = base + ps - (base &amp; (ps - <span class="hljs-number">1</span>));</span><br><span class="line">    &#125; <span class="hljs-keyword">else</span> &#123;</span><br><span class="line">        address = base;</span><br><span class="line">    &#125;</span><br><span class="line">    cleaner = Cleaner.create(<span class="hljs-keyword">this</span>, <span class="hljs-keyword">new</span> Deallocator(base, size, cap));</span><br><span class="line">    att = <span class="hljs-keyword">null</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
 <p><strong>DirectByteBuffer#Deallocator</strong><br><figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Deallocator</span> <span class="hljs-keyword">implements</span> <span class="hljs-title">Runnable</span></span></span><br><span class="line"><span class="hljs-class"></span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> Unsafe unsafe = Unsafe.getUnsafe();</span><br><span class="line"></span><br><span class="line">    <span class="hljs-keyword">private</span> <span class="hljs-keyword">long</span> address;</span><br><span class="line">    <span class="hljs-keyword">private</span> <span class="hljs-keyword">long</span> size;</span><br><span class="line">    <span class="hljs-keyword">private</span> <span class="hljs-keyword">int</span> capacity;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">private</span> <span class="hljs-title">Deallocator</span><span class="hljs-params">(<span class="hljs-keyword">long</span> address, <span class="hljs-keyword">long</span> size, <span class="hljs-keyword">int</span> capacity)</span> </span>&#123;</span><br><span class="line">        <span class="hljs-keyword">assert</span> (address != <span class="hljs-number">0</span>);</span><br><span class="line">        <span class="hljs-keyword">this</span>.address = address;</span><br><span class="line">        <span class="hljs-keyword">this</span>.size = size;</span><br><span class="line">        <span class="hljs-keyword">this</span>.capacity = capacity;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">run</span><span class="hljs-params">()</span> </span>&#123;</span><br><span class="line">        <span class="hljs-keyword">if</span> (address == <span class="hljs-number">0</span>) &#123;</span><br><span class="line">            <span class="hljs-comment">// Paranoia</span></span><br><span class="line">            <span class="hljs-keyword">return</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        unsafe.freeMemory(address);</span><br><span class="line">        address = <span class="hljs-number">0</span>;</span><br><span class="line">        Bits.unreserveMemory(size, capacity);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
 <p><strong>DirectByteBuffer#reserveMemory</strong><br><figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function"><span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title">reserveMemory</span><span class="hljs-params">(<span class="hljs-keyword">long</span> size, <span class="hljs-keyword">int</span> cap)</span> </span>&#123;</span><br><span class="line">    <span class="hljs-keyword">synchronized</span> (Bits.class) &#123;</span><br><span class="line">        <span class="hljs-keyword">if</span> (!memoryLimitSet &amp;&amp; VM.isBooted()) &#123;</span><br><span class="line">            maxMemory = VM.maxDirectMemory();</span><br><span class="line">            memoryLimitSet = <span class="hljs-keyword">true</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="hljs-comment">// -XX:MaxDirectMemorySize limits the total capacity rather than the</span></span><br><span class="line">        <span class="hljs-comment">// actual memory usage, which will differ when buffers are page</span></span><br><span class="line">        <span class="hljs-comment">// aligned.</span></span><br><span class="line">        <span class="hljs-keyword">if</span> (cap &lt;= maxMemory - totalCapacity) &#123;</span><br><span class="line">            reservedMemory += size;</span><br><span class="line">            totalCapacity += cap;</span><br><span class="line">            count++;</span><br><span class="line">            <span class="hljs-keyword">return</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    System.gc();</span><br><span class="line">    <span class="hljs-keyword">try</span> &#123;</span><br><span class="line">        Thread.sleep(<span class="hljs-number">100</span>);</span><br><span class="line">    &#125; <span class="hljs-keyword">catch</span> (InterruptedException x) &#123;</span><br><span class="line">        <span class="hljs-comment">// Restore interrupt status</span></span><br><span class="line">        Thread.currentThread().interrupt();</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="hljs-keyword">synchronized</span> (Bits.class) &#123;</span><br><span class="line">        <span class="hljs-keyword">if</span> (totalCapacity + cap &gt; maxMemory)</span><br><span class="line">            <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> OutOfMemoryError(<span class="hljs-string">"Direct buffer memory"</span>);</span><br><span class="line">        reservedMemory += size;</span><br><span class="line">        totalCapacity += cap;</span><br><span class="line">        count++;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
-<h2 id="2-2-Unsafe"><a href="#2-2-Unsafe" class="headerlink" title="2.2 Unsafe"></a>2.2 Unsafe</h2><p><code>Unsafe</code>分配内存，需要手动去释放内存，不然会报<code>OOM</code>错。使用<code>Unsafe</code>是有风险的，很容易导致内存泄露。<br><figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title">main</span><span class="hljs-params">(String[] args)</span> <span class="hljs-keyword">throws</span> NoSuchFieldException, SecurityException, IllegalArgumentException, IllegalAccessException </span>&#123;</span><br><span class="line">		<span class="hljs-comment">// 通过反射获取rt.jar下的Unsafe类</span></span><br><span class="line">		Field field = Unsafe.class.getDeclaredField(<span class="hljs-string">"theUnsafe"</span>);</span><br><span class="line">		field.setAccessible(<span class="hljs-keyword">true</span>);</span><br><span class="line">		<span class="hljs-comment">// 实例化对象</span></span><br><span class="line">		Unsafe unsafe = (Unsafe) field.get(<span class="hljs-keyword">null</span>);</span><br><span class="line">		<span class="hljs-keyword">while</span> (<span class="hljs-keyword">true</span>) &#123;</span><br><span class="line">			<span class="hljs-keyword">long</span> pointer = unsafe.allocateMemory(<span class="hljs-number">1024</span> * <span class="hljs-number">1024</span> * <span class="hljs-number">20</span>);</span><br><span class="line">			System.out.println(unsafe.getByte(pointer + <span class="hljs-number">1</span>));</span><br><span class="line">			<span class="hljs-comment">// 如果不释放内存,运行一段时间会报错java.lang.OutOfMemoryError</span></span><br><span class="line">			<span class="hljs-comment">// unsafe.freeMemory(pointer);</span></span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br></pre></td></tr></table></figure></p>
+<h2 id="Unsafe"><a href="#Unsafe" class="headerlink" title="Unsafe"></a>Unsafe</h2><p><code>Unsafe</code>分配内存，需要手动去释放内存，不然会报<code>OOM</code>错。使用<code>Unsafe</code>是有风险的，很容易导致内存泄露。<br><figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title">main</span><span class="hljs-params">(String[] args)</span> <span class="hljs-keyword">throws</span> NoSuchFieldException, SecurityException, IllegalArgumentException, IllegalAccessException </span>&#123;</span><br><span class="line">		<span class="hljs-comment">// 通过反射获取rt.jar下的Unsafe类</span></span><br><span class="line">		Field field = Unsafe.class.getDeclaredField(<span class="hljs-string">"theUnsafe"</span>);</span><br><span class="line">		field.setAccessible(<span class="hljs-keyword">true</span>);</span><br><span class="line">		<span class="hljs-comment">// 实例化对象</span></span><br><span class="line">		Unsafe unsafe = (Unsafe) field.get(<span class="hljs-keyword">null</span>);</span><br><span class="line">		<span class="hljs-keyword">while</span> (<span class="hljs-keyword">true</span>) &#123;</span><br><span class="line">			<span class="hljs-keyword">long</span> pointer = unsafe.allocateMemory(<span class="hljs-number">1024</span> * <span class="hljs-number">1024</span> * <span class="hljs-number">20</span>);</span><br><span class="line">			System.out.println(unsafe.getByte(pointer + <span class="hljs-number">1</span>));</span><br><span class="line">			<span class="hljs-comment">// 如果不释放内存,运行一段时间会报错java.lang.OutOfMemoryError</span></span><br><span class="line">			<span class="hljs-comment">// unsafe.freeMemory(pointer);</span></span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br></pre></td></tr></table></figure></p>
 
         </div>
         
@@ -272,16 +272,16 @@ var _hmt = _hmt || [];
     <div class="level post-navigation is-flex-wrap is-mobile">
         
         <div class="level-start">
-            <a class="level level-item has-link-grey  article-nav-prev" href="/Java-CAS/">
+            <a class="level level-item has-link-grey  article-nav-prev" href="/MyBatis-SQL-Log/">
                 <i class="level-item fas fa-chevron-left"></i>
-                <span class="level-item">Java CAS(Compare And Swap)</span>
+                <span class="level-item">MyBatis SQL日志源码分析</span>
             </a>
         </div>
         
         
         <div class="level-end">
-            <a class="level level-item has-link-grey  article-nav-next" href="/MyBatis-SQL-Log/">
-                <span class="level-item">MyBatis SQL日志源码分析</span>
+            <a class="level level-item has-link-grey  article-nav-next" href="/Maze-backtracking-Algorithm/">
+                <span class="level-item">迷宫(回溯算法)</span>
                 <i class="level-item fas fa-chevron-right"></i>
             </a>
         </div>
@@ -671,9 +671,9 @@ var _hmt = _hmt || [];
                 目录
             </h3>
             <ul class="menu-list"><li>
-        <a class="is-flex" href="#1、概念">
+        <a class="is-flex" href="#概念">
         <span class="has-mr-6">1</span>
-        <span>1、概念</span>
+        <span>概念</span>
         </a><ul class="menu-list"><li>
         <a class="is-flex" href="#堆内存">
         <span class="has-mr-6">1.1</span>
@@ -691,21 +691,21 @@ var _hmt = _hmt || [];
         <span class="has-mr-6">1.4</span>
         <span>堆外内存缺点</span>
         </a></li></ul></li><li>
-        <a class="is-flex" href="#2、堆外内存释放">
+        <a class="is-flex" href="#堆外内存释放">
         <span class="has-mr-6">2</span>
-        <span>2、堆外内存释放</span>
+        <span>堆外内存释放</span>
         </a><ul class="menu-list"><li>
-        <a class="is-flex" href="#2-1-ByteBuffer">
+        <a class="is-flex" href="#ByteBuffer">
         <span class="has-mr-6">2.1</span>
-        <span>2.1 ByteBuffer</span>
+        <span>ByteBuffer</span>
         </a><ul class="menu-list"><li>
         <a class="is-flex" href="#ByteBuffer释放堆外内存，源码查看">
         <span class="has-mr-6">2.1.1</span>
         <span>ByteBuffer释放堆外内存，源码查看</span>
         </a></li></ul></li><li>
-        <a class="is-flex" href="#2-2-Unsafe">
+        <a class="is-flex" href="#Unsafe">
         <span class="has-mr-6">2.2</span>
-        <span>2.2 Unsafe</span>
+        <span>Unsafe</span>
         </a></li></ul></li></ul>
         </div>
     </div>
@@ -778,6 +778,25 @@ var _hmt = _hmt || [];
         
         <article class="media">
             <!-- 
+            <a href="/Python2ToPython3/" class="media-left">
+                <p class="image is-64x64">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Python2切换Python3">
+                </p>
+            </a>
+             -->
+            <div class="media-content">
+                <div class="content">
+                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
+                    <a href="/Python2ToPython3/" class="has-link-black-ter is-size-6">Python2切换Python3</a>
+                    <p class="is-size-7 is-uppercase">
+                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
+                    </p>
+                </div>
+            </div>
+        </article>
+        
+        <article class="media">
+            <!-- 
             <a href="/MySQL-Command/" class="media-left">
                 <p class="image is-64x64">
                     <img class="thumbnail" src="/images/thumbnail.svg" alt="MySQL基本命令">
@@ -790,25 +809,6 @@ var _hmt = _hmt || [];
                     <a href="/MySQL-Command/" class="has-link-black-ter is-size-6">MySQL基本命令</a>
                     <p class="is-size-7 is-uppercase">
                         <a class="has-link-grey -link" href="/categories/MySQL/">MySQL</a>
-                    </p>
-                </div>
-            </div>
-        </article>
-        
-        <article class="media">
-            <!-- 
-            <a href="/Centos-Line/" class="media-left">
-                <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Centos命令行图形界面切换">
-                </p>
-            </a>
-             -->
-            <div class="media-content">
-                <div class="content">
-                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
-                    <a href="/Centos-Line/" class="has-link-black-ter is-size-6">Centos命令行图形界面切换</a>
-                    <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
                     </p>
                 </div>
             </div>
@@ -1670,9 +1670,9 @@ var _hmt = _hmt || [];
                 目录
             </h3>
             <ul class="menu-list"><li>
-        <a class="is-flex" href="#1、概念">
+        <a class="is-flex" href="#概念">
         <span class="has-mr-6">1</span>
-        <span>1、概念</span>
+        <span>概念</span>
         </a><ul class="menu-list"><li>
         <a class="is-flex" href="#堆内存">
         <span class="has-mr-6">1.1</span>
@@ -1690,21 +1690,21 @@ var _hmt = _hmt || [];
         <span class="has-mr-6">1.4</span>
         <span>堆外内存缺点</span>
         </a></li></ul></li><li>
-        <a class="is-flex" href="#2、堆外内存释放">
+        <a class="is-flex" href="#堆外内存释放">
         <span class="has-mr-6">2</span>
-        <span>2、堆外内存释放</span>
+        <span>堆外内存释放</span>
         </a><ul class="menu-list"><li>
-        <a class="is-flex" href="#2-1-ByteBuffer">
+        <a class="is-flex" href="#ByteBuffer">
         <span class="has-mr-6">2.1</span>
-        <span>2.1 ByteBuffer</span>
+        <span>ByteBuffer</span>
         </a><ul class="menu-list"><li>
         <a class="is-flex" href="#ByteBuffer释放堆外内存，源码查看">
         <span class="has-mr-6">2.1.1</span>
         <span>ByteBuffer释放堆外内存，源码查看</span>
         </a></li></ul></li><li>
-        <a class="is-flex" href="#2-2-Unsafe">
+        <a class="is-flex" href="#Unsafe">
         <span class="has-mr-6">2.2</span>
-        <span>2.2 Unsafe</span>
+        <span>Unsafe</span>
         </a></li></ul></li></ul>
         </div>
     </div>
@@ -1777,6 +1777,25 @@ var _hmt = _hmt || [];
         
         <article class="media">
             <!-- 
+            <a href="/Python2ToPython3/" class="media-left">
+                <p class="image is-64x64">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Python2切换Python3">
+                </p>
+            </a>
+             -->
+            <div class="media-content">
+                <div class="content">
+                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
+                    <a href="/Python2ToPython3/" class="has-link-black-ter is-size-6">Python2切换Python3</a>
+                    <p class="is-size-7 is-uppercase">
+                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
+                    </p>
+                </div>
+            </div>
+        </article>
+        
+        <article class="media">
+            <!-- 
             <a href="/MySQL-Command/" class="media-left">
                 <p class="image is-64x64">
                     <img class="thumbnail" src="/images/thumbnail.svg" alt="MySQL基本命令">
@@ -1789,25 +1808,6 @@ var _hmt = _hmt || [];
                     <a href="/MySQL-Command/" class="has-link-black-ter is-size-6">MySQL基本命令</a>
                     <p class="is-size-7 is-uppercase">
                         <a class="has-link-grey -link" href="/categories/MySQL/">MySQL</a>
-                    </p>
-                </div>
-            </div>
-        </article>
-        
-        <article class="media">
-            <!-- 
-            <a href="/Centos-Line/" class="media-left">
-                <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Centos命令行图形界面切换">
-                </p>
-            </a>
-             -->
-            <div class="media-content">
-                <div class="content">
-                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
-                    <a href="/Centos-Line/" class="has-link-black-ter is-size-6">Centos命令行图形界面切换</a>
-                    <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
                     </p>
                 </div>
             </div>

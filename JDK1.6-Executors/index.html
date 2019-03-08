@@ -7,20 +7,20 @@
 
 
 
-    <meta name="description" content="1 介绍 2 源码解析 Executors#newFixedThreadPool() Executors#newFixedThreadPool(ThreadFactory) Executors#newSingleThreadExecutor() Executors#FinalizableDelegatedExecutorService Executors#DelegatedExecutorSe">
+    <meta name="description" content="介绍 源码解析 Executors#newFixedThreadPool() Executors#newFixedThreadPool(ThreadFactory) Executors#newSingleThreadExecutor() Executors#FinalizableDelegatedExecutorService Executors#DelegatedExecutorServic">
 <meta name="keywords" content="JDK6 源码">
 <meta property="og:type" content="article">
 <meta property="og:title" content="JDK1.6 Executors">
 <meta property="og:url" content="https://joeskye1701.github.io/JDK1.6-Executors/index.html">
 <meta property="og:site_name" content="Joe|博客">
-<meta property="og:description" content="1 介绍 2 源码解析 Executors#newFixedThreadPool() Executors#newFixedThreadPool(ThreadFactory) Executors#newSingleThreadExecutor() Executors#FinalizableDelegatedExecutorService Executors#DelegatedExecutorSe">
+<meta property="og:description" content="介绍 源码解析 Executors#newFixedThreadPool() Executors#newFixedThreadPool(ThreadFactory) Executors#newSingleThreadExecutor() Executors#FinalizableDelegatedExecutorService Executors#DelegatedExecutorServic">
 <meta property="og:locale" content="zh-CN">
 <meta property="og:image" content="https://joeskye1701.github.io/JDK1.6-Executors/Executors-1-1.jpg">
 <meta property="og:image" content="https://joeskye1701.github.io/JDK1.6-Executors/Executors-1-2.jpg">
-<meta property="og:updated_time" content="2019-03-06T19:32:03.309Z">
+<meta property="og:updated_time" content="2019-03-08T19:13:21.022Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="JDK1.6 Executors">
-<meta name="twitter:description" content="1 介绍 2 源码解析 Executors#newFixedThreadPool() Executors#newFixedThreadPool(ThreadFactory) Executors#newSingleThreadExecutor() Executors#FinalizableDelegatedExecutorService Executors#DelegatedExecutorSe">
+<meta name="twitter:description" content="介绍 源码解析 Executors#newFixedThreadPool() Executors#newFixedThreadPool(ThreadFactory) Executors#newSingleThreadExecutor() Executors#FinalizableDelegatedExecutorService Executors#DelegatedExecutorServic">
 <meta name="twitter:image" content="https://joeskye1701.github.io/JDK1.6-Executors/Executors-1-1.jpg">
 
 
@@ -174,8 +174,8 @@ var _hmt = _hmt || [];
         <div class="content">
             <!-- TOC -->
 <ul>
-<li><a href="#1-%E4%BB%8B%E7%BB%8D">1 介绍</a></li>
-<li><a href="#2-%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90">2 源码解析</a><ul>
+<li><a href="#%E4%BB%8B%E7%BB%8D">介绍</a></li>
+<li><a href="#%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90">源码解析</a><ul>
 <li><a href="#executorsnewfixedthreadpool">Executors#newFixedThreadPool()</a></li>
 <li><a href="#executorsnewfixedthreadpoolthreadfactory">Executors#newFixedThreadPool(ThreadFactory)</a></li>
 <li><a href="#executorsnewsinglethreadexecutor">Executors#newSingleThreadExecutor()</a></li>
@@ -196,8 +196,8 @@ var _hmt = _hmt || [];
 </li>
 </ul>
 <!-- /TOC -->
-<h1 id="1-介绍"><a href="#1-介绍" class="headerlink" title="1 介绍"></a>1 介绍</h1><p>Executors是JUC包提供的一个工具性质的帮助类，它针对ExecutorService、ScheduledExecutorService、ThreadFactory和Callable提供了一系列工厂方法和工具方法。</p>
-<h1 id="2-源码解析"><a href="#2-源码解析" class="headerlink" title="2 源码解析"></a>2 源码解析</h1><h2 id="Executors-newFixedThreadPool"><a href="#Executors-newFixedThreadPool" class="headerlink" title="Executors#newFixedThreadPool()"></a>Executors#newFixedThreadPool()</h2><figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment"> * Creates a thread pool that reuses a fixed number of threads</span></span><br><span class="line"><span class="hljs-comment"> * operating off a shared unbounded queue.  At any point, at most</span></span><br><span class="line"><span class="hljs-comment"> * &lt;tt&gt;nThreads&lt;/tt&gt; threads will be active processing tasks.</span></span><br><span class="line"><span class="hljs-comment"> * If additional tasks are submitted when all threads are active,</span></span><br><span class="line"><span class="hljs-comment"> * they will wait in the queue until a thread is available.</span></span><br><span class="line"><span class="hljs-comment"> * If any thread terminates due to a failure during execution</span></span><br><span class="line"><span class="hljs-comment"> * prior to shutdown, a new one will take its place if needed to</span></span><br><span class="line"><span class="hljs-comment"> * execute subsequent tasks.  The threads in the pool will exist</span></span><br><span class="line"><span class="hljs-comment"> * until it is explicitly &#123;<span class="hljs-doctag">@link</span> ExecutorService#shutdown shutdown&#125;.</span></span><br><span class="line"><span class="hljs-comment"> *</span></span><br><span class="line"><span class="hljs-comment"> * <span class="hljs-doctag">@param</span> nThreads the number of threads in the pool</span></span><br><span class="line"><span class="hljs-comment"> * <span class="hljs-doctag">@return</span> the newly created thread pool</span></span><br><span class="line"><span class="hljs-comment"> * <span class="hljs-doctag">@throws</span> IllegalArgumentException if &lt;tt&gt;nThreads &amp;lt;= 0&lt;/tt&gt;</span></span><br><span class="line"><span class="hljs-comment"> */</span></span><br><span class="line"><span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> ExecutorService <span class="hljs-title">newFixedThreadPool</span><span class="hljs-params">(<span class="hljs-keyword">int</span> nThreads)</span> </span>&#123;</span><br><span class="line">    <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> ThreadPoolExecutor(nThreads, nThreads,</span><br><span class="line">                                  <span class="hljs-number">0L</span>, TimeUnit.MILLISECONDS,</span><br><span class="line">                                  <span class="hljs-keyword">new</span> LinkedBlockingQueue&lt;Runnable&gt;());</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h1 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h1><p>Executors是JUC包提供的一个工具性质的帮助类，它针对ExecutorService、ScheduledExecutorService、ThreadFactory和Callable提供了一系列工厂方法和工具方法。</p>
+<h1 id="源码解析"><a href="#源码解析" class="headerlink" title="源码解析"></a>源码解析</h1><h2 id="Executors-newFixedThreadPool"><a href="#Executors-newFixedThreadPool" class="headerlink" title="Executors#newFixedThreadPool()"></a>Executors#newFixedThreadPool()</h2><figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment"> * Creates a thread pool that reuses a fixed number of threads</span></span><br><span class="line"><span class="hljs-comment"> * operating off a shared unbounded queue.  At any point, at most</span></span><br><span class="line"><span class="hljs-comment"> * &lt;tt&gt;nThreads&lt;/tt&gt; threads will be active processing tasks.</span></span><br><span class="line"><span class="hljs-comment"> * If additional tasks are submitted when all threads are active,</span></span><br><span class="line"><span class="hljs-comment"> * they will wait in the queue until a thread is available.</span></span><br><span class="line"><span class="hljs-comment"> * If any thread terminates due to a failure during execution</span></span><br><span class="line"><span class="hljs-comment"> * prior to shutdown, a new one will take its place if needed to</span></span><br><span class="line"><span class="hljs-comment"> * execute subsequent tasks.  The threads in the pool will exist</span></span><br><span class="line"><span class="hljs-comment"> * until it is explicitly &#123;<span class="hljs-doctag">@link</span> ExecutorService#shutdown shutdown&#125;.</span></span><br><span class="line"><span class="hljs-comment"> *</span></span><br><span class="line"><span class="hljs-comment"> * <span class="hljs-doctag">@param</span> nThreads the number of threads in the pool</span></span><br><span class="line"><span class="hljs-comment"> * <span class="hljs-doctag">@return</span> the newly created thread pool</span></span><br><span class="line"><span class="hljs-comment"> * <span class="hljs-doctag">@throws</span> IllegalArgumentException if &lt;tt&gt;nThreads &amp;lt;= 0&lt;/tt&gt;</span></span><br><span class="line"><span class="hljs-comment"> */</span></span><br><span class="line"><span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> ExecutorService <span class="hljs-title">newFixedThreadPool</span><span class="hljs-params">(<span class="hljs-keyword">int</span> nThreads)</span> </span>&#123;</span><br><span class="line">    <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> ThreadPoolExecutor(nThreads, nThreads,</span><br><span class="line">                                  <span class="hljs-number">0L</span>, TimeUnit.MILLISECONDS,</span><br><span class="line">                                  <span class="hljs-keyword">new</span> LinkedBlockingQueue&lt;Runnable&gt;());</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <ul>
 <li>这个方法创建了一个核心线程数量和最大线程数量一致的，并且任务队列是无界队列的线程池。</li>
 <li>由于默认核心线程不会超时，所以超时相关的参数也没有意义。</li>
@@ -700,13 +700,13 @@ var _hmt = _hmt || [];
                 目录
             </h3>
             <ul class="menu-list"><li>
-        <a class="is-flex" href="#1-介绍">
+        <a class="is-flex" href="#介绍">
         <span class="has-mr-6">1</span>
-        <span>1 介绍</span>
+        <span>介绍</span>
         </a></li><li>
-        <a class="is-flex" href="#2-源码解析">
+        <a class="is-flex" href="#源码解析">
         <span class="has-mr-6">2</span>
-        <span>2 源码解析</span>
+        <span>源码解析</span>
         </a><ul class="menu-list"><li>
         <a class="is-flex" href="#Executors-newFixedThreadPool">
         <span class="has-mr-6">2.1</span>
@@ -843,6 +843,25 @@ var _hmt = _hmt || [];
         
         <article class="media">
             <!-- 
+            <a href="/Python2ToPython3/" class="media-left">
+                <p class="image is-64x64">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Python2切换Python3">
+                </p>
+            </a>
+             -->
+            <div class="media-content">
+                <div class="content">
+                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
+                    <a href="/Python2ToPython3/" class="has-link-black-ter is-size-6">Python2切换Python3</a>
+                    <p class="is-size-7 is-uppercase">
+                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
+                    </p>
+                </div>
+            </div>
+        </article>
+        
+        <article class="media">
+            <!-- 
             <a href="/MySQL-Command/" class="media-left">
                 <p class="image is-64x64">
                     <img class="thumbnail" src="/images/thumbnail.svg" alt="MySQL基本命令">
@@ -855,25 +874,6 @@ var _hmt = _hmt || [];
                     <a href="/MySQL-Command/" class="has-link-black-ter is-size-6">MySQL基本命令</a>
                     <p class="is-size-7 is-uppercase">
                         <a class="has-link-grey -link" href="/categories/MySQL/">MySQL</a>
-                    </p>
-                </div>
-            </div>
-        </article>
-        
-        <article class="media">
-            <!-- 
-            <a href="/Centos-Line/" class="media-left">
-                <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Centos命令行图形界面切换">
-                </p>
-            </a>
-             -->
-            <div class="media-content">
-                <div class="content">
-                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
-                    <a href="/Centos-Line/" class="has-link-black-ter is-size-6">Centos命令行图形界面切换</a>
-                    <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
                     </p>
                 </div>
             </div>
@@ -1735,13 +1735,13 @@ var _hmt = _hmt || [];
                 目录
             </h3>
             <ul class="menu-list"><li>
-        <a class="is-flex" href="#1-介绍">
+        <a class="is-flex" href="#介绍">
         <span class="has-mr-6">1</span>
-        <span>1 介绍</span>
+        <span>介绍</span>
         </a></li><li>
-        <a class="is-flex" href="#2-源码解析">
+        <a class="is-flex" href="#源码解析">
         <span class="has-mr-6">2</span>
-        <span>2 源码解析</span>
+        <span>源码解析</span>
         </a><ul class="menu-list"><li>
         <a class="is-flex" href="#Executors-newFixedThreadPool">
         <span class="has-mr-6">2.1</span>
@@ -1878,6 +1878,25 @@ var _hmt = _hmt || [];
         
         <article class="media">
             <!-- 
+            <a href="/Python2ToPython3/" class="media-left">
+                <p class="image is-64x64">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Python2切换Python3">
+                </p>
+            </a>
+             -->
+            <div class="media-content">
+                <div class="content">
+                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
+                    <a href="/Python2ToPython3/" class="has-link-black-ter is-size-6">Python2切换Python3</a>
+                    <p class="is-size-7 is-uppercase">
+                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
+                    </p>
+                </div>
+            </div>
+        </article>
+        
+        <article class="media">
+            <!-- 
             <a href="/MySQL-Command/" class="media-left">
                 <p class="image is-64x64">
                     <img class="thumbnail" src="/images/thumbnail.svg" alt="MySQL基本命令">
@@ -1890,25 +1909,6 @@ var _hmt = _hmt || [];
                     <a href="/MySQL-Command/" class="has-link-black-ter is-size-6">MySQL基本命令</a>
                     <p class="is-size-7 is-uppercase">
                         <a class="has-link-grey -link" href="/categories/MySQL/">MySQL</a>
-                    </p>
-                </div>
-            </div>
-        </article>
-        
-        <article class="media">
-            <!-- 
-            <a href="/Centos-Line/" class="media-left">
-                <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Centos命令行图形界面切换">
-                </p>
-            </a>
-             -->
-            <div class="media-content">
-                <div class="content">
-                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
-                    <a href="/Centos-Line/" class="has-link-black-ter is-size-6">Centos命令行图形界面切换</a>
-                    <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
                     </p>
                 </div>
             </div>

@@ -173,15 +173,15 @@ var _hmt = _hmt || [];
         <div class="content">
             <!-- TOC -->
 <ul>
-<li><a href="#1-介绍">1 介绍</a></li>
-<li><a href="#2-一只探路猫">2 一只探路猫</a></li>
-<li><a href="#3-简化搜索区域">3 简化搜索区域</a></li>
-<li><a href="#4-open和closed列表">4 Open和Closed列表</a></li>
-<li><a href="#5-路径增量">5 路径增量</a></li>
-<li><a href="#6-关于g值">6 关于G值</a></li>
-<li><a href="#7-关于h值">7 关于H值</a></li>
-<li><a href="#8-a星算法">8 A星算法</a></li>
-<li><a href="#9-猫的路径">9 猫的路径</a><ul>
+<li><a href="#介绍">介绍</a></li>
+<li><a href="#一只探路猫">一只探路猫</a></li>
+<li><a href="#简化搜索区域">简化搜索区域</a></li>
+<li><a href="#open和closed列表">Open和Closed列表</a></li>
+<li><a href="#路径增量">路径增量</a></li>
+<li><a href="#关于g值">关于G值</a></li>
+<li><a href="#关于h值">关于H值</a></li>
+<li><a href="#a星算法">A星算法</a></li>
+<li><a href="#猫的路径">猫的路径</a><ul>
 <li><a href="#第一步">第一步</a></li>
 <li><a href="#第二步">第二步</a></li>
 <li><a href="#第三步">第三步</a></li>
@@ -192,16 +192,16 @@ var _hmt = _hmt || [];
 <li><a href="#第八步">第八步</a></li>
 </ul>
 </li>
-<li><a href="#10-一只有远见的猫">10 一只有远见的猫</a><ul>
+<li><a href="#一只有远见的猫">一只有远见的猫</a><ul>
 <li><a href="#object-c">object-c</a></li>
 <li><a href="#java">java</a><ul>
-<li><a href="#1-上下左右寻找未做斜对角线寻找路径">1 上下左右寻找，未做斜对角线寻找路径</a></li>
-<li><a href="#2-上下左右斜对角线寻找">2 上下左右，斜对角线寻找</a></li>
+<li><a href="#上下左右寻找未做斜对角线寻找路径">上下左右寻找，未做斜对角线寻找路径</a></li>
+<li><a href="#上下左右斜对角线寻找">上下左右，斜对角线寻找</a></li>
 </ul>
 </li>
 </ul>
 </li>
-<li><a href="#10-改进">10 改进</a><ul>
+<li><a href="#改进">改进</a><ul>
 <li><a href="#优化速度">优化速度</a><ul>
 <li><a href="#排序查找算法">排序查找算法</a></li>
 <li><a href="#二叉树查找算法">二叉树查找算法</a></li>
@@ -213,9 +213,9 @@ var _hmt = _hmt || [];
 </ul>
 <!-- /TOC -->
 <p>转帖：<a href="https://www.cnblogs.com/zhoug2020/p/3468167.html" target="_blank" rel="noopener">A*寻路算法介绍</a></p>
-<h1 id="1-介绍"><a href="#1-介绍" class="headerlink" title="1 介绍"></a>1 介绍</h1><p>你是否在做一款游戏的时候想创造一些怪兽或者游戏主角，让它们移动到特定的位置，避开墙壁和障碍物呢？<br>如果是的话，请看这篇教程，我们会展示如何使用A<em>寻路算法来实现它！<br>在网上已经有很多篇关于A</em>寻路算法的文章，但是大部分都是提供给已经解基本原理的高级开发者的。<br>本篇教程将从最基本的原理讲起。我们会一步步讲解A<em>寻路算法，幷配有很多图解和例子。<br>不管你使用的是什么编程语言或者操作平台，你会发现本篇教程很有帮助，因为它在非编程语言的层面上解释算法的原理。稍后，会有一篇教程，展示如何在Cocos2D iPhone 游戏中实现A</em>算法。<br>现在找下到达一杯咖啡因饮料和美味的零食的最短路径，开始吧！  </p>
-<h1 id="2-一只探路猫"><a href="#2-一只探路猫" class="headerlink" title="2 一只探路猫"></a>2 一只探路猫</h1><p>让我们想象一下，有一款游戏，游戏中一只猫想要找到获取骨头的路线。<br>“为什么会有一只猫想要骨头？！”你可能会这么想。在本游戏中， 这是一只狡猾的猫，他想捡起骨头给狗，以防止被咬死！<br>现在想像一下下图中的猫想找到到达骨头的最短路径。<br><img src="./arithmetic-a-1.jpg" alt><br>不幸的是，猫不能直接从它当前的位置走到骨头的位置，因为有面墙挡住去路，而且它在游戏中不是一只幽灵猫！<br>游戏中的猫同样懒惰，它总是想找到最短路径，这样当他回家看望它的女朋友时不会太累。<br>但是我们如何编写一个算法计算出猫要选择的那条路径呢？A*算法拯救我们！  </p>
-<h1 id="3-简化搜索区域"><a href="#3-简化搜索区域" class="headerlink" title="3 简化搜索区域"></a>3 简化搜索区域</h1><p>寻路的第一步是简化成容易控制的搜索区域。<br>怎么处理要根据游戏来决定。例如，我们可以将搜索区域划分成像素点，但是这样的划分粒度对于我们这款基于方块的游戏来说太高（没必要）。<br>作为代替，我们使用方块（一个正方形）作为寻路算法的单元。其他的形状类型也是可能的（比如三角形或者六边形），但是正方形是最简单并且最适合我们需求的。<br>像那样去划分，我们的搜索区域可以简单的用一个地图大小的二维数组去表示。所以如果是<code>25*25</code>方块大小的地图，我们的搜索区域将会是一个有625个正方形的数组。如果我们把地图划分成像素点，搜索区域就是一个有640，000个正方形的数组（一个方块是<code>32*32</code>像素）！<br>现在让我们基于目前的区域，把区域划分成多个方块来代表搜索空间（在这个简单的例子中，<code>7*6</code>个方块 = 42 个方块）。<br><img src="./arithmetic-a-2.jpg" alt><br></p>
+<h1 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h1><p>你是否在做一款游戏的时候想创造一些怪兽或者游戏主角，让它们移动到特定的位置，避开墙壁和障碍物呢？<br>如果是的话，请看这篇教程，我们会展示如何使用A<em>寻路算法来实现它！<br>在网上已经有很多篇关于A</em>寻路算法的文章，但是大部分都是提供给已经解基本原理的高级开发者的。<br>本篇教程将从最基本的原理讲起。我们会一步步讲解A<em>寻路算法，幷配有很多图解和例子。<br>不管你使用的是什么编程语言或者操作平台，你会发现本篇教程很有帮助，因为它在非编程语言的层面上解释算法的原理。稍后，会有一篇教程，展示如何在Cocos2D iPhone 游戏中实现A</em>算法。<br>现在找下到达一杯咖啡因饮料和美味的零食的最短路径，开始吧！  </p>
+<h1 id="一只探路猫"><a href="#一只探路猫" class="headerlink" title="一只探路猫"></a>一只探路猫</h1><p>让我们想象一下，有一款游戏，游戏中一只猫想要找到获取骨头的路线。<br>“为什么会有一只猫想要骨头？！”你可能会这么想。在本游戏中， 这是一只狡猾的猫，他想捡起骨头给狗，以防止被咬死！<br>现在想像一下下图中的猫想找到到达骨头的最短路径。<br><img src="./arithmetic-a-1.jpg" alt><br>不幸的是，猫不能直接从它当前的位置走到骨头的位置，因为有面墙挡住去路，而且它在游戏中不是一只幽灵猫！<br>游戏中的猫同样懒惰，它总是想找到最短路径，这样当他回家看望它的女朋友时不会太累。<br>但是我们如何编写一个算法计算出猫要选择的那条路径呢？A*算法拯救我们！  </p>
+<h1 id="简化搜索区域"><a href="#简化搜索区域" class="headerlink" title="简化搜索区域"></a>简化搜索区域</h1><p>寻路的第一步是简化成容易控制的搜索区域。<br>怎么处理要根据游戏来决定。例如，我们可以将搜索区域划分成像素点，但是这样的划分粒度对于我们这款基于方块的游戏来说太高（没必要）。<br>作为代替，我们使用方块（一个正方形）作为寻路算法的单元。其他的形状类型也是可能的（比如三角形或者六边形），但是正方形是最简单并且最适合我们需求的。<br>像那样去划分，我们的搜索区域可以简单的用一个地图大小的二维数组去表示。所以如果是<code>25*25</code>方块大小的地图，我们的搜索区域将会是一个有625个正方形的数组。如果我们把地图划分成像素点，搜索区域就是一个有640，000个正方形的数组（一个方块是<code>32*32</code>像素）！<br>现在让我们基于目前的区域，把区域划分成多个方块来代表搜索空间（在这个简单的例子中，<code>7*6</code>个方块 = 42 个方块）。<br><img src="./arithmetic-a-2.jpg" alt><br></p>
         </div>
         
         
@@ -657,6 +657,25 @@ var _hmt = _hmt || [];
         
         <article class="media">
             <!-- 
+            <a href="/Python2ToPython3/" class="media-left">
+                <p class="image is-64x64">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Python2切换Python3">
+                </p>
+            </a>
+             -->
+            <div class="media-content">
+                <div class="content">
+                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
+                    <a href="/Python2ToPython3/" class="has-link-black-ter is-size-6">Python2切换Python3</a>
+                    <p class="is-size-7 is-uppercase">
+                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
+                    </p>
+                </div>
+            </div>
+        </article>
+        
+        <article class="media">
+            <!-- 
             <a href="/MySQL-Command/" class="media-left">
                 <p class="image is-64x64">
                     <img class="thumbnail" src="/images/thumbnail.svg" alt="MySQL基本命令">
@@ -669,25 +688,6 @@ var _hmt = _hmt || [];
                     <a href="/MySQL-Command/" class="has-link-black-ter is-size-6">MySQL基本命令</a>
                     <p class="is-size-7 is-uppercase">
                         <a class="has-link-grey -link" href="/categories/MySQL/">MySQL</a>
-                    </p>
-                </div>
-            </div>
-        </article>
-        
-        <article class="media">
-            <!-- 
-            <a href="/Centos-Line/" class="media-left">
-                <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Centos命令行图形界面切换">
-                </p>
-            </a>
-             -->
-            <div class="media-content">
-                <div class="content">
-                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
-                    <a href="/Centos-Line/" class="has-link-black-ter is-size-6">Centos命令行图形界面切换</a>
-                    <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
                     </p>
                 </div>
             </div>
@@ -1609,6 +1609,25 @@ var _hmt = _hmt || [];
         
         <article class="media">
             <!-- 
+            <a href="/Python2ToPython3/" class="media-left">
+                <p class="image is-64x64">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Python2切换Python3">
+                </p>
+            </a>
+             -->
+            <div class="media-content">
+                <div class="content">
+                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
+                    <a href="/Python2ToPython3/" class="has-link-black-ter is-size-6">Python2切换Python3</a>
+                    <p class="is-size-7 is-uppercase">
+                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
+                    </p>
+                </div>
+            </div>
+        </article>
+        
+        <article class="media">
+            <!-- 
             <a href="/MySQL-Command/" class="media-left">
                 <p class="image is-64x64">
                     <img class="thumbnail" src="/images/thumbnail.svg" alt="MySQL基本命令">
@@ -1621,25 +1640,6 @@ var _hmt = _hmt || [];
                     <a href="/MySQL-Command/" class="has-link-black-ter is-size-6">MySQL基本命令</a>
                     <p class="is-size-7 is-uppercase">
                         <a class="has-link-grey -link" href="/categories/MySQL/">MySQL</a>
-                    </p>
-                </div>
-            </div>
-        </article>
-        
-        <article class="media">
-            <!-- 
-            <a href="/Centos-Line/" class="media-left">
-                <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Centos命令行图形界面切换">
-                </p>
-            </a>
-             -->
-            <div class="media-content">
-                <div class="content">
-                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
-                    <a href="/Centos-Line/" class="has-link-black-ter is-size-6">Centos命令行图形界面切换</a>
-                    <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
                     </p>
                 </div>
             </div>

@@ -7,19 +7,19 @@
 
 
 
-    <meta name="description" content="1 介绍 优点   2 源码分析 ScheduledExecutorService() ScheduledThreadPoolExecutor#属性 ScheduledThreadPoolExecutor() ScheduledThreadPoolExecutor#DelayedWorkQueue() ScheduledThreadPoolExecutor#schedule() Schedul">
+    <meta name="description" content="介绍 优点   源码分析 ScheduledExecutorService() ScheduledThreadPoolExecutor#属性 ScheduledThreadPoolExecutor() ScheduledThreadPoolExecutor#DelayedWorkQueue() ScheduledThreadPoolExecutor#schedule() ScheduledTh">
 <meta name="keywords" content="JDK6 源码">
 <meta property="og:type" content="article">
 <meta property="og:title" content="JDK1.6 ScheduledThreadPoolExecutor">
 <meta property="og:url" content="https://joeskye1701.github.io/JDK1.6-ScheduledThreadPoolExecutor/index.html">
 <meta property="og:site_name" content="Joe|博客">
-<meta property="og:description" content="1 介绍 优点   2 源码分析 ScheduledExecutorService() ScheduledThreadPoolExecutor#属性 ScheduledThreadPoolExecutor() ScheduledThreadPoolExecutor#DelayedWorkQueue() ScheduledThreadPoolExecutor#schedule() Schedul">
+<meta property="og:description" content="介绍 优点   源码分析 ScheduledExecutorService() ScheduledThreadPoolExecutor#属性 ScheduledThreadPoolExecutor() ScheduledThreadPoolExecutor#DelayedWorkQueue() ScheduledThreadPoolExecutor#schedule() ScheduledTh">
 <meta property="og:locale" content="zh-CN">
 <meta property="og:image" content="https://joeskye1701.github.io/JDK1.6-ScheduledThreadPoolExecutor/ScheduledThreadPoolExecutor-1.jpg">
-<meta property="og:updated_time" content="2019-03-06T19:32:27.982Z">
+<meta property="og:updated_time" content="2019-03-08T19:16:52.113Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="JDK1.6 ScheduledThreadPoolExecutor">
-<meta name="twitter:description" content="1 介绍 优点   2 源码分析 ScheduledExecutorService() ScheduledThreadPoolExecutor#属性 ScheduledThreadPoolExecutor() ScheduledThreadPoolExecutor#DelayedWorkQueue() ScheduledThreadPoolExecutor#schedule() Schedul">
+<meta name="twitter:description" content="介绍 优点   源码分析 ScheduledExecutorService() ScheduledThreadPoolExecutor#属性 ScheduledThreadPoolExecutor() ScheduledThreadPoolExecutor#DelayedWorkQueue() ScheduledThreadPoolExecutor#schedule() ScheduledTh">
 <meta name="twitter:image" content="https://joeskye1701.github.io/JDK1.6-ScheduledThreadPoolExecutor/ScheduledThreadPoolExecutor-1.jpg">
 
 
@@ -173,11 +173,11 @@ var _hmt = _hmt || [];
         <div class="content">
             <!-- TOC -->
 <ul>
-<li><a href="#1-%E4%BB%8B%E7%BB%8D">1 介绍</a><ul>
+<li><a href="#%E4%BB%8B%E7%BB%8D">介绍</a><ul>
 <li><a href="#%E4%BC%98%E7%82%B9">优点</a></li>
 </ul>
 </li>
-<li><a href="#2-%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90">2 源码分析</a><ul>
+<li><a href="#%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90">源码分析</a><ul>
 <li><a href="#scheduledexecutorservice">ScheduledExecutorService()</a></li>
 <li><a href="#scheduledthreadpoolexecutor%E5%B1%9E%E6%80%A7">ScheduledThreadPoolExecutor#属性</a></li>
 <li><a href="#scheduledthreadpoolexecutor">ScheduledThreadPoolExecutor()</a></li>
@@ -203,17 +203,17 @@ var _hmt = _hmt || [];
 <li><a href="#scheduledthreadpoolexecutorcancelunwantedtasks">ScheduledThreadPoolExecutor#cancelUnwantedTasks()</a></li>
 </ul>
 </li>
-<li><a href="#4-%E6%80%BB%E7%BB%93">4 总结</a></li>
+<li><a href="#%E6%80%BB%E7%BB%93">总结</a></li>
 </ul>
 <!-- /TOC -->
-<h1 id="1-介绍"><a href="#1-介绍" class="headerlink" title="1 介绍"></a>1 介绍</h1><p>ScheduledThreadPoolExecutor是一种类似Timer的定时器或者说是调度器。</p>
+<h1 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h1><p>ScheduledThreadPoolExecutor是一种类似Timer的定时器或者说是调度器。</p>
 <h2 id="优点"><a href="#优点" class="headerlink" title="优点"></a>优点</h2><ol>
 <li>多线程的定时调度，timer是单线程的，每个timer实例只有一个工作线程。</li>
 <li>由于继承自ThreadPoolExecutor，更具有灵活性和伸缩性。</li>
 <li>没有timer那种线程泄露问题，timer调度的任务如果异常终止，那么整个timer都会被取消，无法执行其他任务。</li>
 </ol>
 <a id="more"></a>
-<h1 id="2-源码分析"><a href="#2-源码分析" class="headerlink" title="2 源码分析"></a>2 源码分析</h1><h2 id="ScheduledExecutorService"><a href="#ScheduledExecutorService" class="headerlink" title="ScheduledExecutorService()"></a>ScheduledExecutorService()</h2><figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment"> * An &#123;<span class="hljs-doctag">@link</span> ExecutorService&#125; that can schedule commands to run after a given</span></span><br><span class="line"><span class="hljs-comment"> * delay, or to execute periodically.</span></span><br><span class="line"><span class="hljs-comment"> *</span></span><br><span class="line"><span class="hljs-comment"> * &lt;p&gt; The &lt;tt&gt;schedule&lt;/tt&gt; methods create tasks with various delays</span></span><br><span class="line"><span class="hljs-comment"> * and return a task object that can be used to cancel or check</span></span><br><span class="line"><span class="hljs-comment"> * execution. The &lt;tt&gt;scheduleAtFixedRate&lt;/tt&gt; and</span></span><br><span class="line"><span class="hljs-comment"> * &lt;tt&gt;scheduleWithFixedDelay&lt;/tt&gt; methods create and execute tasks</span></span><br><span class="line"><span class="hljs-comment"> * that run periodically until cancelled.</span></span><br><span class="line"><span class="hljs-comment"> *</span></span><br><span class="line"><span class="hljs-comment"> * &lt;p&gt; Commands submitted using the &#123;<span class="hljs-doctag">@link</span> Executor#execute&#125; and</span></span><br><span class="line"><span class="hljs-comment"> * &#123;<span class="hljs-doctag">@link</span> ExecutorService&#125; &lt;tt&gt;submit&lt;/tt&gt; methods are scheduled with</span></span><br><span class="line"><span class="hljs-comment"> * a requested delay of zero. Zero and negative delays (but not</span></span><br><span class="line"><span class="hljs-comment"> * periods) are also allowed in &lt;tt&gt;schedule&lt;/tt&gt; methods, and are</span></span><br><span class="line"><span class="hljs-comment"> * treated as requests for immediate execution.</span></span><br><span class="line"><span class="hljs-comment"> *    </span></span><br><span class="line"><span class="hljs-comment"> * .....</span></span><br><span class="line"><span class="hljs-comment"> * </span></span><br><span class="line"><span class="hljs-comment"> * <span class="hljs-doctag">@since</span> 1.5</span></span><br><span class="line"><span class="hljs-comment"> * <span class="hljs-doctag">@author</span> Doug Lea</span></span><br><span class="line"><span class="hljs-comment"> */</span></span><br><span class="line"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">interface</span> <span class="hljs-title">ScheduledExecutorService</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">ExecutorService</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment">     * Creates and executes a one-shot action that becomes enabled</span></span><br><span class="line"><span class="hljs-comment">     * after the given delay.</span></span><br><span class="line"><span class="hljs-comment">     *</span></span><br><span class="line"><span class="hljs-comment">     * <span class="hljs-doctag">@param</span> command the task to execute</span></span><br><span class="line"><span class="hljs-comment">     * <span class="hljs-doctag">@param</span> delay the time from now to delay execution</span></span><br><span class="line"><span class="hljs-comment">     * <span class="hljs-doctag">@param</span> unit the time unit of the delay parameter</span></span><br><span class="line"><span class="hljs-comment">     * <span class="hljs-doctag">@return</span> a ScheduledFuture representing pending completion of</span></span><br><span class="line"><span class="hljs-comment">     *         the task and whose &lt;tt&gt;get()&lt;/tt&gt; method will return</span></span><br><span class="line"><span class="hljs-comment">     *         &lt;tt&gt;null&lt;/tt&gt; upon completion</span></span><br><span class="line"><span class="hljs-comment">     * <span class="hljs-doctag">@throws</span> RejectedExecutionException if the task cannot be</span></span><br><span class="line"><span class="hljs-comment">     *         scheduled for execution</span></span><br><span class="line"><span class="hljs-comment">     * <span class="hljs-doctag">@throws</span> NullPointerException if command is null</span></span><br><span class="line"><span class="hljs-comment">     */</span></span><br><span class="line">    <span class="hljs-comment">// 1</span></span><br><span class="line">    <span class="hljs-keyword">public</span> ScheduledFuture&lt;?&gt; schedule(Runnable command,</span><br><span class="line">				       <span class="hljs-keyword">long</span> delay, TimeUnit unit);</span><br><span class="line"></span><br><span class="line">    <span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment">     * Creates and executes a ScheduledFuture that becomes enabled after the</span></span><br><span class="line"><span class="hljs-comment">     * given delay.</span></span><br><span class="line"><span class="hljs-comment">     *</span></span><br><span class="line"><span class="hljs-comment">     * <span class="hljs-doctag">@param</span> callable the function to execute</span></span><br><span class="line"><span class="hljs-comment">     * <span class="hljs-doctag">@param</span> delay the time from now to delay execution</span></span><br><span class="line"><span class="hljs-comment">     * <span class="hljs-doctag">@param</span> unit the time unit of the delay parameter</span></span><br><span class="line"><span class="hljs-comment">     * <span class="hljs-doctag">@return</span> a ScheduledFuture that can be used to extract result or cancel</span></span><br><span class="line"><span class="hljs-comment">     * <span class="hljs-doctag">@throws</span> RejectedExecutionException if the task cannot be</span></span><br><span class="line"><span class="hljs-comment">     *         scheduled for execution</span></span><br><span class="line"><span class="hljs-comment">     * <span class="hljs-doctag">@throws</span> NullPointerException if callable is null</span></span><br><span class="line"><span class="hljs-comment">     */</span></span><br><span class="line">    <span class="hljs-comment">// 2</span></span><br><span class="line">    <span class="hljs-keyword">public</span> &lt;V&gt; <span class="hljs-function">ScheduledFuture&lt;V&gt; <span class="hljs-title">schedule</span><span class="hljs-params">(Callable&lt;V&gt; callable,</span></span></span><br><span class="line"><span class="hljs-function"><span class="hljs-params">					   <span class="hljs-keyword">long</span> delay, TimeUnit unit)</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment">     * Creates and executes a periodic action that becomes enabled first</span></span><br><span class="line"><span class="hljs-comment">     * after the given initial delay, and subsequently with the given</span></span><br><span class="line"><span class="hljs-comment">     * period; that is executions will commence after</span></span><br><span class="line"><span class="hljs-comment">     * &lt;tt&gt;initialDelay&lt;/tt&gt; then &lt;tt&gt;initialDelay+period&lt;/tt&gt;, then</span></span><br><span class="line"><span class="hljs-comment">     * &lt;tt&gt;initialDelay + 2 * period&lt;/tt&gt;, and so on.</span></span><br><span class="line"><span class="hljs-comment">     * If any execution of the task</span></span><br><span class="line"><span class="hljs-comment">     * encounters an exception, subsequent executions are suppressed.</span></span><br><span class="line"><span class="hljs-comment">     * Otherwise, the task will only terminate via cancellation or</span></span><br><span class="line"><span class="hljs-comment">     * termination of the executor.  If any execution of this task</span></span><br><span class="line"><span class="hljs-comment">     * takes longer than its period, then subsequent executions</span></span><br><span class="line"><span class="hljs-comment">     * may start late, but will not concurrently execute.</span></span><br><span class="line"><span class="hljs-comment">     *</span></span><br><span class="line"><span class="hljs-comment">     * <span class="hljs-doctag">@param</span> command the task to execute</span></span><br><span class="line"><span class="hljs-comment">     * <span class="hljs-doctag">@param</span> initialDelay the time to delay first execution</span></span><br><span class="line"><span class="hljs-comment">     * <span class="hljs-doctag">@param</span> period the period between successive executions</span></span><br><span class="line"><span class="hljs-comment">     * <span class="hljs-doctag">@param</span> unit the time unit of the initialDelay and period parameters</span></span><br><span class="line"><span class="hljs-comment">     * <span class="hljs-doctag">@return</span> a ScheduledFuture representing pending completion of</span></span><br><span class="line"><span class="hljs-comment">     *         the task, and whose &lt;tt&gt;get()&lt;/tt&gt; method will throw an</span></span><br><span class="line"><span class="hljs-comment">     *         exception upon cancellation</span></span><br><span class="line"><span class="hljs-comment">     * <span class="hljs-doctag">@throws</span> RejectedExecutionException if the task cannot be</span></span><br><span class="line"><span class="hljs-comment">     *         scheduled for execution</span></span><br><span class="line"><span class="hljs-comment">     * <span class="hljs-doctag">@throws</span> NullPointerException if command is null</span></span><br><span class="line"><span class="hljs-comment">     * <span class="hljs-doctag">@throws</span> IllegalArgumentException if period less than or equal to zero</span></span><br><span class="line"><span class="hljs-comment">     */</span></span><br><span class="line">    <span class="hljs-comment">// 3</span></span><br><span class="line">    <span class="hljs-keyword">public</span> ScheduledFuture&lt;?&gt; scheduleAtFixedRate(Runnable command,</span><br><span class="line">						  <span class="hljs-keyword">long</span> initialDelay,</span><br><span class="line">						  <span class="hljs-keyword">long</span> period,</span><br><span class="line">						  TimeUnit unit);</span><br><span class="line"></span><br><span class="line">    <span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment">     * Creates and executes a periodic action that becomes enabled first</span></span><br><span class="line"><span class="hljs-comment">     * after the given initial delay, and subsequently with the</span></span><br><span class="line"><span class="hljs-comment">     * given delay between the termination of one execution and the</span></span><br><span class="line"><span class="hljs-comment">     * commencement of the next.  If any execution of the task</span></span><br><span class="line"><span class="hljs-comment">     * encounters an exception, subsequent executions are suppressed.</span></span><br><span class="line"><span class="hljs-comment">     * Otherwise, the task will only terminate via cancellation or</span></span><br><span class="line"><span class="hljs-comment">     * termination of the executor.</span></span><br><span class="line"><span class="hljs-comment">     *</span></span><br><span class="line"><span class="hljs-comment">     * <span class="hljs-doctag">@param</span> command the task to execute</span></span><br><span class="line"><span class="hljs-comment">     * <span class="hljs-doctag">@param</span> initialDelay the time to delay first execution</span></span><br><span class="line"><span class="hljs-comment">     * <span class="hljs-doctag">@param</span> delay the delay between the termination of one</span></span><br><span class="line"><span class="hljs-comment">     * execution and the commencement of the next</span></span><br><span class="line"><span class="hljs-comment">     * <span class="hljs-doctag">@param</span> unit the time unit of the initialDelay and delay parameters</span></span><br><span class="line"><span class="hljs-comment">     * <span class="hljs-doctag">@return</span> a ScheduledFuture representing pending completion of</span></span><br><span class="line"><span class="hljs-comment">     *         the task, and whose &lt;tt&gt;get()&lt;/tt&gt; method will throw an</span></span><br><span class="line"><span class="hljs-comment">     *         exception upon cancellation</span></span><br><span class="line"><span class="hljs-comment">     * <span class="hljs-doctag">@throws</span> RejectedExecutionException if the task cannot be</span></span><br><span class="line"><span class="hljs-comment">     *         scheduled for execution</span></span><br><span class="line"><span class="hljs-comment">     * <span class="hljs-doctag">@throws</span> NullPointerException if command is null</span></span><br><span class="line"><span class="hljs-comment">     * <span class="hljs-doctag">@throws</span> IllegalArgumentException if delay less than or equal to zero</span></span><br><span class="line"><span class="hljs-comment">     */</span></span><br><span class="line">    <span class="hljs-comment">// 4</span></span><br><span class="line">    <span class="hljs-keyword">public</span> ScheduledFuture&lt;?&gt; scheduleWithFixedDelay(Runnable command,</span><br><span class="line">						     <span class="hljs-keyword">long</span> initialDelay,</span><br><span class="line">						     <span class="hljs-keyword">long</span> delay,</span><br><span class="line">						     TimeUnit unit);</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h1 id="源码分析"><a href="#源码分析" class="headerlink" title="源码分析"></a>源码分析</h1><h2 id="ScheduledExecutorService"><a href="#ScheduledExecutorService" class="headerlink" title="ScheduledExecutorService()"></a>ScheduledExecutorService()</h2><figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment"> * An &#123;<span class="hljs-doctag">@link</span> ExecutorService&#125; that can schedule commands to run after a given</span></span><br><span class="line"><span class="hljs-comment"> * delay, or to execute periodically.</span></span><br><span class="line"><span class="hljs-comment"> *</span></span><br><span class="line"><span class="hljs-comment"> * &lt;p&gt; The &lt;tt&gt;schedule&lt;/tt&gt; methods create tasks with various delays</span></span><br><span class="line"><span class="hljs-comment"> * and return a task object that can be used to cancel or check</span></span><br><span class="line"><span class="hljs-comment"> * execution. The &lt;tt&gt;scheduleAtFixedRate&lt;/tt&gt; and</span></span><br><span class="line"><span class="hljs-comment"> * &lt;tt&gt;scheduleWithFixedDelay&lt;/tt&gt; methods create and execute tasks</span></span><br><span class="line"><span class="hljs-comment"> * that run periodically until cancelled.</span></span><br><span class="line"><span class="hljs-comment"> *</span></span><br><span class="line"><span class="hljs-comment"> * &lt;p&gt; Commands submitted using the &#123;<span class="hljs-doctag">@link</span> Executor#execute&#125; and</span></span><br><span class="line"><span class="hljs-comment"> * &#123;<span class="hljs-doctag">@link</span> ExecutorService&#125; &lt;tt&gt;submit&lt;/tt&gt; methods are scheduled with</span></span><br><span class="line"><span class="hljs-comment"> * a requested delay of zero. Zero and negative delays (but not</span></span><br><span class="line"><span class="hljs-comment"> * periods) are also allowed in &lt;tt&gt;schedule&lt;/tt&gt; methods, and are</span></span><br><span class="line"><span class="hljs-comment"> * treated as requests for immediate execution.</span></span><br><span class="line"><span class="hljs-comment"> *    </span></span><br><span class="line"><span class="hljs-comment"> * .....</span></span><br><span class="line"><span class="hljs-comment"> * </span></span><br><span class="line"><span class="hljs-comment"> * <span class="hljs-doctag">@since</span> 1.5</span></span><br><span class="line"><span class="hljs-comment"> * <span class="hljs-doctag">@author</span> Doug Lea</span></span><br><span class="line"><span class="hljs-comment"> */</span></span><br><span class="line"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">interface</span> <span class="hljs-title">ScheduledExecutorService</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">ExecutorService</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment">     * Creates and executes a one-shot action that becomes enabled</span></span><br><span class="line"><span class="hljs-comment">     * after the given delay.</span></span><br><span class="line"><span class="hljs-comment">     *</span></span><br><span class="line"><span class="hljs-comment">     * <span class="hljs-doctag">@param</span> command the task to execute</span></span><br><span class="line"><span class="hljs-comment">     * <span class="hljs-doctag">@param</span> delay the time from now to delay execution</span></span><br><span class="line"><span class="hljs-comment">     * <span class="hljs-doctag">@param</span> unit the time unit of the delay parameter</span></span><br><span class="line"><span class="hljs-comment">     * <span class="hljs-doctag">@return</span> a ScheduledFuture representing pending completion of</span></span><br><span class="line"><span class="hljs-comment">     *         the task and whose &lt;tt&gt;get()&lt;/tt&gt; method will return</span></span><br><span class="line"><span class="hljs-comment">     *         &lt;tt&gt;null&lt;/tt&gt; upon completion</span></span><br><span class="line"><span class="hljs-comment">     * <span class="hljs-doctag">@throws</span> RejectedExecutionException if the task cannot be</span></span><br><span class="line"><span class="hljs-comment">     *         scheduled for execution</span></span><br><span class="line"><span class="hljs-comment">     * <span class="hljs-doctag">@throws</span> NullPointerException if command is null</span></span><br><span class="line"><span class="hljs-comment">     */</span></span><br><span class="line">    <span class="hljs-comment">// 1</span></span><br><span class="line">    <span class="hljs-keyword">public</span> ScheduledFuture&lt;?&gt; schedule(Runnable command,</span><br><span class="line">				       <span class="hljs-keyword">long</span> delay, TimeUnit unit);</span><br><span class="line"></span><br><span class="line">    <span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment">     * Creates and executes a ScheduledFuture that becomes enabled after the</span></span><br><span class="line"><span class="hljs-comment">     * given delay.</span></span><br><span class="line"><span class="hljs-comment">     *</span></span><br><span class="line"><span class="hljs-comment">     * <span class="hljs-doctag">@param</span> callable the function to execute</span></span><br><span class="line"><span class="hljs-comment">     * <span class="hljs-doctag">@param</span> delay the time from now to delay execution</span></span><br><span class="line"><span class="hljs-comment">     * <span class="hljs-doctag">@param</span> unit the time unit of the delay parameter</span></span><br><span class="line"><span class="hljs-comment">     * <span class="hljs-doctag">@return</span> a ScheduledFuture that can be used to extract result or cancel</span></span><br><span class="line"><span class="hljs-comment">     * <span class="hljs-doctag">@throws</span> RejectedExecutionException if the task cannot be</span></span><br><span class="line"><span class="hljs-comment">     *         scheduled for execution</span></span><br><span class="line"><span class="hljs-comment">     * <span class="hljs-doctag">@throws</span> NullPointerException if callable is null</span></span><br><span class="line"><span class="hljs-comment">     */</span></span><br><span class="line">    <span class="hljs-comment">// 2</span></span><br><span class="line">    <span class="hljs-keyword">public</span> &lt;V&gt; <span class="hljs-function">ScheduledFuture&lt;V&gt; <span class="hljs-title">schedule</span><span class="hljs-params">(Callable&lt;V&gt; callable,</span></span></span><br><span class="line"><span class="hljs-function"><span class="hljs-params">					   <span class="hljs-keyword">long</span> delay, TimeUnit unit)</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment">     * Creates and executes a periodic action that becomes enabled first</span></span><br><span class="line"><span class="hljs-comment">     * after the given initial delay, and subsequently with the given</span></span><br><span class="line"><span class="hljs-comment">     * period; that is executions will commence after</span></span><br><span class="line"><span class="hljs-comment">     * &lt;tt&gt;initialDelay&lt;/tt&gt; then &lt;tt&gt;initialDelay+period&lt;/tt&gt;, then</span></span><br><span class="line"><span class="hljs-comment">     * &lt;tt&gt;initialDelay + 2 * period&lt;/tt&gt;, and so on.</span></span><br><span class="line"><span class="hljs-comment">     * If any execution of the task</span></span><br><span class="line"><span class="hljs-comment">     * encounters an exception, subsequent executions are suppressed.</span></span><br><span class="line"><span class="hljs-comment">     * Otherwise, the task will only terminate via cancellation or</span></span><br><span class="line"><span class="hljs-comment">     * termination of the executor.  If any execution of this task</span></span><br><span class="line"><span class="hljs-comment">     * takes longer than its period, then subsequent executions</span></span><br><span class="line"><span class="hljs-comment">     * may start late, but will not concurrently execute.</span></span><br><span class="line"><span class="hljs-comment">     *</span></span><br><span class="line"><span class="hljs-comment">     * <span class="hljs-doctag">@param</span> command the task to execute</span></span><br><span class="line"><span class="hljs-comment">     * <span class="hljs-doctag">@param</span> initialDelay the time to delay first execution</span></span><br><span class="line"><span class="hljs-comment">     * <span class="hljs-doctag">@param</span> period the period between successive executions</span></span><br><span class="line"><span class="hljs-comment">     * <span class="hljs-doctag">@param</span> unit the time unit of the initialDelay and period parameters</span></span><br><span class="line"><span class="hljs-comment">     * <span class="hljs-doctag">@return</span> a ScheduledFuture representing pending completion of</span></span><br><span class="line"><span class="hljs-comment">     *         the task, and whose &lt;tt&gt;get()&lt;/tt&gt; method will throw an</span></span><br><span class="line"><span class="hljs-comment">     *         exception upon cancellation</span></span><br><span class="line"><span class="hljs-comment">     * <span class="hljs-doctag">@throws</span> RejectedExecutionException if the task cannot be</span></span><br><span class="line"><span class="hljs-comment">     *         scheduled for execution</span></span><br><span class="line"><span class="hljs-comment">     * <span class="hljs-doctag">@throws</span> NullPointerException if command is null</span></span><br><span class="line"><span class="hljs-comment">     * <span class="hljs-doctag">@throws</span> IllegalArgumentException if period less than or equal to zero</span></span><br><span class="line"><span class="hljs-comment">     */</span></span><br><span class="line">    <span class="hljs-comment">// 3</span></span><br><span class="line">    <span class="hljs-keyword">public</span> ScheduledFuture&lt;?&gt; scheduleAtFixedRate(Runnable command,</span><br><span class="line">						  <span class="hljs-keyword">long</span> initialDelay,</span><br><span class="line">						  <span class="hljs-keyword">long</span> period,</span><br><span class="line">						  TimeUnit unit);</span><br><span class="line"></span><br><span class="line">    <span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment">     * Creates and executes a periodic action that becomes enabled first</span></span><br><span class="line"><span class="hljs-comment">     * after the given initial delay, and subsequently with the</span></span><br><span class="line"><span class="hljs-comment">     * given delay between the termination of one execution and the</span></span><br><span class="line"><span class="hljs-comment">     * commencement of the next.  If any execution of the task</span></span><br><span class="line"><span class="hljs-comment">     * encounters an exception, subsequent executions are suppressed.</span></span><br><span class="line"><span class="hljs-comment">     * Otherwise, the task will only terminate via cancellation or</span></span><br><span class="line"><span class="hljs-comment">     * termination of the executor.</span></span><br><span class="line"><span class="hljs-comment">     *</span></span><br><span class="line"><span class="hljs-comment">     * <span class="hljs-doctag">@param</span> command the task to execute</span></span><br><span class="line"><span class="hljs-comment">     * <span class="hljs-doctag">@param</span> initialDelay the time to delay first execution</span></span><br><span class="line"><span class="hljs-comment">     * <span class="hljs-doctag">@param</span> delay the delay between the termination of one</span></span><br><span class="line"><span class="hljs-comment">     * execution and the commencement of the next</span></span><br><span class="line"><span class="hljs-comment">     * <span class="hljs-doctag">@param</span> unit the time unit of the initialDelay and delay parameters</span></span><br><span class="line"><span class="hljs-comment">     * <span class="hljs-doctag">@return</span> a ScheduledFuture representing pending completion of</span></span><br><span class="line"><span class="hljs-comment">     *         the task, and whose &lt;tt&gt;get()&lt;/tt&gt; method will throw an</span></span><br><span class="line"><span class="hljs-comment">     *         exception upon cancellation</span></span><br><span class="line"><span class="hljs-comment">     * <span class="hljs-doctag">@throws</span> RejectedExecutionException if the task cannot be</span></span><br><span class="line"><span class="hljs-comment">     *         scheduled for execution</span></span><br><span class="line"><span class="hljs-comment">     * <span class="hljs-doctag">@throws</span> NullPointerException if command is null</span></span><br><span class="line"><span class="hljs-comment">     * <span class="hljs-doctag">@throws</span> IllegalArgumentException if delay less than or equal to zero</span></span><br><span class="line"><span class="hljs-comment">     */</span></span><br><span class="line">    <span class="hljs-comment">// 4</span></span><br><span class="line">    <span class="hljs-keyword">public</span> ScheduledFuture&lt;?&gt; scheduleWithFixedDelay(Runnable command,</span><br><span class="line">						     <span class="hljs-keyword">long</span> initialDelay,</span><br><span class="line">						     <span class="hljs-keyword">long</span> delay,</span><br><span class="line">						     TimeUnit unit);</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <p>标注代码分析</p>
 <ol>
 <li>创建并执行一个一次性任务，这个任务过了延迟时间就会被执行。</li>
@@ -317,7 +317,7 @@ var _hmt = _hmt || [];
 <li>最后清理一把任务队列里面被取消的任务。</li>
 </ol>
 <p>可以看到在设置关闭后任务处理策略和关闭当前ScheduledThreadPoolExecutor时，都会(按需)调用一下cancelUnwantedTasks方法来清理不需要的任务。</p>
-<h1 id="4-总结"><a href="#4-总结" class="headerlink" title="4 总结"></a>4 总结</h1><ol>
+<h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><ol>
 <li>ScheduledFutureTask表示可调度的异步任务，提交到ScheduledThreadPoolExecutor的任务都会被包装成这个类。</li>
 <li>ScheduledThreadPoolExecutor调度任务时会按照延迟时间来，延迟时间最先到期的任务会被首先调度，如果两个任务延迟时间相同，那么还有内部序列号来保证先入先出的顺序。</li>
 <li>ScheduledFutureTask被调度后，具体执行时，会判断自己是否是周期性任务。如果不是，任务执行一次；如果时，先执行任务，执行成功后，会算出下次触发事件(延迟时间)，然后被再次放入ScheduledThreadPoolExecutor的任务队列中，等待下次被调度执行。</li>
@@ -380,9 +380,9 @@ var _hmt = _hmt || [];
     <div class="level post-navigation is-flex-wrap is-mobile">
         
         <div class="level-start">
-            <a class="level level-item has-link-grey  article-nav-prev" href="/JDK1.6-ThreadLocal/">
+            <a class="level level-item has-link-grey  article-nav-prev" href="/JDK1.6-SynchronousQueue/">
                 <i class="level-item fas fa-chevron-left"></i>
-                <span class="level-item">JDK1.6 ThreadLocal</span>
+                <span class="level-item">JDK1.6 SynchronousQueue</span>
             </a>
         </div>
         
@@ -779,17 +779,17 @@ var _hmt = _hmt || [];
                 目录
             </h3>
             <ul class="menu-list"><li>
-        <a class="is-flex" href="#1-介绍">
+        <a class="is-flex" href="#介绍">
         <span class="has-mr-6">1</span>
-        <span>1 介绍</span>
+        <span>介绍</span>
         </a><ul class="menu-list"><li>
         <a class="is-flex" href="#优点">
         <span class="has-mr-6">1.1</span>
         <span>优点</span>
         </a></li></ul></li><li>
-        <a class="is-flex" href="#2-源码分析">
+        <a class="is-flex" href="#源码分析">
         <span class="has-mr-6">2</span>
-        <span>2 源码分析</span>
+        <span>源码分析</span>
         </a><ul class="menu-list"><li>
         <a class="is-flex" href="#ScheduledExecutorService">
         <span class="has-mr-6">2.1</span>
@@ -883,9 +883,9 @@ var _hmt = _hmt || [];
         <span class="has-mr-6">2.23</span>
         <span>ScheduledThreadPoolExecutor#cancelUnwantedTasks()</span>
         </a></li></ul></li><li>
-        <a class="is-flex" href="#4-总结">
+        <a class="is-flex" href="#总结">
         <span class="has-mr-6">3</span>
-        <span>4 总结</span>
+        <span>总结</span>
         </a></li></ul>
         </div>
     </div>
@@ -958,6 +958,25 @@ var _hmt = _hmt || [];
         
         <article class="media">
             <!-- 
+            <a href="/Python2ToPython3/" class="media-left">
+                <p class="image is-64x64">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Python2切换Python3">
+                </p>
+            </a>
+             -->
+            <div class="media-content">
+                <div class="content">
+                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
+                    <a href="/Python2ToPython3/" class="has-link-black-ter is-size-6">Python2切换Python3</a>
+                    <p class="is-size-7 is-uppercase">
+                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
+                    </p>
+                </div>
+            </div>
+        </article>
+        
+        <article class="media">
+            <!-- 
             <a href="/MySQL-Command/" class="media-left">
                 <p class="image is-64x64">
                     <img class="thumbnail" src="/images/thumbnail.svg" alt="MySQL基本命令">
@@ -970,25 +989,6 @@ var _hmt = _hmt || [];
                     <a href="/MySQL-Command/" class="has-link-black-ter is-size-6">MySQL基本命令</a>
                     <p class="is-size-7 is-uppercase">
                         <a class="has-link-grey -link" href="/categories/MySQL/">MySQL</a>
-                    </p>
-                </div>
-            </div>
-        </article>
-        
-        <article class="media">
-            <!-- 
-            <a href="/Centos-Line/" class="media-left">
-                <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Centos命令行图形界面切换">
-                </p>
-            </a>
-             -->
-            <div class="media-content">
-                <div class="content">
-                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
-                    <a href="/Centos-Line/" class="has-link-black-ter is-size-6">Centos命令行图形界面切换</a>
-                    <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
                     </p>
                 </div>
             </div>
@@ -1850,17 +1850,17 @@ var _hmt = _hmt || [];
                 目录
             </h3>
             <ul class="menu-list"><li>
-        <a class="is-flex" href="#1-介绍">
+        <a class="is-flex" href="#介绍">
         <span class="has-mr-6">1</span>
-        <span>1 介绍</span>
+        <span>介绍</span>
         </a><ul class="menu-list"><li>
         <a class="is-flex" href="#优点">
         <span class="has-mr-6">1.1</span>
         <span>优点</span>
         </a></li></ul></li><li>
-        <a class="is-flex" href="#2-源码分析">
+        <a class="is-flex" href="#源码分析">
         <span class="has-mr-6">2</span>
-        <span>2 源码分析</span>
+        <span>源码分析</span>
         </a><ul class="menu-list"><li>
         <a class="is-flex" href="#ScheduledExecutorService">
         <span class="has-mr-6">2.1</span>
@@ -1954,9 +1954,9 @@ var _hmt = _hmt || [];
         <span class="has-mr-6">2.23</span>
         <span>ScheduledThreadPoolExecutor#cancelUnwantedTasks()</span>
         </a></li></ul></li><li>
-        <a class="is-flex" href="#4-总结">
+        <a class="is-flex" href="#总结">
         <span class="has-mr-6">3</span>
-        <span>4 总结</span>
+        <span>总结</span>
         </a></li></ul>
         </div>
     </div>
@@ -2029,6 +2029,25 @@ var _hmt = _hmt || [];
         
         <article class="media">
             <!-- 
+            <a href="/Python2ToPython3/" class="media-left">
+                <p class="image is-64x64">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Python2切换Python3">
+                </p>
+            </a>
+             -->
+            <div class="media-content">
+                <div class="content">
+                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
+                    <a href="/Python2ToPython3/" class="has-link-black-ter is-size-6">Python2切换Python3</a>
+                    <p class="is-size-7 is-uppercase">
+                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
+                    </p>
+                </div>
+            </div>
+        </article>
+        
+        <article class="media">
+            <!-- 
             <a href="/MySQL-Command/" class="media-left">
                 <p class="image is-64x64">
                     <img class="thumbnail" src="/images/thumbnail.svg" alt="MySQL基本命令">
@@ -2041,25 +2060,6 @@ var _hmt = _hmt || [];
                     <a href="/MySQL-Command/" class="has-link-black-ter is-size-6">MySQL基本命令</a>
                     <p class="is-size-7 is-uppercase">
                         <a class="has-link-grey -link" href="/categories/MySQL/">MySQL</a>
-                    </p>
-                </div>
-            </div>
-        </article>
-        
-        <article class="media">
-            <!-- 
-            <a href="/Centos-Line/" class="media-left">
-                <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Centos命令行图形界面切换">
-                </p>
-            </a>
-             -->
-            <div class="media-content">
-                <div class="content">
-                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
-                    <a href="/Centos-Line/" class="has-link-black-ter is-size-6">Centos命令行图形界面切换</a>
-                    <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
                     </p>
                 </div>
             </div>

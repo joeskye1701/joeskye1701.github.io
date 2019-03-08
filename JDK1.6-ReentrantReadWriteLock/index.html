@@ -7,18 +7,18 @@
 
 
 
-    <meta name="description" content="1 介绍 写锁(tryAcquire) 读锁(tryAcquireShared)   2 源码分析 Sync属性 Sync#tryAcquire() Sync#writerShouldBlock() Sync#tryRelease() Sync#HoldCounter Sync#ThreadLocalHoldCounter Sync#tryAcquireShared Sync#fullTryA">
+    <meta name="description" content="介绍 写锁(tryAcquire) 读锁(tryAcquireShared)   源码分析 Sync属性 Sync#tryAcquire() Sync#writerShouldBlock() Sync#tryRelease() Sync#HoldCounter Sync#ThreadLocalHoldCounter Sync#tryAcquireShared Sync#fullTryAcqui">
 <meta name="keywords" content="JDK6 源码">
 <meta property="og:type" content="article">
 <meta property="og:title" content="JDK1.6 ReentrantReadWriteLock">
 <meta property="og:url" content="https://joeskye1701.github.io/JDK1.6-ReentrantReadWriteLock/index.html">
 <meta property="og:site_name" content="Joe|博客">
-<meta property="og:description" content="1 介绍 写锁(tryAcquire) 读锁(tryAcquireShared)   2 源码分析 Sync属性 Sync#tryAcquire() Sync#writerShouldBlock() Sync#tryRelease() Sync#HoldCounter Sync#ThreadLocalHoldCounter Sync#tryAcquireShared Sync#fullTryA">
+<meta property="og:description" content="介绍 写锁(tryAcquire) 读锁(tryAcquireShared)   源码分析 Sync属性 Sync#tryAcquire() Sync#writerShouldBlock() Sync#tryRelease() Sync#HoldCounter Sync#ThreadLocalHoldCounter Sync#tryAcquireShared Sync#fullTryAcqui">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:updated_time" content="2019-03-06T19:32:25.092Z">
+<meta property="og:updated_time" content="2019-03-08T19:15:53.335Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="JDK1.6 ReentrantReadWriteLock">
-<meta name="twitter:description" content="1 介绍 写锁(tryAcquire) 读锁(tryAcquireShared)   2 源码分析 Sync属性 Sync#tryAcquire() Sync#writerShouldBlock() Sync#tryRelease() Sync#HoldCounter Sync#ThreadLocalHoldCounter Sync#tryAcquireShared Sync#fullTryA">
+<meta name="twitter:description" content="介绍 写锁(tryAcquire) 读锁(tryAcquireShared)   源码分析 Sync属性 Sync#tryAcquire() Sync#writerShouldBlock() Sync#tryRelease() Sync#HoldCounter Sync#ThreadLocalHoldCounter Sync#tryAcquireShared Sync#fullTryAcqui">
 
 
 
@@ -171,12 +171,12 @@ var _hmt = _hmt || [];
         <div class="content">
             <!-- TOC -->
 <ul>
-<li><a href="#1-%E4%BB%8B%E7%BB%8D">1 介绍</a><ul>
+<li><a href="#%E4%BB%8B%E7%BB%8D">介绍</a><ul>
 <li><a href="#%E5%86%99%E9%94%81tryacquire">写锁(tryAcquire)</a></li>
 <li><a href="#%E8%AF%BB%E9%94%81tryacquireshared">读锁(tryAcquireShared)</a></li>
 </ul>
 </li>
-<li><a href="#2-%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90">2 源码分析</a><ul>
+<li><a href="#%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90">源码分析</a><ul>
 <li><a href="#sync%E5%B1%9E%E6%80%A7">Sync属性</a></li>
 <li><a href="#synctryacquire">Sync#tryAcquire()</a></li>
 <li><a href="#syncwritershouldblock">Sync#writerShouldBlock()</a></li>
@@ -197,13 +197,13 @@ var _hmt = _hmt || [];
 <li><a href="#reentrantreadwritelockwritelocktrylock">ReentrantReadWriteLock#WriteLock#tryLock()</a></li>
 </ul>
 </li>
-<li><a href="#3-%E9%94%81%E9%99%8D%E7%BA%A7">3 锁降级</a></li>
+<li><a href="#%E9%94%81%E9%99%8D%E7%BA%A7">锁降级</a></li>
 </ul>
 <!-- /TOC -->
-<h1 id="1-介绍"><a href="#1-介绍" class="headerlink" title="1 介绍"></a>1 介绍</h1><p>ReentrantReadWriteLock支持公平/非公平锁。写锁可以降级为读锁，但读锁不能升级为写锁。</p>
+<h1 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h1><p>ReentrantReadWriteLock支持公平/非公平锁。写锁可以降级为读锁，但读锁不能升级为写锁。</p>
 <h2 id="写锁-tryAcquire"><a href="#写锁-tryAcquire" class="headerlink" title="写锁(tryAcquire)"></a>写锁(tryAcquire)</h2><p>(读锁&amp;&amp;写锁)或者(无读锁&amp;&amp;无写锁)，根据公平锁判断queue empty或者queue head，再竞争锁，非公平锁直接竞争锁。</p>
 <h2 id="读锁-tryAcquireShared"><a href="#读锁-tryAcquireShared" class="headerlink" title="读锁(tryAcquireShared)"></a>读锁(tryAcquireShared)</h2><p>读锁会阻塞写锁。也会根据公平锁判断queue empty或者queue head，再竞争锁，非公平锁队列头有写请求，那么当前读请求阻塞，返回false，CAS直接竞争锁。如果是queue head，返回true，通过fullTryAcquireShared()中的CAS竞争锁。</p>
-<h1 id="2-源码分析"><a href="#2-源码分析" class="headerlink" title="2 源码分析"></a>2 源码分析</h1><p>ReentrantReadWriteLock实现ReadWriteLock接口。<br><figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">interface</span> <span class="hljs-title">ReadWriteLock</span> </span>&#123;</span><br><span class="line">    <span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment">     * Returns the lock used for reading.</span></span><br><span class="line"><span class="hljs-comment">     *</span></span><br><span class="line"><span class="hljs-comment">     * <span class="hljs-doctag">@return</span> the lock used for reading.</span></span><br><span class="line"><span class="hljs-comment">     */</span></span><br><span class="line">    <span class="hljs-function">Lock <span class="hljs-title">readLock</span><span class="hljs-params">()</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment">     * Returns the lock used for writing.</span></span><br><span class="line"><span class="hljs-comment">     *</span></span><br><span class="line"><span class="hljs-comment">     * <span class="hljs-doctag">@return</span> the lock used for writing.</span></span><br><span class="line"><span class="hljs-comment">     */</span></span><br><span class="line">    <span class="hljs-function">Lock <span class="hljs-title">writeLock</span><span class="hljs-params">()</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<h1 id="源码分析"><a href="#源码分析" class="headerlink" title="源码分析"></a>源码分析</h1><p>ReentrantReadWriteLock实现ReadWriteLock接口。<br><figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">interface</span> <span class="hljs-title">ReadWriteLock</span> </span>&#123;</span><br><span class="line">    <span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment">     * Returns the lock used for reading.</span></span><br><span class="line"><span class="hljs-comment">     *</span></span><br><span class="line"><span class="hljs-comment">     * <span class="hljs-doctag">@return</span> the lock used for reading.</span></span><br><span class="line"><span class="hljs-comment">     */</span></span><br><span class="line">    <span class="hljs-function">Lock <span class="hljs-title">readLock</span><span class="hljs-params">()</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment">     * Returns the lock used for writing.</span></span><br><span class="line"><span class="hljs-comment">     *</span></span><br><span class="line"><span class="hljs-comment">     * <span class="hljs-doctag">@return</span> the lock used for writing.</span></span><br><span class="line"><span class="hljs-comment">     */</span></span><br><span class="line">    <span class="hljs-function">Lock <span class="hljs-title">writeLock</span><span class="hljs-params">()</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
 <p>读锁和写锁2个方法。<br>ReentrantReadWriteLock#Sync基于AbstractQueuedSynchronizer实现。</p>
 <a id="more"></a>
 <h2 id="Sync属性"><a href="#Sync属性" class="headerlink" title="Sync属性"></a>Sync属性</h2><figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">int</span> SHARED_SHIFT   = <span class="hljs-number">16</span>;</span><br><span class="line">        <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">int</span> SHARED_UNIT    = (<span class="hljs-number">1</span> &lt;&lt; SHARED_SHIFT);</span><br><span class="line">        <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">int</span> MAX_COUNT      = (<span class="hljs-number">1</span> &lt;&lt; SHARED_SHIFT) - <span class="hljs-number">1</span>;</span><br><span class="line">        <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">int</span> EXCLUSIVE_MASK = (<span class="hljs-number">1</span> &lt;&lt; SHARED_SHIFT) - <span class="hljs-number">1</span>;</span><br><span class="line"></span><br><span class="line">        <span class="hljs-comment">/** Returns the number of shared holds represented in count  */</span></span><br><span class="line">        <span class="hljs-function"><span class="hljs-keyword">static</span> <span class="hljs-keyword">int</span> <span class="hljs-title">sharedCount</span><span class="hljs-params">(<span class="hljs-keyword">int</span> c)</span>    </span>&#123; <span class="hljs-keyword">return</span> c &gt;&gt;&gt; SHARED_SHIFT; &#125;</span><br><span class="line">        <span class="hljs-comment">/** Returns the number of exclusive holds represented in count  */</span></span><br><span class="line">        <span class="hljs-function"><span class="hljs-keyword">static</span> <span class="hljs-keyword">int</span> <span class="hljs-title">exclusiveCount</span><span class="hljs-params">(<span class="hljs-keyword">int</span> c)</span> </span>&#123; <span class="hljs-keyword">return</span> c &amp; EXCLUSIVE_MASK; &#125;</span><br></pre></td></tr></table></figure>
@@ -303,7 +303,7 @@ var _hmt = _hmt || [];
 <li>如果没有其他线程持有当前锁的读锁或者写锁，那么CAS请求读锁成功。</li>
 <li>如果当前线程已经持有当前写锁，直接执行CAS增加写锁持有次数。</li>
 </ul>
-<h1 id="3-锁降级"><a href="#3-锁降级" class="headerlink" title="3 锁降级"></a>3 锁降级</h1><p>jdk官方实例<br><figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">import</span> java.util.concurrent.locks.ReentrantReadWriteLock;</span><br><span class="line"></span><br><span class="line"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">CachedData</span> </span>&#123;</span><br><span class="line">	Object data;</span><br><span class="line">	<span class="hljs-keyword">volatile</span> <span class="hljs-keyword">boolean</span> cacheValid;</span><br><span class="line">	ReentrantReadWriteLock rwl = <span class="hljs-keyword">new</span> ReentrantReadWriteLock();</span><br><span class="line"></span><br><span class="line">	<span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">processCachedData</span><span class="hljs-params">()</span> </span>&#123;</span><br><span class="line">        <span class="hljs-comment">// 1</span></span><br><span class="line">		rwl.readLock().lock();</span><br><span class="line">		<span class="hljs-keyword">if</span> (!cacheValid) &#123;</span><br><span class="line">			<span class="hljs-comment">// Must release read lock before acquiring write lock</span></span><br><span class="line">			rwl.readLock().unlock();</span><br><span class="line">			<span class="hljs-comment">// 2</span></span><br><span class="line">            rwl.writeLock().lock();</span><br><span class="line">			<span class="hljs-comment">// Recheck state because another thread might have acquired</span></span><br><span class="line">			<span class="hljs-comment">// write lock and changed state before we did.</span></span><br><span class="line">			<span class="hljs-keyword">if</span> (!cacheValid) &#123;</span><br><span class="line">				<span class="hljs-comment">// data = ...</span></span><br><span class="line">				cacheValid = <span class="hljs-keyword">true</span>;</span><br><span class="line">			&#125;</span><br><span class="line">			<span class="hljs-comment">// Downgrade by acquiring read lock before releasing write lock</span></span><br><span class="line">            <span class="hljs-comment">// 3</span></span><br><span class="line">			rwl.readLock().lock();</span><br><span class="line">			rwl.writeLock().unlock(); <span class="hljs-comment">// Unlock write, still hold read</span></span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		<span class="hljs-comment">//use(data);</span></span><br><span class="line">        <span class="hljs-comment">// 4</span></span><br><span class="line">		rwl.readLock().unlock();</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<h1 id="锁降级"><a href="#锁降级" class="headerlink" title="锁降级"></a>锁降级</h1><p>jdk官方实例<br><figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">import</span> java.util.concurrent.locks.ReentrantReadWriteLock;</span><br><span class="line"></span><br><span class="line"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">CachedData</span> </span>&#123;</span><br><span class="line">	Object data;</span><br><span class="line">	<span class="hljs-keyword">volatile</span> <span class="hljs-keyword">boolean</span> cacheValid;</span><br><span class="line">	ReentrantReadWriteLock rwl = <span class="hljs-keyword">new</span> ReentrantReadWriteLock();</span><br><span class="line"></span><br><span class="line">	<span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">processCachedData</span><span class="hljs-params">()</span> </span>&#123;</span><br><span class="line">        <span class="hljs-comment">// 1</span></span><br><span class="line">		rwl.readLock().lock();</span><br><span class="line">		<span class="hljs-keyword">if</span> (!cacheValid) &#123;</span><br><span class="line">			<span class="hljs-comment">// Must release read lock before acquiring write lock</span></span><br><span class="line">			rwl.readLock().unlock();</span><br><span class="line">			<span class="hljs-comment">// 2</span></span><br><span class="line">            rwl.writeLock().lock();</span><br><span class="line">			<span class="hljs-comment">// Recheck state because another thread might have acquired</span></span><br><span class="line">			<span class="hljs-comment">// write lock and changed state before we did.</span></span><br><span class="line">			<span class="hljs-keyword">if</span> (!cacheValid) &#123;</span><br><span class="line">				<span class="hljs-comment">// data = ...</span></span><br><span class="line">				cacheValid = <span class="hljs-keyword">true</span>;</span><br><span class="line">			&#125;</span><br><span class="line">			<span class="hljs-comment">// Downgrade by acquiring read lock before releasing write lock</span></span><br><span class="line">            <span class="hljs-comment">// 3</span></span><br><span class="line">			rwl.readLock().lock();</span><br><span class="line">			rwl.writeLock().unlock(); <span class="hljs-comment">// Unlock write, still hold read</span></span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		<span class="hljs-comment">//use(data);</span></span><br><span class="line">        <span class="hljs-comment">// 4</span></span><br><span class="line">		rwl.readLock().unlock();</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
 <p>标注代码分析</p>
 <ol>
 <li>读锁。</li>
@@ -768,9 +768,9 @@ var _hmt = _hmt || [];
                 目录
             </h3>
             <ul class="menu-list"><li>
-        <a class="is-flex" href="#1-介绍">
+        <a class="is-flex" href="#介绍">
         <span class="has-mr-6">1</span>
-        <span>1 介绍</span>
+        <span>介绍</span>
         </a><ul class="menu-list"><li>
         <a class="is-flex" href="#写锁-tryAcquire">
         <span class="has-mr-6">1.1</span>
@@ -780,9 +780,9 @@ var _hmt = _hmt || [];
         <span class="has-mr-6">1.2</span>
         <span>读锁(tryAcquireShared)</span>
         </a></li></ul></li><li>
-        <a class="is-flex" href="#2-源码分析">
+        <a class="is-flex" href="#源码分析">
         <span class="has-mr-6">2</span>
-        <span>2 源码分析</span>
+        <span>源码分析</span>
         </a><ul class="menu-list"><li>
         <a class="is-flex" href="#Sync属性">
         <span class="has-mr-6">2.1</span>
@@ -856,9 +856,9 @@ var _hmt = _hmt || [];
         <span class="has-mr-6">2.18</span>
         <span>ReentrantReadWriteLock#WriteLock#tryLock()</span>
         </a></li></ul></li><li>
-        <a class="is-flex" href="#3-锁降级">
+        <a class="is-flex" href="#锁降级">
         <span class="has-mr-6">3</span>
-        <span>3 锁降级</span>
+        <span>锁降级</span>
         </a></li></ul>
         </div>
     </div>
@@ -931,6 +931,25 @@ var _hmt = _hmt || [];
         
         <article class="media">
             <!-- 
+            <a href="/Python2ToPython3/" class="media-left">
+                <p class="image is-64x64">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Python2切换Python3">
+                </p>
+            </a>
+             -->
+            <div class="media-content">
+                <div class="content">
+                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
+                    <a href="/Python2ToPython3/" class="has-link-black-ter is-size-6">Python2切换Python3</a>
+                    <p class="is-size-7 is-uppercase">
+                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
+                    </p>
+                </div>
+            </div>
+        </article>
+        
+        <article class="media">
+            <!-- 
             <a href="/MySQL-Command/" class="media-left">
                 <p class="image is-64x64">
                     <img class="thumbnail" src="/images/thumbnail.svg" alt="MySQL基本命令">
@@ -943,25 +962,6 @@ var _hmt = _hmt || [];
                     <a href="/MySQL-Command/" class="has-link-black-ter is-size-6">MySQL基本命令</a>
                     <p class="is-size-7 is-uppercase">
                         <a class="has-link-grey -link" href="/categories/MySQL/">MySQL</a>
-                    </p>
-                </div>
-            </div>
-        </article>
-        
-        <article class="media">
-            <!-- 
-            <a href="/Centos-Line/" class="media-left">
-                <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Centos命令行图形界面切换">
-                </p>
-            </a>
-             -->
-            <div class="media-content">
-                <div class="content">
-                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
-                    <a href="/Centos-Line/" class="has-link-black-ter is-size-6">Centos命令行图形界面切换</a>
-                    <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
                     </p>
                 </div>
             </div>
@@ -1823,9 +1823,9 @@ var _hmt = _hmt || [];
                 目录
             </h3>
             <ul class="menu-list"><li>
-        <a class="is-flex" href="#1-介绍">
+        <a class="is-flex" href="#介绍">
         <span class="has-mr-6">1</span>
-        <span>1 介绍</span>
+        <span>介绍</span>
         </a><ul class="menu-list"><li>
         <a class="is-flex" href="#写锁-tryAcquire">
         <span class="has-mr-6">1.1</span>
@@ -1835,9 +1835,9 @@ var _hmt = _hmt || [];
         <span class="has-mr-6">1.2</span>
         <span>读锁(tryAcquireShared)</span>
         </a></li></ul></li><li>
-        <a class="is-flex" href="#2-源码分析">
+        <a class="is-flex" href="#源码分析">
         <span class="has-mr-6">2</span>
-        <span>2 源码分析</span>
+        <span>源码分析</span>
         </a><ul class="menu-list"><li>
         <a class="is-flex" href="#Sync属性">
         <span class="has-mr-6">2.1</span>
@@ -1911,9 +1911,9 @@ var _hmt = _hmt || [];
         <span class="has-mr-6">2.18</span>
         <span>ReentrantReadWriteLock#WriteLock#tryLock()</span>
         </a></li></ul></li><li>
-        <a class="is-flex" href="#3-锁降级">
+        <a class="is-flex" href="#锁降级">
         <span class="has-mr-6">3</span>
-        <span>3 锁降级</span>
+        <span>锁降级</span>
         </a></li></ul>
         </div>
     </div>
@@ -1986,6 +1986,25 @@ var _hmt = _hmt || [];
         
         <article class="media">
             <!-- 
+            <a href="/Python2ToPython3/" class="media-left">
+                <p class="image is-64x64">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Python2切换Python3">
+                </p>
+            </a>
+             -->
+            <div class="media-content">
+                <div class="content">
+                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
+                    <a href="/Python2ToPython3/" class="has-link-black-ter is-size-6">Python2切换Python3</a>
+                    <p class="is-size-7 is-uppercase">
+                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
+                    </p>
+                </div>
+            </div>
+        </article>
+        
+        <article class="media">
+            <!-- 
             <a href="/MySQL-Command/" class="media-left">
                 <p class="image is-64x64">
                     <img class="thumbnail" src="/images/thumbnail.svg" alt="MySQL基本命令">
@@ -1998,25 +2017,6 @@ var _hmt = _hmt || [];
                     <a href="/MySQL-Command/" class="has-link-black-ter is-size-6">MySQL基本命令</a>
                     <p class="is-size-7 is-uppercase">
                         <a class="has-link-grey -link" href="/categories/MySQL/">MySQL</a>
-                    </p>
-                </div>
-            </div>
-        </article>
-        
-        <article class="media">
-            <!-- 
-            <a href="/Centos-Line/" class="media-left">
-                <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Centos命令行图形界面切换">
-                </p>
-            </a>
-             -->
-            <div class="media-content">
-                <div class="content">
-                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
-                    <a href="/Centos-Line/" class="has-link-black-ter is-size-6">Centos命令行图形界面切换</a>
-                    <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
                     </p>
                 </div>
             </div>

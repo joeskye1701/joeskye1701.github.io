@@ -7,20 +7,20 @@
 
 
 
-    <meta name="description" content="1 介绍 2 源码分析 Executor ExecutorService AbstractExecutorService#newTaskFor AbstractExecutorService#submit AbstractExecutorService#doInvokeAny() AbstractExecutorService#invokeAny() AbstractExecutorServi">
+    <meta name="description" content="介绍 源码分析 Executor ExecutorService AbstractExecutorService#newTaskFor AbstractExecutorService#submit AbstractExecutorService#doInvokeAny() AbstractExecutorService#invokeAny() AbstractExecutorService#i">
 <meta name="keywords" content="JDK6 源码">
 <meta property="og:type" content="article">
 <meta property="og:title" content="JDK1.6 ThreadPoolExecutor">
 <meta property="og:url" content="https://joeskye1701.github.io/JDK1.6-ThreadPoolExecutor/index.html">
 <meta property="og:site_name" content="Joe|博客">
-<meta property="og:description" content="1 介绍 2 源码分析 Executor ExecutorService AbstractExecutorService#newTaskFor AbstractExecutorService#submit AbstractExecutorService#doInvokeAny() AbstractExecutorService#invokeAny() AbstractExecutorServi">
+<meta property="og:description" content="介绍 源码分析 Executor ExecutorService AbstractExecutorService#newTaskFor AbstractExecutorService#submit AbstractExecutorService#doInvokeAny() AbstractExecutorService#invokeAny() AbstractExecutorService#i">
 <meta property="og:locale" content="zh-CN">
 <meta property="og:image" content="https://joeskye1701.github.io/JDK1.6-ThreadPoolExecutor/ThreadPoolExecutor-1-1.jpg">
 <meta property="og:image" content="https://joeskye1701.github.io/JDK1.6-ThreadPoolExecutor/ThreadPoolExecutor-1-2.jpg">
-<meta property="og:updated_time" content="2019-03-06T19:32:36.784Z">
+<meta property="og:updated_time" content="2019-03-08T19:17:41.967Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="JDK1.6 ThreadPoolExecutor">
-<meta name="twitter:description" content="1 介绍 2 源码分析 Executor ExecutorService AbstractExecutorService#newTaskFor AbstractExecutorService#submit AbstractExecutorService#doInvokeAny() AbstractExecutorService#invokeAny() AbstractExecutorServi">
+<meta name="twitter:description" content="介绍 源码分析 Executor ExecutorService AbstractExecutorService#newTaskFor AbstractExecutorService#submit AbstractExecutorService#doInvokeAny() AbstractExecutorService#invokeAny() AbstractExecutorService#i">
 <meta name="twitter:image" content="https://joeskye1701.github.io/JDK1.6-ThreadPoolExecutor/ThreadPoolExecutor-1-1.jpg">
 
 
@@ -159,7 +159,7 @@ var _hmt = _hmt || [];
                 <span class="level-item has-text-grey">
                     
                     
-                    44 分钟 读完 (大约 6548 个字)
+                    44 分钟 读完 (大约 6540 个字)
                 </span>
                 
                 
@@ -174,8 +174,8 @@ var _hmt = _hmt || [];
         <div class="content">
             <!-- TOC -->
 <ul>
-<li><a href="#1-%E4%BB%8B%E7%BB%8D">1 介绍</a></li>
-<li><a href="#2-%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90">2 源码分析</a><ul>
+<li><a href="#%E4%BB%8B%E7%BB%8D">介绍</a></li>
+<li><a href="#%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90">源码分析</a><ul>
 <li><a href="#executor">Executor</a></li>
 <li><a href="#executorservice">ExecutorService</a></li>
 <li><a href="#abstractexecutorservicenewtaskfor">AbstractExecutorService#newTaskFor</a></li>
@@ -218,11 +218,10 @@ var _hmt = _hmt || [];
 </li>
 </ul>
 </li>
-<li><a href="#3-%E6%80%BB%E7%BB%93">3 总结</a></li>
 </ul>
 <!-- /TOC -->
-<h1 id="1-介绍"><a href="#1-介绍" class="headerlink" title="1 介绍"></a>1 介绍</h1><p>ThreadPoolExecutor是JUC包中提供的线程池，使用ThreadPoolExecutor的好处一方面是能重用线程资源，避免重复创建线程带来的开销；另一方面是ThreadPoolExecutor提供了内部资源(线程、任务)的管理功能，方便我们监控线程池工作状态。</p>
-<h1 id="2-源码分析"><a href="#2-源码分析" class="headerlink" title="2 源码分析"></a>2 源码分析</h1><p>ThreadPoolExecutor类结构图<br><img src="./ThreadPoolExecutor-1-1.jpg" alt></p>
+<h1 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h1><p>ThreadPoolExecutor是JUC包中提供的线程池，使用ThreadPoolExecutor的好处一方面是能重用线程资源，避免重复创建线程带来的开销；另一方面是ThreadPoolExecutor提供了内部资源(线程、任务)的管理功能，方便我们监控线程池工作状态。</p>
+<h1 id="源码分析"><a href="#源码分析" class="headerlink" title="源码分析"></a>源码分析</h1><p>ThreadPoolExecutor类结构图<br><img src="./ThreadPoolExecutor-1-1.jpg" alt></p>
 <h2 id="Executor"><a href="#Executor" class="headerlink" title="Executor"></a>Executor</h2><figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">interface</span> <span class="hljs-title">Executor</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment">     * Executes the given command at some time in the future.  The command</span></span><br><span class="line"><span class="hljs-comment">     * may execute in a new thread, in a pooled thread, or in the calling</span></span><br><span class="line"><span class="hljs-comment">     * thread, at the discretion of the &lt;tt&gt;Executor&lt;/tt&gt; implementation.</span></span><br><span class="line"><span class="hljs-comment">     *</span></span><br><span class="line"><span class="hljs-comment">     * <span class="hljs-doctag">@param</span> command the runnable task</span></span><br><span class="line"><span class="hljs-comment">     * <span class="hljs-doctag">@throws</span> RejectedExecutionException if this task cannot be</span></span><br><span class="line"><span class="hljs-comment">     * accepted for execution.</span></span><br><span class="line"><span class="hljs-comment">     * <span class="hljs-doctag">@throws</span> NullPointerException if command is null</span></span><br><span class="line"><span class="hljs-comment">     */</span></span><br><span class="line">    <span class="hljs-comment">// 1</span></span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">execute</span><span class="hljs-params">(Runnable command)</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <p>标注代码分析</p>
 <ol>
@@ -426,7 +425,7 @@ var _hmt = _hmt || [];
 <h2 id="ThreadPoolExecutor-setMaximumPoolSize"><a href="#ThreadPoolExecutor-setMaximumPoolSize" class="headerlink" title="ThreadPoolExecutor#setMaximumPoolSize()"></a>ThreadPoolExecutor#setMaximumPoolSize()</h2><figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">setMaximumPoolSize</span><span class="hljs-params">(<span class="hljs-keyword">int</span> maximumPoolSize)</span> </span>&#123;</span><br><span class="line">        <span class="hljs-keyword">if</span> (maximumPoolSize &lt;= <span class="hljs-number">0</span> || maximumPoolSize &lt; corePoolSize)</span><br><span class="line">            <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> IllegalArgumentException();</span><br><span class="line">        <span class="hljs-keyword">final</span> ReentrantLock mainLock = <span class="hljs-keyword">this</span>.mainLock;</span><br><span class="line">        mainLock.lock();</span><br><span class="line">        <span class="hljs-keyword">try</span> &#123;</span><br><span class="line">            <span class="hljs-keyword">int</span> extra = <span class="hljs-keyword">this</span>.maximumPoolSize - maximumPoolSize;</span><br><span class="line">            <span class="hljs-keyword">this</span>.maximumPoolSize = maximumPoolSize;</span><br><span class="line">            <span class="hljs-comment">// 1</span></span><br><span class="line">            <span class="hljs-keyword">if</span> (extra &gt; <span class="hljs-number">0</span> &amp;&amp; poolSize &gt; maximumPoolSize) &#123;</span><br><span class="line">                <span class="hljs-keyword">try</span> &#123;</span><br><span class="line">                    Iterator&lt;Worker&gt; it = workers.iterator();</span><br><span class="line">                    <span class="hljs-keyword">while</span> (it.hasNext() &amp;&amp;</span><br><span class="line">                           extra &gt; <span class="hljs-number">0</span> &amp;&amp;</span><br><span class="line">                           poolSize &gt; maximumPoolSize) &#123;</span><br><span class="line">                        it.next().interruptIfIdle();</span><br><span class="line">                        --extra;</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125; <span class="hljs-keyword">catch</span> (SecurityException ignore) &#123;</span><br><span class="line">                    <span class="hljs-comment">// Not an error; it is OK if the threads stay live</span></span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125; <span class="hljs-keyword">finally</span> &#123;</span><br><span class="line">            mainLock.unlock();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
 <p>标注代码分析</p>
 <ol>
-<li>根据注释可以理解，如果new maximumPoolSize &gt; maximumPoolSize，则直接设值。如果new maximumPoolSize &lt; maximumPoolSize，中断workers阻塞队列中的闲置Thread。<h2 id="实现RejectedExecutionHandler接口"><a href="#实现RejectedExecutionHandler接口" class="headerlink" title="实现RejectedExecutionHandler接口"></a>实现RejectedExecutionHandler接口</h2><img src="./ThreadPoolExecutor-1-2.jpg" alt><h3 id="ThreadPoolExecutor-AbortPolicy"><a href="#ThreadPoolExecutor-AbortPolicy" class="headerlink" title="ThreadPoolExecutor#AbortPolicy"></a>ThreadPoolExecutor#AbortPolicy</h3>拒绝当前任务，抛出RejectedExecutionException。<h3 id="ThreadPoolExecutor-CallerRunsPolicy"><a href="#ThreadPoolExecutor-CallerRunsPolicy" class="headerlink" title="ThreadPoolExecutor#CallerRunsPolicy"></a>ThreadPoolExecutor#CallerRunsPolicy</h3>线程池未关闭，直接运行当前任务。<h3 id="ThreadPoolExecutor-DiscardPolicy"><a href="#ThreadPoolExecutor-DiscardPolicy" class="headerlink" title="ThreadPoolExecutor#DiscardPolicy"></a>ThreadPoolExecutor#DiscardPolicy</h3>丢弃当前任务，什么都不操作。<h3 id="ThreadPoolExecutor-DiscardOldestPolicy"><a href="#ThreadPoolExecutor-DiscardOldestPolicy" class="headerlink" title="ThreadPoolExecutor#DiscardOldestPolicy"></a>ThreadPoolExecutor#DiscardOldestPolicy</h3>丢弃Queue的第1个任务，也就是最早添加的Runnable，运行当前任务。<h1 id="3-总结"><a href="#3-总结" class="headerlink" title="3 总结"></a>3 总结</h1></li>
+<li>根据注释可以理解，如果new maximumPoolSize &gt; maximumPoolSize，则直接设值。如果new maximumPoolSize &lt; maximumPoolSize，中断workers阻塞队列中的闲置Thread。<h2 id="实现RejectedExecutionHandler接口"><a href="#实现RejectedExecutionHandler接口" class="headerlink" title="实现RejectedExecutionHandler接口"></a>实现RejectedExecutionHandler接口</h2><img src="./ThreadPoolExecutor-1-2.jpg" alt><h3 id="ThreadPoolExecutor-AbortPolicy"><a href="#ThreadPoolExecutor-AbortPolicy" class="headerlink" title="ThreadPoolExecutor#AbortPolicy"></a>ThreadPoolExecutor#AbortPolicy</h3>拒绝当前任务，抛出RejectedExecutionException。<h3 id="ThreadPoolExecutor-CallerRunsPolicy"><a href="#ThreadPoolExecutor-CallerRunsPolicy" class="headerlink" title="ThreadPoolExecutor#CallerRunsPolicy"></a>ThreadPoolExecutor#CallerRunsPolicy</h3>线程池未关闭，直接运行当前任务。<h3 id="ThreadPoolExecutor-DiscardPolicy"><a href="#ThreadPoolExecutor-DiscardPolicy" class="headerlink" title="ThreadPoolExecutor#DiscardPolicy"></a>ThreadPoolExecutor#DiscardPolicy</h3>丢弃当前任务，什么都不操作。<h3 id="ThreadPoolExecutor-DiscardOldestPolicy"><a href="#ThreadPoolExecutor-DiscardOldestPolicy" class="headerlink" title="ThreadPoolExecutor#DiscardOldestPolicy"></a>ThreadPoolExecutor#DiscardOldestPolicy</h3>丢弃Queue的第1个任务，也就是最早添加的Runnable，运行当前任务。</li>
 </ol>
 
         </div>
@@ -494,8 +493,8 @@ var _hmt = _hmt || [];
         
         
         <div class="level-end">
-            <a class="level level-item has-link-grey  article-nav-next" href="/JDK1.6-SynchronousQueue/">
-                <span class="level-item">JDK1.6 SynchronousQueue</span>
+            <a class="level level-item has-link-grey  article-nav-next" href="/JDK1.6-ThreadLocal/">
+                <span class="level-item">JDK1.6 ThreadLocal</span>
                 <i class="level-item fas fa-chevron-right"></i>
             </a>
         </div>
@@ -885,13 +884,13 @@ var _hmt = _hmt || [];
                 目录
             </h3>
             <ul class="menu-list"><li>
-        <a class="is-flex" href="#1-介绍">
+        <a class="is-flex" href="#介绍">
         <span class="has-mr-6">1</span>
-        <span>1 介绍</span>
+        <span>介绍</span>
         </a></li><li>
-        <a class="is-flex" href="#2-源码分析">
+        <a class="is-flex" href="#源码分析">
         <span class="has-mr-6">2</span>
-        <span>2 源码分析</span>
+        <span>源码分析</span>
         </a><ul class="menu-list"><li>
         <a class="is-flex" href="#Executor">
         <span class="has-mr-6">2.1</span>
@@ -1044,11 +1043,7 @@ var _hmt = _hmt || [];
         <a class="is-flex" href="#ThreadPoolExecutor-DiscardOldestPolicy">
         <span class="has-mr-6">2.34.4</span>
         <span>ThreadPoolExecutor#DiscardOldestPolicy</span>
-        </a></li></ul></li></ul></li><li>
-        <a class="is-flex" href="#3-总结">
-        <span class="has-mr-6">3</span>
-        <span>3 总结</span>
-        </a></li></ul>
+        </a></li></ul></li></ul></li></ul>
         </div>
     </div>
 </div>
@@ -1120,6 +1115,25 @@ var _hmt = _hmt || [];
         
         <article class="media">
             <!-- 
+            <a href="/Python2ToPython3/" class="media-left">
+                <p class="image is-64x64">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Python2切换Python3">
+                </p>
+            </a>
+             -->
+            <div class="media-content">
+                <div class="content">
+                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
+                    <a href="/Python2ToPython3/" class="has-link-black-ter is-size-6">Python2切换Python3</a>
+                    <p class="is-size-7 is-uppercase">
+                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
+                    </p>
+                </div>
+            </div>
+        </article>
+        
+        <article class="media">
+            <!-- 
             <a href="/MySQL-Command/" class="media-left">
                 <p class="image is-64x64">
                     <img class="thumbnail" src="/images/thumbnail.svg" alt="MySQL基本命令">
@@ -1132,25 +1146,6 @@ var _hmt = _hmt || [];
                     <a href="/MySQL-Command/" class="has-link-black-ter is-size-6">MySQL基本命令</a>
                     <p class="is-size-7 is-uppercase">
                         <a class="has-link-grey -link" href="/categories/MySQL/">MySQL</a>
-                    </p>
-                </div>
-            </div>
-        </article>
-        
-        <article class="media">
-            <!-- 
-            <a href="/Centos-Line/" class="media-left">
-                <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Centos命令行图形界面切换">
-                </p>
-            </a>
-             -->
-            <div class="media-content">
-                <div class="content">
-                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
-                    <a href="/Centos-Line/" class="has-link-black-ter is-size-6">Centos命令行图形界面切换</a>
-                    <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
                     </p>
                 </div>
             </div>
@@ -2012,13 +2007,13 @@ var _hmt = _hmt || [];
                 目录
             </h3>
             <ul class="menu-list"><li>
-        <a class="is-flex" href="#1-介绍">
+        <a class="is-flex" href="#介绍">
         <span class="has-mr-6">1</span>
-        <span>1 介绍</span>
+        <span>介绍</span>
         </a></li><li>
-        <a class="is-flex" href="#2-源码分析">
+        <a class="is-flex" href="#源码分析">
         <span class="has-mr-6">2</span>
-        <span>2 源码分析</span>
+        <span>源码分析</span>
         </a><ul class="menu-list"><li>
         <a class="is-flex" href="#Executor">
         <span class="has-mr-6">2.1</span>
@@ -2171,11 +2166,7 @@ var _hmt = _hmt || [];
         <a class="is-flex" href="#ThreadPoolExecutor-DiscardOldestPolicy">
         <span class="has-mr-6">2.34.4</span>
         <span>ThreadPoolExecutor#DiscardOldestPolicy</span>
-        </a></li></ul></li></ul></li><li>
-        <a class="is-flex" href="#3-总结">
-        <span class="has-mr-6">3</span>
-        <span>3 总结</span>
-        </a></li></ul>
+        </a></li></ul></li></ul></li></ul>
         </div>
     </div>
 </div>
@@ -2247,6 +2238,25 @@ var _hmt = _hmt || [];
         
         <article class="media">
             <!-- 
+            <a href="/Python2ToPython3/" class="media-left">
+                <p class="image is-64x64">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Python2切换Python3">
+                </p>
+            </a>
+             -->
+            <div class="media-content">
+                <div class="content">
+                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
+                    <a href="/Python2ToPython3/" class="has-link-black-ter is-size-6">Python2切换Python3</a>
+                    <p class="is-size-7 is-uppercase">
+                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
+                    </p>
+                </div>
+            </div>
+        </article>
+        
+        <article class="media">
+            <!-- 
             <a href="/MySQL-Command/" class="media-left">
                 <p class="image is-64x64">
                     <img class="thumbnail" src="/images/thumbnail.svg" alt="MySQL基本命令">
@@ -2259,25 +2269,6 @@ var _hmt = _hmt || [];
                     <a href="/MySQL-Command/" class="has-link-black-ter is-size-6">MySQL基本命令</a>
                     <p class="is-size-7 is-uppercase">
                         <a class="has-link-grey -link" href="/categories/MySQL/">MySQL</a>
-                    </p>
-                </div>
-            </div>
-        </article>
-        
-        <article class="media">
-            <!-- 
-            <a href="/Centos-Line/" class="media-left">
-                <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Centos命令行图形界面切换">
-                </p>
-            </a>
-             -->
-            <div class="media-content">
-                <div class="content">
-                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
-                    <a href="/Centos-Line/" class="has-link-black-ter is-size-6">Centos命令行图形界面切换</a>
-                    <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
                     </p>
                 </div>
             </div>

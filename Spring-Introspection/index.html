@@ -7,18 +7,18 @@
 
 
 
-    <meta name="description" content="1 问题 2 解决方式 Spring中的描述     1 问题在服务器运行过程中，Spring不停的运行计划任务和OpenSessionInViewFilter，使得Tomcat反复加载对象而产生框架并用时可能产生的内存泄漏，则使用IntrospectorCleanupListener作为相应的解决办法。  2 解决方式Spring中的提供一个名为org.springframework.web">
+    <meta name="description" content="问题 解决方式 Spring中的描述     问题在服务器运行过程中，Spring不停的运行计划任务和OpenSessionInViewFilter，使得Tomcat反复加载对象而产生框架并用时可能产生的内存泄漏，则使用IntrospectorCleanupListener作为相应的解决办法。  解决方式Spring中的提供一个名为org.springframework.web.util.In">
 <meta name="keywords" content="Spring,开源项目">
 <meta property="og:type" content="article">
 <meta property="og:title" content="清理Spring内省对象">
 <meta property="og:url" content="https://joeskye1701.github.io/Spring-Introspection/index.html">
 <meta property="og:site_name" content="Joe|博客">
-<meta property="og:description" content="1 问题 2 解决方式 Spring中的描述     1 问题在服务器运行过程中，Spring不停的运行计划任务和OpenSessionInViewFilter，使得Tomcat反复加载对象而产生框架并用时可能产生的内存泄漏，则使用IntrospectorCleanupListener作为相应的解决办法。  2 解决方式Spring中的提供一个名为org.springframework.web">
+<meta property="og:description" content="问题 解决方式 Spring中的描述     问题在服务器运行过程中，Spring不停的运行计划任务和OpenSessionInViewFilter，使得Tomcat反复加载对象而产生框架并用时可能产生的内存泄漏，则使用IntrospectorCleanupListener作为相应的解决办法。  解决方式Spring中的提供一个名为org.springframework.web.util.In">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:updated_time" content="2019-03-06T19:43:40.874Z">
+<meta property="og:updated_time" content="2019-03-08T18:46:34.370Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="清理Spring内省对象">
-<meta name="twitter:description" content="1 问题 2 解决方式 Spring中的描述     1 问题在服务器运行过程中，Spring不停的运行计划任务和OpenSessionInViewFilter，使得Tomcat反复加载对象而产生框架并用时可能产生的内存泄漏，则使用IntrospectorCleanupListener作为相应的解决办法。  2 解决方式Spring中的提供一个名为org.springframework.web">
+<meta name="twitter:description" content="问题 解决方式 Spring中的描述     问题在服务器运行过程中，Spring不停的运行计划任务和OpenSessionInViewFilter，使得Tomcat反复加载对象而产生框架并用时可能产生的内存泄漏，则使用IntrospectorCleanupListener作为相应的解决办法。  解决方式Spring中的提供一个名为org.springframework.web.util.In">
 
 
 
@@ -171,15 +171,15 @@ var _hmt = _hmt || [];
         <div class="content">
             <!-- TOC -->
 <ul>
-<li><a href="#1-%E9%97%AE%E9%A2%98">1 问题</a></li>
-<li><a href="#2-%E8%A7%A3%E5%86%B3%E6%96%B9%E5%BC%8F">2 解决方式</a><ul>
+<li><a href="#%E9%97%AE%E9%A2%98">问题</a></li>
+<li><a href="#%E8%A7%A3%E5%86%B3%E6%96%B9%E5%BC%8F">解决方式</a><ul>
 <li><a href="#spring%E4%B8%AD%E7%9A%84%E6%8F%8F%E8%BF%B0">Spring中的描述</a></li>
 </ul>
 </li>
 </ul>
 <!-- /TOC -->
-<h1 id="1-问题"><a href="#1-问题" class="headerlink" title="1 问题"></a>1 问题</h1><p>在服务器运行过程中，Spring不停的运行计划任务和<code>OpenSessionInViewFilter</code>，使得Tomcat反复加载对象而产生框架并用时可能产生的内存泄漏，则使用<code>IntrospectorCleanupListener</code>作为相应的解决办法。 </p>
-<h1 id="2-解决方式"><a href="#2-解决方式" class="headerlink" title="2 解决方式"></a>2 解决方式</h1><p>Spring中的提供一个名为<code>org.springframework.web.util.IntrospectorCleanupListener</code>的监听器。它主要负责处理由JavaBeans Introspector（内省对象）的使用而引起的内存泄露。<br><a id="more"></a></p>
+<h1 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h1><p>在服务器运行过程中，Spring不停的运行计划任务和<code>OpenSessionInViewFilter</code>，使得Tomcat反复加载对象而产生框架并用时可能产生的内存泄漏，则使用<code>IntrospectorCleanupListener</code>作为相应的解决办法。 </p>
+<h1 id="解决方式"><a href="#解决方式" class="headerlink" title="解决方式"></a>解决方式</h1><p>Spring中的提供一个名为<code>org.springframework.web.util.IntrospectorCleanupListener</code>的监听器。它主要负责处理由JavaBeans Introspector（内省对象）的使用而引起的内存泄露。<br><a id="more"></a></p>
 <h2 id="Spring中的描述"><a href="#Spring中的描述" class="headerlink" title="Spring中的描述"></a>Spring中的描述</h2><p>它是一个在web应用关闭的时候，清除JavaBeans Introspector的监听器。web.xml中注册这个<code>listener</code>。可以保证在web应用关闭的时候释放与掉这个web应用相关的class loader和由它管理的类。如果使用JavaBeans Introspector来分析应用中的类，<code>Introspector</code>中会保留这些类的引用。结果在应用关闭的时候，这些类以及web应用相关的class loader没有被垃圾回收。<br>不幸的是，清除<code>Introspector</code>的唯一方式是刷新整个缓存。这是因为没法判断哪些是属于应用的引用。所以删除被缓存的<code>introspection</code>会导致把这台电脑上的所有应用的<code>introspection</code>都删掉。需要注意的是，Spring托管的bean不需要使用这个监听器。因为Spring它自己的<code>introspection</code>所使用的缓存在分析完一个类之后会被马上从Java Beans Introspector缓存中清除掉。应用程序中的类从来不直接使用Java Beans Introspector。所以一般不会导致内部查看资源泄露。但是一些类库和框架往往会产生这个问题。<br>例如Struts和Quartz，单个的内部查看泄漏会导致整个的web应用的类加载器不能进行垃圾回收。在web应用关闭之后，会看到此应用的所有静态类资源。这个错误当然不是由这个类自身引起的。<br>用法很简单，就是在web.xml中加入:<br><figure class="highlight xml hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-tag">&lt;<span class="hljs-name">listener</span>&gt;</span></span><br><span class="line">    <span class="hljs-tag">&lt;<span class="hljs-name">listener-class</span>&gt;</span>org.springframework.web.util.IntrospectorCleanupListener<span class="hljs-tag">&lt;/<span class="hljs-name">listener-class</span>&gt;</span></span><br><span class="line"><span class="hljs-tag">&lt;/<span class="hljs-name">listener</span>&gt;</span></span><br></pre></td></tr></table></figure></p>
 <p>Servlet标准不允许在web容器内自行做线程管理，Quartz的问题确实存在。<br>对于web容器来说，最忌讳应用程序私自启动线程，自行进行线程调度，像Quartz这种在web容器内部默认就自己启动10线程进行异步job调度的框架本身就是很危险的事情，很容易造成Servlet线程资源回收不掉。  </p>
 
@@ -639,13 +639,13 @@ var _hmt = _hmt || [];
                 目录
             </h3>
             <ul class="menu-list"><li>
-        <a class="is-flex" href="#1-问题">
+        <a class="is-flex" href="#问题">
         <span class="has-mr-6">1</span>
-        <span>1 问题</span>
+        <span>问题</span>
         </a></li><li>
-        <a class="is-flex" href="#2-解决方式">
+        <a class="is-flex" href="#解决方式">
         <span class="has-mr-6">2</span>
-        <span>2 解决方式</span>
+        <span>解决方式</span>
         </a><ul class="menu-list"><li>
         <a class="is-flex" href="#Spring中的描述">
         <span class="has-mr-6">2.1</span>
@@ -722,6 +722,25 @@ var _hmt = _hmt || [];
         
         <article class="media">
             <!-- 
+            <a href="/Python2ToPython3/" class="media-left">
+                <p class="image is-64x64">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Python2切换Python3">
+                </p>
+            </a>
+             -->
+            <div class="media-content">
+                <div class="content">
+                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
+                    <a href="/Python2ToPython3/" class="has-link-black-ter is-size-6">Python2切换Python3</a>
+                    <p class="is-size-7 is-uppercase">
+                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
+                    </p>
+                </div>
+            </div>
+        </article>
+        
+        <article class="media">
+            <!-- 
             <a href="/MySQL-Command/" class="media-left">
                 <p class="image is-64x64">
                     <img class="thumbnail" src="/images/thumbnail.svg" alt="MySQL基本命令">
@@ -734,25 +753,6 @@ var _hmt = _hmt || [];
                     <a href="/MySQL-Command/" class="has-link-black-ter is-size-6">MySQL基本命令</a>
                     <p class="is-size-7 is-uppercase">
                         <a class="has-link-grey -link" href="/categories/MySQL/">MySQL</a>
-                    </p>
-                </div>
-            </div>
-        </article>
-        
-        <article class="media">
-            <!-- 
-            <a href="/Centos-Line/" class="media-left">
-                <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Centos命令行图形界面切换">
-                </p>
-            </a>
-             -->
-            <div class="media-content">
-                <div class="content">
-                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
-                    <a href="/Centos-Line/" class="has-link-black-ter is-size-6">Centos命令行图形界面切换</a>
-                    <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
                     </p>
                 </div>
             </div>
@@ -1614,13 +1614,13 @@ var _hmt = _hmt || [];
                 目录
             </h3>
             <ul class="menu-list"><li>
-        <a class="is-flex" href="#1-问题">
+        <a class="is-flex" href="#问题">
         <span class="has-mr-6">1</span>
-        <span>1 问题</span>
+        <span>问题</span>
         </a></li><li>
-        <a class="is-flex" href="#2-解决方式">
+        <a class="is-flex" href="#解决方式">
         <span class="has-mr-6">2</span>
-        <span>2 解决方式</span>
+        <span>解决方式</span>
         </a><ul class="menu-list"><li>
         <a class="is-flex" href="#Spring中的描述">
         <span class="has-mr-6">2.1</span>
@@ -1697,6 +1697,25 @@ var _hmt = _hmt || [];
         
         <article class="media">
             <!-- 
+            <a href="/Python2ToPython3/" class="media-left">
+                <p class="image is-64x64">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Python2切换Python3">
+                </p>
+            </a>
+             -->
+            <div class="media-content">
+                <div class="content">
+                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
+                    <a href="/Python2ToPython3/" class="has-link-black-ter is-size-6">Python2切换Python3</a>
+                    <p class="is-size-7 is-uppercase">
+                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
+                    </p>
+                </div>
+            </div>
+        </article>
+        
+        <article class="media">
+            <!-- 
             <a href="/MySQL-Command/" class="media-left">
                 <p class="image is-64x64">
                     <img class="thumbnail" src="/images/thumbnail.svg" alt="MySQL基本命令">
@@ -1709,25 +1728,6 @@ var _hmt = _hmt || [];
                     <a href="/MySQL-Command/" class="has-link-black-ter is-size-6">MySQL基本命令</a>
                     <p class="is-size-7 is-uppercase">
                         <a class="has-link-grey -link" href="/categories/MySQL/">MySQL</a>
-                    </p>
-                </div>
-            </div>
-        </article>
-        
-        <article class="media">
-            <!-- 
-            <a href="/Centos-Line/" class="media-left">
-                <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Centos命令行图形界面切换">
-                </p>
-            </a>
-             -->
-            <div class="media-content">
-                <div class="content">
-                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
-                    <a href="/Centos-Line/" class="has-link-black-ter is-size-6">Centos命令行图形界面切换</a>
-                    <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
                     </p>
                 </div>
             </div>

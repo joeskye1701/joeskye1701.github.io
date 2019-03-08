@@ -7,19 +7,19 @@
 
 
 
-    <meta name="description" content="1 源码 UserMapper` application-context.xml` test`   2 原理分析 MapperScannerConfigurer#Scanner#doScan` MapperFactoryBean#afterPropertiesSet()` MapperFactoryBean#getObject()` SqlSessionTemplate#getMapper()">
+    <meta name="description" content="源码 UserMapper` application-context.xml` test`   原理分析 MapperScannerConfigurer#Scanner#doScan` MapperFactoryBean#afterPropertiesSet()` MapperFactoryBean#getObject()` SqlSessionTemplate#getMapper()` or">
 <meta name="keywords" content="MyBatis,开源项目">
 <meta property="og:type" content="article">
 <meta property="og:title" content="MyBatis基于接口编程的原理分析">
 <meta property="og:url" content="https://joeskye1701.github.io/MyBatis-Interface-Analysis/index.html">
 <meta property="og:site_name" content="Joe|博客">
-<meta property="og:description" content="1 源码 UserMapper` application-context.xml` test`   2 原理分析 MapperScannerConfigurer#Scanner#doScan` MapperFactoryBean#afterPropertiesSet()` MapperFactoryBean#getObject()` SqlSessionTemplate#getMapper()">
+<meta property="og:description" content="源码 UserMapper` application-context.xml` test`   原理分析 MapperScannerConfigurer#Scanner#doScan` MapperFactoryBean#afterPropertiesSet()` MapperFactoryBean#getObject()` SqlSessionTemplate#getMapper()` or">
 <meta property="og:locale" content="zh-CN">
 <meta property="og:image" content="https://joeskye1701.github.io/MyBatis-Interface-Analysis/Mybatis.jpg">
-<meta property="og:updated_time" content="2019-03-06T19:42:11.482Z">
+<meta property="og:updated_time" content="2019-03-08T18:50:07.515Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="MyBatis基于接口编程的原理分析">
-<meta name="twitter:description" content="1 源码 UserMapper` application-context.xml` test`   2 原理分析 MapperScannerConfigurer#Scanner#doScan` MapperFactoryBean#afterPropertiesSet()` MapperFactoryBean#getObject()` SqlSessionTemplate#getMapper()">
+<meta name="twitter:description" content="源码 UserMapper` application-context.xml` test`   原理分析 MapperScannerConfigurer#Scanner#doScan` MapperFactoryBean#afterPropertiesSet()` MapperFactoryBean#getObject()` SqlSessionTemplate#getMapper()` or">
 <meta name="twitter:image" content="https://joeskye1701.github.io/MyBatis-Interface-Analysis/Mybatis.jpg">
 
 
@@ -173,13 +173,13 @@ var _hmt = _hmt || [];
         <div class="content">
             <!-- TOC -->
 <ul>
-<li><a href="#1-%E6%BA%90%E7%A0%81">1 源码</a><ul>
+<li><a href="#%E6%BA%90%E7%A0%81">源码</a><ul>
 <li><a href="#usermapper">UserMapper`</a></li>
 <li><a href="#application-contextxml">application-context.xml`</a></li>
 <li><a href="#test">test`</a></li>
 </ul>
 </li>
-<li><a href="#2-%E5%8E%9F%E7%90%86%E5%88%86%E6%9E%90">2 原理分析</a><ul>
+<li><a href="#%E5%8E%9F%E7%90%86%E5%88%86%E6%9E%90">原理分析</a><ul>
 <li><a href="#mapperscannerconfigurerscannerdoscan">MapperScannerConfigurer#Scanner#doScan`</a></li>
 <li><a href="#mapperfactorybeanafterpropertiesset">MapperFactoryBean#afterPropertiesSet()`</a></li>
 <li><a href="#mapperfactorybeangetobject">MapperFactoryBean#getObject()`</a></li>
@@ -190,17 +190,17 @@ var _hmt = _hmt || [];
 <li><a href="#mapperproxyinvoke">MapperProxy#invoke`</a></li>
 </ul>
 </li>
-<li><a href="#3-mybatis%E7%89%88%E6%9C%AC%E5%B7%AE%E5%BC%82">3 Mybatis版本差异</a><ul>
+<li><a href="#mybatis%E7%89%88%E6%9C%AC%E5%B7%AE%E5%BC%82">Mybatis版本差异</a><ul>
 <li><a href="#mapperfactorybeancheckdaoconfig">MapperFactoryBean#checkDaoConfig()</a></li>
 <li><a href="#mapperproxyinvoke">MapperProxy#invoke()</a></li>
 </ul>
 </li>
 </ul>
 <!-- /TOC -->
-<h1 id="1-源码"><a href="#1-源码" class="headerlink" title="1 源码"></a>1 源码</h1><h2 id="UserMapper"><a href="#UserMapper" class="headerlink" title="UserMapper"></a>UserMapper</h2><figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">package</span> org.denger.mapper;  </span><br><span class="line">  </span><br><span class="line"><span class="hljs-keyword">import</span> org.apache.ibatis.annotations.Param;  </span><br><span class="line"><span class="hljs-keyword">import</span> org.apache.ibatis.annotations.Select;  </span><br><span class="line"><span class="hljs-keyword">import</span> org.denger.po.User;  </span><br><span class="line">  </span><br><span class="line"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">interface</span> <span class="hljs-title">UserMapper</span> </span>&#123;  </span><br><span class="line">  </span><br><span class="line">    <span class="hljs-meta">@Select</span>(<span class="hljs-string">"select * from tab_uc_account where id=#&#123;userId&#125;"</span>)  </span><br><span class="line">    <span class="hljs-function">User <span class="hljs-title">getUser</span><span class="hljs-params">(@Param(<span class="hljs-string">"userId"</span>)</span> Long userId)</span>;  </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h1 id="源码"><a href="#源码" class="headerlink" title="源码"></a>源码</h1><h2 id="UserMapper"><a href="#UserMapper" class="headerlink" title="UserMapper"></a>UserMapper</h2><figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">package</span> org.denger.mapper;  </span><br><span class="line">  </span><br><span class="line"><span class="hljs-keyword">import</span> org.apache.ibatis.annotations.Param;  </span><br><span class="line"><span class="hljs-keyword">import</span> org.apache.ibatis.annotations.Select;  </span><br><span class="line"><span class="hljs-keyword">import</span> org.denger.po.User;  </span><br><span class="line">  </span><br><span class="line"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">interface</span> <span class="hljs-title">UserMapper</span> </span>&#123;  </span><br><span class="line">  </span><br><span class="line">    <span class="hljs-meta">@Select</span>(<span class="hljs-string">"select * from tab_uc_account where id=#&#123;userId&#125;"</span>)  </span><br><span class="line">    <span class="hljs-function">User <span class="hljs-title">getUser</span><span class="hljs-params">(@Param(<span class="hljs-string">"userId"</span>)</span> Long userId)</span>;  </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <h2 id="application-context-xml"><a href="#application-context-xml" class="headerlink" title="application-context.xml"></a>application-context.xml</h2><figure class="highlight xml hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-meta">&lt;?xml version="1.0" encoding="UTF-8"?&gt;</span>  </span><br><span class="line"><span class="hljs-tag">&lt;<span class="hljs-name">beans</span> <span class="hljs-attr">xmlns</span>=<span class="hljs-string">"http://www.springframework.org/schema/beans"</span>  </span></span><br><span class="line"><span class="hljs-tag">    <span class="hljs-attr">xmlns:xsi</span>=<span class="hljs-string">"http://www.w3.org/2001/XMLSchema-instance"</span> <span class="hljs-attr">xmlns:context</span>=<span class="hljs-string">"http://www.springframework.org/schema/context"</span>  </span></span><br><span class="line"><span class="hljs-tag">    <span class="hljs-attr">xmlns:aop</span>=<span class="hljs-string">"http://www.springframework.org/schema/aop"</span> <span class="hljs-attr">xmlns:tx</span>=<span class="hljs-string">"http://www.springframework.org/schema/tx"</span>  </span></span><br><span class="line"><span class="hljs-tag">    <span class="hljs-attr">xsi:schemaLocation</span>=<span class="hljs-string">"http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.0.xsd http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-2.0.xsd http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-2.0.xsd"</span>&gt;</span>  </span><br><span class="line">  </span><br><span class="line">  </span><br><span class="line">    <span class="hljs-comment">&lt;!-- Provided by annotation-based configuration  --&gt;</span>  </span><br><span class="line">    <span class="hljs-tag">&lt;<span class="hljs-name">context:annotation-config</span>/&gt;</span>  </span><br><span class="line">  </span><br><span class="line">    <span class="hljs-comment">&lt;!--JDBC Transaction  Manage --&gt;</span>  </span><br><span class="line">    <span class="hljs-tag">&lt;<span class="hljs-name">bean</span> <span class="hljs-attr">id</span>=<span class="hljs-string">"dataSourceProxy"</span> <span class="hljs-attr">class</span>=<span class="hljs-string">"org.springframework.jdbc.datasource.TransactionAwareDataSourceProxy"</span>&gt;</span>  </span><br><span class="line">        <span class="hljs-tag">&lt;<span class="hljs-name">constructor-arg</span>&gt;</span>  </span><br><span class="line">            <span class="hljs-tag">&lt;<span class="hljs-name">ref</span> <span class="hljs-attr">bean</span>=<span class="hljs-string">"dataSource"</span> /&gt;</span>  </span><br><span class="line">        <span class="hljs-tag">&lt;/<span class="hljs-name">constructor-arg</span>&gt;</span>  </span><br><span class="line">    <span class="hljs-tag">&lt;/<span class="hljs-name">bean</span>&gt;</span>  </span><br><span class="line">  </span><br><span class="line">    <span class="hljs-comment">&lt;!-- The JDBC c3p0 dataSource bean--&gt;</span>  </span><br><span class="line">    <span class="hljs-tag">&lt;<span class="hljs-name">bean</span> <span class="hljs-attr">id</span>=<span class="hljs-string">"dataSource"</span> <span class="hljs-attr">class</span>=<span class="hljs-string">"com.mchange.v2.c3p0.ComboPooledDataSource"</span> <span class="hljs-attr">destroy-method</span>=<span class="hljs-string">"close"</span>&gt;</span>  </span><br><span class="line">        <span class="hljs-tag">&lt;<span class="hljs-name">property</span> <span class="hljs-attr">name</span>=<span class="hljs-string">"driverClass"</span> <span class="hljs-attr">value</span>=<span class="hljs-string">"com.mysql.jdbc.Driver"</span> /&gt;</span>  </span><br><span class="line">        <span class="hljs-tag">&lt;<span class="hljs-name">property</span> <span class="hljs-attr">name</span>=<span class="hljs-string">"jdbcUrl"</span> <span class="hljs-attr">value</span>=<span class="hljs-string">"jdbc:mysql://127.0.0.1:3306/noah"</span> /&gt;</span>  </span><br><span class="line">        <span class="hljs-tag">&lt;<span class="hljs-name">property</span> <span class="hljs-attr">name</span>=<span class="hljs-string">"user"</span> <span class="hljs-attr">value</span>=<span class="hljs-string">"root"</span> /&gt;</span>  </span><br><span class="line">        <span class="hljs-tag">&lt;<span class="hljs-name">property</span> <span class="hljs-attr">name</span>=<span class="hljs-string">"password"</span> <span class="hljs-attr">value</span>=<span class="hljs-string">"123456"</span> /&gt;</span>  </span><br><span class="line">    <span class="hljs-tag">&lt;/<span class="hljs-name">bean</span>&gt;</span>  </span><br><span class="line">  </span><br><span class="line">    <span class="hljs-comment">&lt;!--MyBatis integration with Spring as define sqlSessionFactory  --&gt;</span>  </span><br><span class="line">    <span class="hljs-tag">&lt;<span class="hljs-name">bean</span> <span class="hljs-attr">id</span>=<span class="hljs-string">"sqlSessionFactory"</span> <span class="hljs-attr">class</span>=<span class="hljs-string">"org.mybatis.spring.SqlSessionFactoryBean"</span>&gt;</span>  </span><br><span class="line">        <span class="hljs-tag">&lt;<span class="hljs-name">property</span> <span class="hljs-attr">name</span>=<span class="hljs-string">"dataSource"</span> <span class="hljs-attr">ref</span>=<span class="hljs-string">"dataSource"</span> /&gt;</span>  </span><br><span class="line">    <span class="hljs-tag">&lt;/<span class="hljs-name">bean</span>&gt;</span>  </span><br><span class="line">  </span><br><span class="line">    <span class="hljs-tag">&lt;<span class="hljs-name">bean</span> <span class="hljs-attr">class</span>=<span class="hljs-string">"org.mybatis.spring.mapper.MapperScannerConfigurer"</span>&gt;</span>  </span><br><span class="line">        <span class="hljs-tag">&lt;<span class="hljs-name">property</span> <span class="hljs-attr">name</span>=<span class="hljs-string">"sqlSessionFactory"</span>  <span class="hljs-attr">ref</span>=<span class="hljs-string">"sqlSessionFactory"</span>/&gt;</span>  </span><br><span class="line">        <span class="hljs-tag">&lt;<span class="hljs-name">property</span> <span class="hljs-attr">name</span>=<span class="hljs-string">"basePackage"</span> <span class="hljs-attr">value</span>=<span class="hljs-string">"org.denger.mapper"</span>&gt;</span><span class="hljs-tag">&lt;/<span class="hljs-name">property</span>&gt;</span>  </span><br><span class="line">    <span class="hljs-tag">&lt;/<span class="hljs-name">bean</span>&gt;</span>  </span><br><span class="line"><span class="hljs-tag">&lt;/<span class="hljs-name">beans</span>&gt;</span></span><br></pre></td></tr></table></figure>
 <h2 id="test"><a href="#test" class="headerlink" title="test"></a>test</h2><figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">package</span> org.denger.mapper;  </span><br><span class="line">  </span><br><span class="line"><span class="hljs-keyword">import</span> org.junit.Assert;  </span><br><span class="line"><span class="hljs-keyword">import</span> org.junit.Test;  </span><br><span class="line"><span class="hljs-keyword">import</span> org.springframework.beans.factory.annotation.Autowired;  </span><br><span class="line"><span class="hljs-keyword">import</span> org.springframework.test.context.ContextConfiguration;  </span><br><span class="line"><span class="hljs-keyword">import</span> org.springframework.test.context.junit4.AbstractJUnit4SpringContextTests;  </span><br><span class="line">  </span><br><span class="line"><span class="hljs-meta">@ContextConfiguration</span>(locations = &#123; <span class="hljs-string">"/application-context.xml"</span>&#125;)  </span><br><span class="line"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">UserMapperTest</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">AbstractJUnit4SpringContextTests</span></span>&#123;  </span><br><span class="line">  </span><br><span class="line">    <span class="hljs-meta">@Autowired</span>  </span><br><span class="line">    <span class="hljs-keyword">public</span> UserMapper userMapper;  </span><br><span class="line">      </span><br><span class="line">    <span class="hljs-meta">@Test</span>  </span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">testGetUser</span><span class="hljs-params">()</span></span>&#123;  </span><br><span class="line">        Assert.assertNotNull(userMapper.getUser(<span class="hljs-number">300L</span>));  </span><br><span class="line">    &#125;  </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<h1 id="2-原理分析"><a href="#2-原理分析" class="headerlink" title="2 原理分析"></a>2 原理分析</h1><p>对于以上极其简单代码看上去并无特殊之处，主要亮点在于 <code>UserMapper</code> 居然不用实现类，而且在调用 <code>getUser</code> 的时候，也是使用直接调用了<code>UserMapper</code>实现类，那么Mybatis是如何去实现 <code>UserMapper</code>的接口的呢？<br>可能你马上能想到的实现机制就是通过动态代理方式，看看MyBatis整个的代理过程吧。<br>首先在Spring的配置文件中看到下面的Bean。<br><figure class="highlight xml hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-tag">&lt;<span class="hljs-name">bean</span> <span class="hljs-attr">class</span>=<span class="hljs-string">"org.mybatis.spring.mapper.MapperScannerConfigurer"</span>&gt;</span>  </span><br><span class="line">        <span class="hljs-tag">&lt;<span class="hljs-name">property</span> <span class="hljs-attr">name</span>=<span class="hljs-string">"sqlSessionFactory"</span>  <span class="hljs-attr">ref</span>=<span class="hljs-string">"sqlSessionFactory"</span>/&gt;</span>  </span><br><span class="line">        <span class="hljs-tag">&lt;<span class="hljs-name">property</span> <span class="hljs-attr">name</span>=<span class="hljs-string">"basePackage"</span> <span class="hljs-attr">value</span>=<span class="hljs-string">"org.denger.mapper"</span>&gt;</span><span class="hljs-tag">&lt;/<span class="hljs-name">property</span>&gt;</span>  </span><br><span class="line"><span class="hljs-tag">&lt;/<span class="hljs-name">bean</span>&gt;</span></span><br></pre></td></tr></table></figure></p>
+<h1 id="原理分析"><a href="#原理分析" class="headerlink" title="原理分析"></a>原理分析</h1><p>对于以上极其简单代码看上去并无特殊之处，主要亮点在于 <code>UserMapper</code> 居然不用实现类，而且在调用 <code>getUser</code> 的时候，也是使用直接调用了<code>UserMapper</code>实现类，那么Mybatis是如何去实现 <code>UserMapper</code>的接口的呢？<br>可能你马上能想到的实现机制就是通过动态代理方式，看看MyBatis整个的代理过程吧。<br>首先在Spring的配置文件中看到下面的Bean。<br><figure class="highlight xml hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-tag">&lt;<span class="hljs-name">bean</span> <span class="hljs-attr">class</span>=<span class="hljs-string">"org.mybatis.spring.mapper.MapperScannerConfigurer"</span>&gt;</span>  </span><br><span class="line">        <span class="hljs-tag">&lt;<span class="hljs-name">property</span> <span class="hljs-attr">name</span>=<span class="hljs-string">"sqlSessionFactory"</span>  <span class="hljs-attr">ref</span>=<span class="hljs-string">"sqlSessionFactory"</span>/&gt;</span>  </span><br><span class="line">        <span class="hljs-tag">&lt;<span class="hljs-name">property</span> <span class="hljs-attr">name</span>=<span class="hljs-string">"basePackage"</span> <span class="hljs-attr">value</span>=<span class="hljs-string">"org.denger.mapper"</span>&gt;</span><span class="hljs-tag">&lt;/<span class="hljs-name">property</span>&gt;</span>  </span><br><span class="line"><span class="hljs-tag">&lt;/<span class="hljs-name">bean</span>&gt;</span></span><br></pre></td></tr></table></figure></p>
 <figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment"> * BeanDefinitionRegistryPostProcessor that searches recursively starting from a base package for</span></span><br><span class="line"><span class="hljs-comment"> * interfaces and registers them as &#123;<span class="hljs-doctag">@code</span> MapperFactoryBean&#125;. Note that only interfaces with at</span></span><br><span class="line"><span class="hljs-comment"> * least one method will be registered; concrete classes will be ignored.</span></span><br><span class="line"><span class="hljs-comment"> * &lt;p&gt;</span></span><br></pre></td></tr></table></figure>
 <p>以上的<code>MapperScannerConfigurer</code>的注释中描述道。<br>从base包中搜索所有下面所有<code>interface</code>，并将其注册到Spring Bean容器中，其注册的class bean是<code>MapperFactoryBean</code>。<br>看看它的注册过程，从<code>MapperScannerConfigurer#Scanner</code>类中抽取，在初始化以上<code>application-content.xml</code>文件时就会进行调用。<br>主要用于是搜索<code>base packages</code>下的所有<code>mapper.class</code>，并将其注册至spring的<code>benfinitionHolder</code>中。<br><a id="more"></a>  </p>
 <h2 id="MapperScannerConfigurer-Scanner-doScan"><a href="#MapperScannerConfigurer-Scanner-doScan" class="headerlink" title="MapperScannerConfigurer#Scanner#doScan"></a>MapperScannerConfigurer#Scanner#doScan</h2><figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-comment">/** </span></span><br><span class="line"><span class="hljs-comment"> 1. Calls the parent search that will search and register all the candidates. Then the </span></span><br><span class="line"><span class="hljs-comment"> 2. registered objects are post processed to set them as MapperFactoryBeans </span></span><br><span class="line"><span class="hljs-comment">*/</span>  </span><br><span class="line"><span class="hljs-meta">@Override</span>  </span><br><span class="line"><span class="hljs-function"><span class="hljs-keyword">protected</span> Set&lt;BeanDefinitionHolder&gt; <span class="hljs-title">doScan</span><span class="hljs-params">(String... basePackages)</span> </span>&#123;  </span><br><span class="line">        <span class="hljs-comment">// #1  </span></span><br><span class="line">    Set&lt;BeanDefinitionHolder&gt; beanDefinitions = <span class="hljs-keyword">super</span>.doScan(basePackages);  </span><br><span class="line">    <span class="hljs-keyword">if</span> (beanDefinitions.isEmpty()) &#123;  </span><br><span class="line">            logger.warn(<span class="hljs-string">"No MyBatis mapper was found in '"</span> + MapperScannerConfigurer.<span class="hljs-keyword">this</span>.basePackage  </span><br><span class="line">                        + <span class="hljs-string">"' package. Please check your configuration."</span>);  </span><br><span class="line">    &#125; <span class="hljs-keyword">else</span> &#123;  </span><br><span class="line">         <span class="hljs-comment">// #2  </span></span><br><span class="line">         <span class="hljs-keyword">for</span> (BeanDefinitionHolder holder : beanDefinitions) &#123;  </span><br><span class="line">                GenericBeanDefinition definition = (GenericBeanDefinition) holder.getBeanDefinition();  </span><br><span class="line">            <span class="hljs-keyword">if</span> (logger.isDebugEnabled()) &#123;  </span><br><span class="line">                logger.debug(<span class="hljs-string">"Creating MapperFactoryBean with name '"</span> + holder.getBeanName() + <span class="hljs-string">"' and '"</span>+ definition.getBeanClassName() + <span class="hljs-string">"' mapperInterface"</span>);  </span><br><span class="line">            &#125;  </span><br><span class="line">           <span class="hljs-comment">// #3  </span></span><br><span class="line">          definition.getPropertyValues().add(<span class="hljs-string">"mapperInterface"</span>, definition.getBeanClassName());  </span><br><span class="line">          definition.setBeanClass(MapperFactoryBean.class);  </span><br><span class="line">     &#125;  </span><br><span class="line">    <span class="hljs-keyword">return</span> beanDefinitions;  </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
@@ -225,7 +225,7 @@ var _hmt = _hmt || [];
 <p>JDK的动态代理就不说，至此，基本Mybatis已经完成了<code>Mapper</code>实例的整个创建过程，也就是在具体使用 <code>UserMapper#getUser()</code> 时，它实际上调用的是 <code>MapperProxy</code>，因为此时所返回的 <code>MapperProxy</code>是实现了<code>UserMapper</code>接口的。只不过 <code>MapperProxy</code>拦截了所有对<code>userMapper</code>中方法的调用，如下。  </p>
 <h2 id="MapperProxy-invoke"><a href="#MapperProxy-invoke" class="headerlink" title="MapperProxy#invoke"></a>MapperProxy#invoke</h2><figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function"><span class="hljs-keyword">public</span> Object <span class="hljs-title">invoke</span><span class="hljs-params">(Object proxy, Method method, Object[] args)</span> <span class="hljs-keyword">throws</span> Throwable </span>&#123;  </span><br><span class="line">   <span class="hljs-keyword">try</span> &#123;  </span><br><span class="line">     <span class="hljs-comment">//如果调用不是 object 中默认的方法(如equals之类的)  </span></span><br><span class="line">     <span class="hljs-keyword">if</span> (!OBJECT_METHODS.contains(method.getName())) &#123;  </span><br><span class="line">       <span class="hljs-comment">//因为当前MapperProxy代理了所有 Mapper，所以需要根据当前拦截到的方法及代理对象获取 MapperInterface  class，也就是UserMapper.class  </span></span><br><span class="line">       <span class="hljs-keyword">final</span> Class declaringInterface = findDeclaringInterface(proxy, method);  </span><br><span class="line">       <span class="hljs-comment">//然后再根据UserMapper.class、及当前调用的Method(也就是getUser)及SqlSession构造一个 MapperMethod，在这里面会获取到getUser方法上的 @Select()的SQL，然后再通过sqlSession来进行执行  </span></span><br><span class="line">       <span class="hljs-keyword">final</span> MapperMethod mapperMethod = <span class="hljs-keyword">new</span> MapperMethod(declaringInterface, method, sqlSession);  </span><br><span class="line">       <span class="hljs-comment">//execute执行数据库操作，并返回结果集  </span></span><br><span class="line">       <span class="hljs-keyword">final</span> Object result = mapperMethod.execute(args);  </span><br><span class="line">       <span class="hljs-keyword">if</span> (result == <span class="hljs-keyword">null</span> &amp;&amp; method.getReturnType().isPrimitive()) &#123;  </span><br><span class="line">         <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> BindingException(<span class="hljs-string">"Mapper method '"</span> + method.getName() + <span class="hljs-string">"' ("</span> + method.getDeclaringClass() + <span class="hljs-string">") attempted to return null from a method with a primitive return type ("</span> + method.getReturnType() + <span class="hljs-string">")."</span>);  </span><br><span class="line">       &#125;  </span><br><span class="line">       <span class="hljs-keyword">return</span> result;  </span><br><span class="line">     &#125;  </span><br><span class="line">   &#125; <span class="hljs-keyword">catch</span> (SQLException e) &#123;  </span><br><span class="line">     e.printStackTrace();  </span><br><span class="line">   &#125;  </span><br><span class="line">   <span class="hljs-keyword">return</span> <span class="hljs-keyword">null</span>;  </span><br><span class="line"> &#125;</span><br></pre></td></tr></table></figure>
 <p>为什么说它拦截了呢？可以看到, 它并没有调用 <code>method.invoke(object)</code>方法，因为实际上 <code>MapperProxy</code>只是动态的<code>implement UserMapper</code>接口，但它没有真正实现 <code>UserMapper</code>中的任何方法。至于结果的返回，它也是通过 <code>MapperMethod.execute</code> 中进行数据库操作来返回结果的。<br>就是一个实现了 <code>MapperInterface</code> 的 <code>MapperProxy</code> 实例被<code>MapperProxy</code>代理了，可以Debug看看　<code>userMapper</code>实例就是 <code>MapperProxy</code>。  </p>
-<h1 id="3-Mybatis版本差异"><a href="#3-Mybatis版本差异" class="headerlink" title="3 Mybatis版本差异"></a>3 Mybatis版本差异</h1><p>以上文章很早以前写的，现在用Mybatis3.4.0版本，2个版本存在一些差异。  </p>
+<h1 id="Mybatis版本差异"><a href="#Mybatis版本差异" class="headerlink" title="Mybatis版本差异"></a>Mybatis版本差异</h1><p>以上文章很早以前写的，现在用Mybatis3.4.0版本，2个版本存在一些差异。  </p>
 <h2 id="MapperFactoryBean-checkDaoConfig"><a href="#MapperFactoryBean-checkDaoConfig" class="headerlink" title="MapperFactoryBean#checkDaoConfig()"></a>MapperFactoryBean#checkDaoConfig()</h2><p><code>MapperFactoryBean#afterPropertiesSet</code>方法，在3.4版本中不存在，3.4版本：<br><figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function"><span class="hljs-keyword">protected</span> <span class="hljs-keyword">void</span> <span class="hljs-title">checkDaoConfig</span><span class="hljs-params">()</span> </span>&#123;</span><br><span class="line">    <span class="hljs-keyword">super</span>.checkDaoConfig();</span><br><span class="line"></span><br><span class="line">    notNull(<span class="hljs-keyword">this</span>.mapperInterface, <span class="hljs-string">"Property 'mapperInterface' is required"</span>);</span><br><span class="line"></span><br><span class="line">    Configuration configuration = getSqlSession().getConfiguration();</span><br><span class="line">    <span class="hljs-keyword">if</span> (<span class="hljs-keyword">this</span>.addToConfig &amp;&amp; !configuration.hasMapper(<span class="hljs-keyword">this</span>.mapperInterface)) &#123;</span><br><span class="line">      <span class="hljs-keyword">try</span> &#123;</span><br><span class="line">        configuration.addMapper(<span class="hljs-keyword">this</span>.mapperInterface);</span><br><span class="line">      &#125; <span class="hljs-keyword">catch</span> (Exception e) &#123;</span><br><span class="line">        logger.error(<span class="hljs-string">"Error while adding the mapper '"</span> + <span class="hljs-keyword">this</span>.mapperInterface + <span class="hljs-string">"' to configuration."</span>, e);</span><br><span class="line">        <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> IllegalArgumentException(e);</span><br><span class="line">      &#125; <span class="hljs-keyword">finally</span> &#123;</span><br><span class="line">        ErrorContext.instance().reset();</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure></p>
 <h2 id="MapperProxy-invoke-1"><a href="#MapperProxy-invoke-1" class="headerlink" title="MapperProxy#invoke()"></a>MapperProxy#invoke()</h2><p>在3.4版本中也不一样。3.4版本：<br><figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function"><span class="hljs-keyword">public</span> Object <span class="hljs-title">invoke</span><span class="hljs-params">(Object proxy, Method method, Object[] args)</span> <span class="hljs-keyword">throws</span> Throwable </span>&#123;</span><br><span class="line">    <span class="hljs-keyword">if</span> (Object.class.equals(method.getDeclaringClass())) &#123;</span><br><span class="line">      <span class="hljs-keyword">try</span> &#123;</span><br><span class="line">        <span class="hljs-keyword">return</span> method.invoke(<span class="hljs-keyword">this</span>, args);</span><br><span class="line">      &#125; <span class="hljs-keyword">catch</span> (Throwable t) &#123;</span><br><span class="line">        <span class="hljs-keyword">throw</span> ExceptionUtil.unwrapThrowable(t);</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="hljs-keyword">final</span> MapperMethod mapperMethod = cachedMapperMethod(method);</span><br><span class="line">    <span class="hljs-keyword">return</span> mapperMethod.execute(sqlSession, args);</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure></p>
 
@@ -286,16 +286,16 @@ var _hmt = _hmt || [];
     <div class="level post-navigation is-flex-wrap is-mobile">
         
         <div class="level-start">
-            <a class="level level-item has-link-grey  article-nav-prev" href="/Optimal-Scheduling-Problem/">
+            <a class="level level-item has-link-grey  article-nav-prev" href="/kryo/">
                 <i class="level-item fas fa-chevron-left"></i>
-                <span class="level-item">最佳调度问题(回溯算法)</span>
+                <span class="level-item">Kryo</span>
             </a>
         </div>
         
         
         <div class="level-end">
-            <a class="level level-item has-link-grey  article-nav-next" href="/Eight-Queens/">
-                <span class="level-item">八皇后(回溯算法)</span>
+            <a class="level level-item has-link-grey  article-nav-next" href="/Optimal-Scheduling-Problem/">
+                <span class="level-item">最佳调度问题(回溯算法)</span>
                 <i class="level-item fas fa-chevron-right"></i>
             </a>
         </div>
@@ -685,9 +685,9 @@ var _hmt = _hmt || [];
                 目录
             </h3>
             <ul class="menu-list"><li>
-        <a class="is-flex" href="#1-源码">
+        <a class="is-flex" href="#源码">
         <span class="has-mr-6">1</span>
-        <span>1 源码</span>
+        <span>源码</span>
         </a><ul class="menu-list"><li>
         <a class="is-flex" href="#UserMapper">
         <span class="has-mr-6">1.1</span>
@@ -701,9 +701,9 @@ var _hmt = _hmt || [];
         <span class="has-mr-6">1.3</span>
         <span>test</span>
         </a></li></ul></li><li>
-        <a class="is-flex" href="#2-原理分析">
+        <a class="is-flex" href="#原理分析">
         <span class="has-mr-6">2</span>
-        <span>2 原理分析</span>
+        <span>原理分析</span>
         </a><ul class="menu-list"><li>
         <a class="is-flex" href="#MapperScannerConfigurer-Scanner-doScan">
         <span class="has-mr-6">2.1</span>
@@ -737,9 +737,9 @@ var _hmt = _hmt || [];
         <span class="has-mr-6">2.8</span>
         <span>MapperProxy#invoke</span>
         </a></li></ul></li><li>
-        <a class="is-flex" href="#3-Mybatis版本差异">
+        <a class="is-flex" href="#Mybatis版本差异">
         <span class="has-mr-6">3</span>
-        <span>3 Mybatis版本差异</span>
+        <span>Mybatis版本差异</span>
         </a><ul class="menu-list"><li>
         <a class="is-flex" href="#MapperFactoryBean-checkDaoConfig">
         <span class="has-mr-6">3.1</span>
@@ -820,6 +820,25 @@ var _hmt = _hmt || [];
         
         <article class="media">
             <!-- 
+            <a href="/Python2ToPython3/" class="media-left">
+                <p class="image is-64x64">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Python2切换Python3">
+                </p>
+            </a>
+             -->
+            <div class="media-content">
+                <div class="content">
+                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
+                    <a href="/Python2ToPython3/" class="has-link-black-ter is-size-6">Python2切换Python3</a>
+                    <p class="is-size-7 is-uppercase">
+                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
+                    </p>
+                </div>
+            </div>
+        </article>
+        
+        <article class="media">
+            <!-- 
             <a href="/MySQL-Command/" class="media-left">
                 <p class="image is-64x64">
                     <img class="thumbnail" src="/images/thumbnail.svg" alt="MySQL基本命令">
@@ -832,25 +851,6 @@ var _hmt = _hmt || [];
                     <a href="/MySQL-Command/" class="has-link-black-ter is-size-6">MySQL基本命令</a>
                     <p class="is-size-7 is-uppercase">
                         <a class="has-link-grey -link" href="/categories/MySQL/">MySQL</a>
-                    </p>
-                </div>
-            </div>
-        </article>
-        
-        <article class="media">
-            <!-- 
-            <a href="/Centos-Line/" class="media-left">
-                <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Centos命令行图形界面切换">
-                </p>
-            </a>
-             -->
-            <div class="media-content">
-                <div class="content">
-                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
-                    <a href="/Centos-Line/" class="has-link-black-ter is-size-6">Centos命令行图形界面切换</a>
-                    <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
                     </p>
                 </div>
             </div>
@@ -1712,9 +1712,9 @@ var _hmt = _hmt || [];
                 目录
             </h3>
             <ul class="menu-list"><li>
-        <a class="is-flex" href="#1-源码">
+        <a class="is-flex" href="#源码">
         <span class="has-mr-6">1</span>
-        <span>1 源码</span>
+        <span>源码</span>
         </a><ul class="menu-list"><li>
         <a class="is-flex" href="#UserMapper">
         <span class="has-mr-6">1.1</span>
@@ -1728,9 +1728,9 @@ var _hmt = _hmt || [];
         <span class="has-mr-6">1.3</span>
         <span>test</span>
         </a></li></ul></li><li>
-        <a class="is-flex" href="#2-原理分析">
+        <a class="is-flex" href="#原理分析">
         <span class="has-mr-6">2</span>
-        <span>2 原理分析</span>
+        <span>原理分析</span>
         </a><ul class="menu-list"><li>
         <a class="is-flex" href="#MapperScannerConfigurer-Scanner-doScan">
         <span class="has-mr-6">2.1</span>
@@ -1764,9 +1764,9 @@ var _hmt = _hmt || [];
         <span class="has-mr-6">2.8</span>
         <span>MapperProxy#invoke</span>
         </a></li></ul></li><li>
-        <a class="is-flex" href="#3-Mybatis版本差异">
+        <a class="is-flex" href="#Mybatis版本差异">
         <span class="has-mr-6">3</span>
-        <span>3 Mybatis版本差异</span>
+        <span>Mybatis版本差异</span>
         </a><ul class="menu-list"><li>
         <a class="is-flex" href="#MapperFactoryBean-checkDaoConfig">
         <span class="has-mr-6">3.1</span>
@@ -1847,6 +1847,25 @@ var _hmt = _hmt || [];
         
         <article class="media">
             <!-- 
+            <a href="/Python2ToPython3/" class="media-left">
+                <p class="image is-64x64">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Python2切换Python3">
+                </p>
+            </a>
+             -->
+            <div class="media-content">
+                <div class="content">
+                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
+                    <a href="/Python2ToPython3/" class="has-link-black-ter is-size-6">Python2切换Python3</a>
+                    <p class="is-size-7 is-uppercase">
+                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
+                    </p>
+                </div>
+            </div>
+        </article>
+        
+        <article class="media">
+            <!-- 
             <a href="/MySQL-Command/" class="media-left">
                 <p class="image is-64x64">
                     <img class="thumbnail" src="/images/thumbnail.svg" alt="MySQL基本命令">
@@ -1859,25 +1878,6 @@ var _hmt = _hmt || [];
                     <a href="/MySQL-Command/" class="has-link-black-ter is-size-6">MySQL基本命令</a>
                     <p class="is-size-7 is-uppercase">
                         <a class="has-link-grey -link" href="/categories/MySQL/">MySQL</a>
-                    </p>
-                </div>
-            </div>
-        </article>
-        
-        <article class="media">
-            <!-- 
-            <a href="/Centos-Line/" class="media-left">
-                <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Centos命令行图形界面切换">
-                </p>
-            </a>
-             -->
-            <div class="media-content">
-                <div class="content">
-                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
-                    <a href="/Centos-Line/" class="has-link-black-ter is-size-6">Centos命令行图形界面切换</a>
-                    <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
                     </p>
                 </div>
             </div>

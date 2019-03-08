@@ -7,13 +7,13 @@
 
 
 
-    <meta name="description" content="1 例 2 源码分析 ThreadLocal#Entry ThreadLocal#nextHashCode ThreadLocal#HASH_INCREMENT ThreadLocal#threadLocalHashCode Thread#threadLocals ThreadLocal#get() ThreadLocal#getMap() ThreadLocal#ThreadLocalMap">
+    <meta name="description" content="例 源码分析 ThreadLocal#Entry ThreadLocal#nextHashCode ThreadLocal#HASH_INCREMENT ThreadLocal#threadLocalHashCode Thread#threadLocals ThreadLocal#get() ThreadLocal#getMap() ThreadLocal#ThreadLocalMap#get">
 <meta name="keywords" content="JDK6 源码">
 <meta property="og:type" content="article">
 <meta property="og:title" content="JDK1.6 ThreadLocal">
 <meta property="og:url" content="https://joeskye1701.github.io/JDK1.6-ThreadLocal/index.html">
 <meta property="og:site_name" content="Joe|博客">
-<meta property="og:description" content="1 例 2 源码分析 ThreadLocal#Entry ThreadLocal#nextHashCode ThreadLocal#HASH_INCREMENT ThreadLocal#threadLocalHashCode Thread#threadLocals ThreadLocal#get() ThreadLocal#getMap() ThreadLocal#ThreadLocalMap">
+<meta property="og:description" content="例 源码分析 ThreadLocal#Entry ThreadLocal#nextHashCode ThreadLocal#HASH_INCREMENT ThreadLocal#threadLocalHashCode Thread#threadLocals ThreadLocal#get() ThreadLocal#getMap() ThreadLocal#ThreadLocalMap#get">
 <meta property="og:locale" content="zh-CN">
 <meta property="og:image" content="https://joeskye1701.github.io/JDK1.6-ThreadLocal/threadlocal-1-1.jpg">
 <meta property="og:image" content="https://joeskye1701.github.io/JDK1.6-ThreadLocal/threadlocal-1-2.jpg">
@@ -28,10 +28,10 @@
 <meta property="og:image" content="https://joeskye1701.github.io/JDK1.6-ThreadLocal/threadlocal-1-11.jpg">
 <meta property="og:image" content="https://joeskye1701.github.io/JDK1.6-ThreadLocal/threadlocal-1-12.jpg">
 <meta property="og:image" content="https://joeskye1701.github.io/JDK1.6-ThreadLocal/threadlocal-1-13.jpg">
-<meta property="og:updated_time" content="2019-03-06T19:32:33.849Z">
+<meta property="og:updated_time" content="2019-03-08T19:17:22.169Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="JDK1.6 ThreadLocal">
-<meta name="twitter:description" content="1 例 2 源码分析 ThreadLocal#Entry ThreadLocal#nextHashCode ThreadLocal#HASH_INCREMENT ThreadLocal#threadLocalHashCode Thread#threadLocals ThreadLocal#get() ThreadLocal#getMap() ThreadLocal#ThreadLocalMap">
+<meta name="twitter:description" content="例 源码分析 ThreadLocal#Entry ThreadLocal#nextHashCode ThreadLocal#HASH_INCREMENT ThreadLocal#threadLocalHashCode Thread#threadLocals ThreadLocal#get() ThreadLocal#getMap() ThreadLocal#ThreadLocalMap#get">
 <meta name="twitter:image" content="https://joeskye1701.github.io/JDK1.6-ThreadLocal/threadlocal-1-1.jpg">
 
 
@@ -185,8 +185,8 @@ var _hmt = _hmt || [];
         <div class="content">
             <!-- TOC -->
 <ul>
-<li><a href="#1-%E4%BE%8B">1 例</a></li>
-<li><a href="#2-%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90">2 源码分析</a><ul>
+<li><a href="#%E4%BE%8B">例</a></li>
+<li><a href="#%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90">源码分析</a><ul>
 <li><a href="#threadlocalentry">ThreadLocal#Entry</a></li>
 <li><a href="#threadlocalnexthashcode">ThreadLocal#nextHashCode</a></li>
 <li><a href="#threadlocalhashincrement">ThreadLocal#HASH_INCREMENT</a></li>
@@ -208,13 +208,13 @@ var _hmt = _hmt || [];
 <li><a href="#%E5%A4%9A%E4%B8%AA%E7%BA%BF%E7%A8%8B">多个线程</a></li>
 </ul>
 </li>
-<li><a href="#4-%E6%80%BB%E7%BB%93">4 总结</a></li>
+<li><a href="#%E6%80%BB%E7%BB%93">总结</a></li>
 </ul>
 <!-- /TOC -->
-<h1 id="1-例"><a href="#1-例" class="headerlink" title="1 例"></a>1 例</h1><p>Hibernate中典型的ThreadLocal的代码。<br><figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> ThreadLocal threadSession = <span class="hljs-keyword">new</span> ThreadLocal();  </span><br><span class="line">  </span><br><span class="line"><span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> Session <span class="hljs-title">getSession</span><span class="hljs-params">()</span> <span class="hljs-keyword">throws</span> InfrastructureException </span>&#123;  </span><br><span class="line">    Session s = (Session) threadSession.get();  </span><br><span class="line">    <span class="hljs-keyword">try</span> &#123;  </span><br><span class="line">        <span class="hljs-keyword">if</span> (s == <span class="hljs-keyword">null</span>) &#123;  </span><br><span class="line">            s = getSessionFactory().openSession();  </span><br><span class="line">            threadSession.set(s);  </span><br><span class="line">        &#125;  </span><br><span class="line">    &#125; <span class="hljs-keyword">catch</span> (HibernateException ex) &#123;  </span><br><span class="line">        <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> InfrastructureException(ex);  </span><br><span class="line">    &#125;  </span><br><span class="line">    <span class="hljs-keyword">return</span> s;  </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<h1 id="例"><a href="#例" class="headerlink" title="例"></a>例</h1><p>Hibernate中典型的ThreadLocal的代码。<br><figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> ThreadLocal threadSession = <span class="hljs-keyword">new</span> ThreadLocal();  </span><br><span class="line">  </span><br><span class="line"><span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> Session <span class="hljs-title">getSession</span><span class="hljs-params">()</span> <span class="hljs-keyword">throws</span> InfrastructureException </span>&#123;  </span><br><span class="line">    Session s = (Session) threadSession.get();  </span><br><span class="line">    <span class="hljs-keyword">try</span> &#123;  </span><br><span class="line">        <span class="hljs-keyword">if</span> (s == <span class="hljs-keyword">null</span>) &#123;  </span><br><span class="line">            s = getSessionFactory().openSession();  </span><br><span class="line">            threadSession.set(s);  </span><br><span class="line">        &#125;  </span><br><span class="line">    &#125; <span class="hljs-keyword">catch</span> (HibernateException ex) &#123;  </span><br><span class="line">        <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> InfrastructureException(ex);  </span><br><span class="line">    &#125;  </span><br><span class="line">    <span class="hljs-keyword">return</span> s;  </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
 <p>可以看到在getSession()方法中，首先判断当前线程中有没有放进去session，如果还没有，那么通过sessionFactory().openSession()来创建一个session，再将session set到线程中，实际是放到当前线程的ThreadLocalMap这个map中。这时，对于这个session的唯一引用就是当前线程中的那个ThreadLocalMap，而threadSession作为这个值的key，要取得这个session可以通过threadSession.get()来得到，里面执行的操作实际是先取得当前线程中的ThreadLocalMap，然后将threadSession作为key将对应的值取出。这个session相当于线程的私有变量，而不是public的。<br>ThreadLocal是在每个线程中有一个map，而将ThreadLocal实例作为key，这样每个map中的项数很少，而且当线程销毁时相应的东西也一起销毁了。 这样设计也防止内存泄漏，1个线程被销毁，这个线程内的对象都被销毁。</p>
 <a id="more"></a>
-<h1 id="2-源码分析"><a href="#2-源码分析" class="headerlink" title="2 源码分析"></a>2 源码分析</h1><p><img src="./threadlocal-1-1.jpg" alt><br>ThreadLocal内部实现一个hash map的内部类。get()和set()内部都是操作TheadLocalMap#entry。</p>
+<h1 id="源码分析"><a href="#源码分析" class="headerlink" title="源码分析"></a>源码分析</h1><p><img src="./threadlocal-1-1.jpg" alt><br>ThreadLocal内部实现一个hash map的内部类。get()和set()内部都是操作TheadLocalMap#entry。</p>
 <h2 id="ThreadLocal-Entry"><a href="#ThreadLocal-Entry" class="headerlink" title="ThreadLocal#Entry"></a>ThreadLocal#Entry</h2><figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment">         * The entries in this hash map extend WeakReference, using</span></span><br><span class="line"><span class="hljs-comment">         * its main ref field as the key (which is always a</span></span><br><span class="line"><span class="hljs-comment">         * ThreadLocal object).  Note that null keys (i.e. entry.get()</span></span><br><span class="line"><span class="hljs-comment">         * == null) mean that the key is no longer referenced, so the</span></span><br><span class="line"><span class="hljs-comment">         * entry can be expunged from table.  Such entries are referred to</span></span><br><span class="line"><span class="hljs-comment">         * as "stale entries" in the code that follows.</span></span><br><span class="line"><span class="hljs-comment">         */</span></span><br><span class="line">        <span class="hljs-keyword">static</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Entry</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">WeakReference</span>&lt;<span class="hljs-title">ThreadLocal</span>&gt; </span>&#123;</span><br><span class="line">            <span class="hljs-comment">/** The value associated with this ThreadLocal. */</span></span><br><span class="line">            Object value;</span><br><span class="line"></span><br><span class="line">            Entry(ThreadLocal k, Object v) &#123;</span><br><span class="line">                <span class="hljs-keyword">super</span>(k);</span><br><span class="line">                value = v;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment">         * The initial capacity -- MUST be a power of two.</span></span><br><span class="line"><span class="hljs-comment">         */</span></span><br><span class="line">        <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">int</span> INITIAL_CAPACITY = <span class="hljs-number">16</span>;</span><br><span class="line"></span><br><span class="line">        <span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment">         * The table, resized as necessary.</span></span><br><span class="line"><span class="hljs-comment">         * table.length MUST always be a power of two.</span></span><br><span class="line"><span class="hljs-comment">         */</span></span><br><span class="line">        <span class="hljs-keyword">private</span> Entry[] table;</span><br><span class="line"></span><br><span class="line">        <span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment">         * The number of entries in the table.</span></span><br><span class="line"><span class="hljs-comment">         */</span></span><br><span class="line">        <span class="hljs-keyword">private</span> <span class="hljs-keyword">int</span> size = <span class="hljs-number">0</span>;</span><br><span class="line"></span><br><span class="line">        <span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment">         * The next size value at which to resize.</span></span><br><span class="line"><span class="hljs-comment">         */</span></span><br><span class="line">        <span class="hljs-keyword">private</span> <span class="hljs-keyword">int</span> threshold; <span class="hljs-comment">// Default to 0</span></span><br></pre></td></tr></table></figure>
 <p>ThreadLocal内部是由entry这个弱引用对象组成，这个entry就是一个hash map，只是是弱引用。Entry的构造函数Entry(ThreadLocal&lt;?&gt; k, Object v)，ThreadLocal引用作为key。根据注释key=null，则不是强引用，因为是弱引用，entry can be expunged  from table，这个对象从table中删除。</p>
 <h2 id="ThreadLocal-nextHashCode"><a href="#ThreadLocal-nextHashCode" class="headerlink" title="ThreadLocal#nextHashCode"></a>ThreadLocal#nextHashCode</h2><figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">   <span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment">    * The next hash code to be given out. Updated atomically. Starts at</span></span><br><span class="line"><span class="hljs-comment">    * zero.</span></span><br><span class="line"><span class="hljs-comment">    */</span></span><br><span class="line">   <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> AtomicInteger nextHashCode = </span><br><span class="line"><span class="hljs-keyword">new</span> AtomicInteger();</span><br></pre></td></tr></table></figure>
@@ -275,7 +275,7 @@ var _hmt = _hmt || [];
 <p><img src="./threadlocal-1-2.jpg" alt><br><img src="./threadlocal-1-3.jpg" alt><br>threadLocalMap = 64a294a6<br>threadLocal = 6f2b958e<br><img src="./threadlocal-1-4.jpg" alt><br>value=1000，i=3，存在tab[3]<br><img src="./threadlocal-1-5.jpg" alt><br>新建一个Entry对象，第1次e对象是null。<br><img src="./threadlocal-1-6.jpg" alt><br><img src="./threadlocal-1-7.jpg" alt><br>第2次set值，value=4000，threadLocalMap和threadLocal是同一个。<br><img src="./threadlocal-1-8.jpg" alt><br><img src="./threadlocal-1-9.jpg" alt><br><img src="./threadlocal-1-10.jpg" alt></p>
 <h2 id="多个线程"><a href="#多个线程" class="headerlink" title="多个线程"></a>多个线程</h2><figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">package</span> threadLocal;</span><br><span class="line"></span><br><span class="line"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">T</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">	<span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> ThreadLocal&lt;String&gt; threadLocal = <span class="hljs-keyword">new</span> ThreadLocal&lt;String&gt;();</span><br><span class="line"></span><br><span class="line">	<span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title">main</span><span class="hljs-params">(String[] args)</span> </span>&#123;</span><br><span class="line">		Thread t1 = <span class="hljs-keyword">new</span> Thread(<span class="hljs-keyword">new</span> Runnable() &#123;</span><br><span class="line">			<span class="hljs-meta">@Override</span></span><br><span class="line">			<span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">run</span><span class="hljs-params">()</span> </span>&#123;</span><br><span class="line">				System.out.println(<span class="hljs-string">"执行线程1....."</span>);</span><br><span class="line">				threadLocal.set(<span class="hljs-string">"1001"</span>);</span><br><span class="line"></span><br><span class="line">				<span class="hljs-keyword">try</span> &#123;</span><br><span class="line">					Thread.sleep(<span class="hljs-number">5000</span>);</span><br><span class="line">				&#125; <span class="hljs-keyword">catch</span> (InterruptedException e) &#123;</span><br><span class="line">					e.printStackTrace();</span><br><span class="line">				&#125;</span><br><span class="line"></span><br><span class="line">				System.out.println(<span class="hljs-string">"t1 = "</span> + T.threadLocal.get());</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;);</span><br><span class="line">		System.out.println(<span class="hljs-string">"thread1  = "</span> + t1);</span><br><span class="line">		t1.start();</span><br><span class="line"></span><br><span class="line">		Thread t2 = <span class="hljs-keyword">new</span> Thread(<span class="hljs-keyword">new</span> Runnable() &#123;</span><br><span class="line">			<span class="hljs-meta">@Override</span></span><br><span class="line">			<span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">run</span><span class="hljs-params">()</span> </span>&#123;</span><br><span class="line">				System.out.println(<span class="hljs-string">"执行线程2....."</span>);</span><br><span class="line">				threadLocal.set(<span class="hljs-string">"1002"</span>);</span><br><span class="line"></span><br><span class="line">				<span class="hljs-keyword">try</span> &#123;</span><br><span class="line">					Thread.sleep(<span class="hljs-number">10000</span>);</span><br><span class="line">				&#125; <span class="hljs-keyword">catch</span> (InterruptedException e) &#123;</span><br><span class="line">					e.printStackTrace();</span><br><span class="line">				&#125;</span><br><span class="line"></span><br><span class="line">				System.out.println(<span class="hljs-string">"t2 = "</span> + T.threadLocal.get());</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;);</span><br><span class="line">		System.out.println(<span class="hljs-string">"thread2  = "</span> + t2);</span><br><span class="line">		t2.start();</span><br><span class="line">		  </span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <p><img src="./threadlocal-1-11.jpg" alt><br><img src="./threadlocal-1-12.jpg" alt><br>T1线程没有threadLocal，需要新建。</p>
-<h1 id="4-总结"><a href="#4-总结" class="headerlink" title="4 总结"></a>4 总结</h1><ul>
+<h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><ul>
 <li>ThreadLocal的get，set方法，key值都是ThreadLocal本身，但是线程（Thread）对ThreadLocal是私有的，每个线程都有自己的ThreadLocal。</li>
 <li>线程销毁的时候，ThreadLocal也跟着销毁，这样不会造成内存溢出。</li>
 <li>根据实例2，多线程使用ThreadLocal互不影响。因为，ThreadLocal里有个内部类ThreadLocalMap，每个线程都私有一个ThreadLocalMap，ThreadLocalMap里有个Entry的hash map结构的类，通过table[]来存取ThreadLocal，每个线程的ThreadLocalMap相互不影响。<br><img src="./threadlocal-1-13.jpg" alt></li>
@@ -338,16 +338,16 @@ var _hmt = _hmt || [];
     <div class="level post-navigation is-flex-wrap is-mobile">
         
         <div class="level-start">
-            <a class="level level-item has-link-grey  article-nav-prev" href="/JDK1.6-SynchronousQueue/">
+            <a class="level level-item has-link-grey  article-nav-prev" href="/JDK1.6-ThreadPoolExecutor/">
                 <i class="level-item fas fa-chevron-left"></i>
-                <span class="level-item">JDK1.6 SynchronousQueue</span>
+                <span class="level-item">JDK1.6 ThreadPoolExecutor</span>
             </a>
         </div>
         
         
         <div class="level-end">
-            <a class="level level-item has-link-grey  article-nav-next" href="/JDK1.6-ScheduledThreadPoolExecutor/">
-                <span class="level-item">JDK1.6 ScheduledThreadPoolExecutor</span>
+            <a class="level level-item has-link-grey  article-nav-next" href="/JDK1.6-SynchronousQueue/">
+                <span class="level-item">JDK1.6 SynchronousQueue</span>
                 <i class="level-item fas fa-chevron-right"></i>
             </a>
         </div>
@@ -737,13 +737,13 @@ var _hmt = _hmt || [];
                 目录
             </h3>
             <ul class="menu-list"><li>
-        <a class="is-flex" href="#1-例">
+        <a class="is-flex" href="#例">
         <span class="has-mr-6">1</span>
-        <span>1 例</span>
+        <span>例</span>
         </a></li><li>
-        <a class="is-flex" href="#2-源码分析">
+        <a class="is-flex" href="#源码分析">
         <span class="has-mr-6">2</span>
-        <span>2 源码分析</span>
+        <span>源码分析</span>
         </a><ul class="menu-list"><li>
         <a class="is-flex" href="#ThreadLocal-Entry">
         <span class="has-mr-6">2.1</span>
@@ -813,9 +813,9 @@ var _hmt = _hmt || [];
         <span class="has-mr-6">3.2</span>
         <span>多个线程</span>
         </a></li></ul></li><li>
-        <a class="is-flex" href="#4-总结">
+        <a class="is-flex" href="#总结">
         <span class="has-mr-6">4</span>
-        <span>4 总结</span>
+        <span>总结</span>
         </a></li></ul>
         </div>
     </div>
@@ -888,6 +888,25 @@ var _hmt = _hmt || [];
         
         <article class="media">
             <!-- 
+            <a href="/Python2ToPython3/" class="media-left">
+                <p class="image is-64x64">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Python2切换Python3">
+                </p>
+            </a>
+             -->
+            <div class="media-content">
+                <div class="content">
+                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
+                    <a href="/Python2ToPython3/" class="has-link-black-ter is-size-6">Python2切换Python3</a>
+                    <p class="is-size-7 is-uppercase">
+                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
+                    </p>
+                </div>
+            </div>
+        </article>
+        
+        <article class="media">
+            <!-- 
             <a href="/MySQL-Command/" class="media-left">
                 <p class="image is-64x64">
                     <img class="thumbnail" src="/images/thumbnail.svg" alt="MySQL基本命令">
@@ -900,25 +919,6 @@ var _hmt = _hmt || [];
                     <a href="/MySQL-Command/" class="has-link-black-ter is-size-6">MySQL基本命令</a>
                     <p class="is-size-7 is-uppercase">
                         <a class="has-link-grey -link" href="/categories/MySQL/">MySQL</a>
-                    </p>
-                </div>
-            </div>
-        </article>
-        
-        <article class="media">
-            <!-- 
-            <a href="/Centos-Line/" class="media-left">
-                <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Centos命令行图形界面切换">
-                </p>
-            </a>
-             -->
-            <div class="media-content">
-                <div class="content">
-                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
-                    <a href="/Centos-Line/" class="has-link-black-ter is-size-6">Centos命令行图形界面切换</a>
-                    <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
                     </p>
                 </div>
             </div>
@@ -1780,13 +1780,13 @@ var _hmt = _hmt || [];
                 目录
             </h3>
             <ul class="menu-list"><li>
-        <a class="is-flex" href="#1-例">
+        <a class="is-flex" href="#例">
         <span class="has-mr-6">1</span>
-        <span>1 例</span>
+        <span>例</span>
         </a></li><li>
-        <a class="is-flex" href="#2-源码分析">
+        <a class="is-flex" href="#源码分析">
         <span class="has-mr-6">2</span>
-        <span>2 源码分析</span>
+        <span>源码分析</span>
         </a><ul class="menu-list"><li>
         <a class="is-flex" href="#ThreadLocal-Entry">
         <span class="has-mr-6">2.1</span>
@@ -1856,9 +1856,9 @@ var _hmt = _hmt || [];
         <span class="has-mr-6">3.2</span>
         <span>多个线程</span>
         </a></li></ul></li><li>
-        <a class="is-flex" href="#4-总结">
+        <a class="is-flex" href="#总结">
         <span class="has-mr-6">4</span>
-        <span>4 总结</span>
+        <span>总结</span>
         </a></li></ul>
         </div>
     </div>
@@ -1931,6 +1931,25 @@ var _hmt = _hmt || [];
         
         <article class="media">
             <!-- 
+            <a href="/Python2ToPython3/" class="media-left">
+                <p class="image is-64x64">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Python2切换Python3">
+                </p>
+            </a>
+             -->
+            <div class="media-content">
+                <div class="content">
+                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
+                    <a href="/Python2ToPython3/" class="has-link-black-ter is-size-6">Python2切换Python3</a>
+                    <p class="is-size-7 is-uppercase">
+                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
+                    </p>
+                </div>
+            </div>
+        </article>
+        
+        <article class="media">
+            <!-- 
             <a href="/MySQL-Command/" class="media-left">
                 <p class="image is-64x64">
                     <img class="thumbnail" src="/images/thumbnail.svg" alt="MySQL基本命令">
@@ -1943,25 +1962,6 @@ var _hmt = _hmt || [];
                     <a href="/MySQL-Command/" class="has-link-black-ter is-size-6">MySQL基本命令</a>
                     <p class="is-size-7 is-uppercase">
                         <a class="has-link-grey -link" href="/categories/MySQL/">MySQL</a>
-                    </p>
-                </div>
-            </div>
-        </article>
-        
-        <article class="media">
-            <!-- 
-            <a href="/Centos-Line/" class="media-left">
-                <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Centos命令行图形界面切换">
-                </p>
-            </a>
-             -->
-            <div class="media-content">
-                <div class="content">
-                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
-                    <a href="/Centos-Line/" class="has-link-black-ter is-size-6">Centos命令行图形界面切换</a>
-                    <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
                     </p>
                 </div>
             </div>

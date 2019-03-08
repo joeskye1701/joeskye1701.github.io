@@ -7,18 +7,18 @@
 
 
 
-    <meta name="description" content="1 ForkJoinTask ForkJoinTask#cancel() ForkJoinTask#setCompletion() ForkJoinPool#shutdown() ForkJoinPool#shutdownNow() ForkJoinPool#tryTerminate() now==true now==false   ForkJoinPool#startTerminating(">
+    <meta name="description" content="ForkJoinTask ForkJoinTask#cancel() ForkJoinTask#setCompletion() ForkJoinPool#shutdown() ForkJoinPool#shutdownNow() ForkJoinPool#tryTerminate() now==true now==false   ForkJoinPool#startTerminating()">
 <meta name="keywords" content="Java,JDK7 源码,设计模式">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Fork-Join其他方法">
 <meta property="og:url" content="https://joeskye1701.github.io/Fork-Join-Other/index.html">
 <meta property="og:site_name" content="Joe|博客">
-<meta property="og:description" content="1 ForkJoinTask ForkJoinTask#cancel() ForkJoinTask#setCompletion() ForkJoinPool#shutdown() ForkJoinPool#shutdownNow() ForkJoinPool#tryTerminate() now==true now==false   ForkJoinPool#startTerminating(">
+<meta property="og:description" content="ForkJoinTask ForkJoinTask#cancel() ForkJoinTask#setCompletion() ForkJoinPool#shutdown() ForkJoinPool#shutdownNow() ForkJoinPool#tryTerminate() now==true now==false   ForkJoinPool#startTerminating()">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:updated_time" content="2019-03-06T19:28:47.917Z">
+<meta property="og:updated_time" content="2019-03-08T19:10:37.937Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Fork-Join其他方法">
-<meta name="twitter:description" content="1 ForkJoinTask ForkJoinTask#cancel() ForkJoinTask#setCompletion() ForkJoinPool#shutdown() ForkJoinPool#shutdownNow() ForkJoinPool#tryTerminate() now==true now==false   ForkJoinPool#startTerminating(">
+<meta name="twitter:description" content="ForkJoinTask ForkJoinTask#cancel() ForkJoinTask#setCompletion() ForkJoinPool#shutdown() ForkJoinPool#shutdownNow() ForkJoinPool#tryTerminate() now==true now==false   ForkJoinPool#startTerminating()">
 
 
 
@@ -171,7 +171,7 @@ var _hmt = _hmt || [];
         <div class="content">
             <!-- TOC -->
 <ul>
-<li><a href="#1-forkjointask">1 ForkJoinTask</a><ul>
+<li><a href="#forkjointask">ForkJoinTask</a><ul>
 <li><a href="#forkjointaskcancel">ForkJoinTask#cancel()</a></li>
 <li><a href="#forkjointasksetcompletion">ForkJoinTask#setCompletion()</a></li>
 <li><a href="#forkjoinpoolshutdown">ForkJoinPool#shutdown()</a></li>
@@ -189,7 +189,7 @@ var _hmt = _hmt || [];
 <li><a href="#forkjoinpoolisshutdown">ForkJoinPool#isShutdown()</a></li>
 </ul>
 </li>
-<li><a href="#2-forkjoinworkerthread">2 ForkJoinWorkerThread</a><ul>
+<li><a href="#forkjoinworkerthread">ForkJoinWorkerThread</a><ul>
 <li><a href="#forkjoinworkerthreadcasslotnull">ForkJoinWorkerThread#casSlotNull()</a></li>
 <li><a href="#forkjoinworkerthreadwriteslot">ForkJoinWorkerThread#writeSlot()</a></li>
 <li><a href="#forkjoinworkerthreadpeektask">ForkJoinWorkerThread#peekTask()</a></li>
@@ -234,7 +234,7 @@ var _hmt = _hmt || [];
 <li><a href="#forkjointaskinforkjoinpool">ForkJoinTask#inForkJoinPool()</a></li>
 </ul>
 </li>
-<li><a href="#3-forkjoinpool">3 ForkJoinPool</a><ul>
+<li><a href="#forkjoinpool">ForkJoinPool</a><ul>
 <li><a href="#forkjoinpoolmanagedblock">ForkJoinPool#managedBlock()</a><ul>
 <li><a href="#forkjoin%E5%B7%A5%E4%BD%9C%E7%BA%BF%E7%A8%8B">ForkJoin工作线程</a></li>
 <li><a href="#%E9%9D%9Eforkjoin%E5%B7%A5%E4%BD%9C%E7%BA%BF%E7%A8%8B">非ForkJoin工作线程</a></li>
@@ -251,7 +251,7 @@ var _hmt = _hmt || [];
 </li>
 </ul>
 <!-- /TOC -->
-<h1 id="1-ForkJoinTask"><a href="#1-ForkJoinTask" class="headerlink" title="1 ForkJoinTask"></a>1 ForkJoinTask</h1><p><code>ForkJoinTask</code>本身也是<code>Future</code>的实现，所以也会有取消过程。</p>
+<h1 id="ForkJoinTask"><a href="#ForkJoinTask" class="headerlink" title="ForkJoinTask"></a>ForkJoinTask</h1><p><code>ForkJoinTask</code>本身也是<code>Future</code>的实现，所以也会有取消过程。</p>
 <h2 id="ForkJoinTask-cancel"><a href="#ForkJoinTask-cancel" class="headerlink" title="ForkJoinTask#cancel()"></a>ForkJoinTask#cancel()</h2><figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment">  * Attempts to cancel execution of this task. This attempt will</span></span><br><span class="line"><span class="hljs-comment">  * fail if the task has already completed or could not be</span></span><br><span class="line"><span class="hljs-comment">  * cancelled for some other reason. If successful, and this task</span></span><br><span class="line"><span class="hljs-comment">  * has not started when &#123;<span class="hljs-doctag">@code</span> cancel&#125; is called, execution of</span></span><br><span class="line"><span class="hljs-comment">  * this task is suppressed. After this method returns</span></span><br><span class="line"><span class="hljs-comment">  * successfully, unless there is an intervening call to &#123;<span class="hljs-doctag">@link</span></span></span><br><span class="line"><span class="hljs-comment">  * #reinitialize&#125;, subsequent calls to &#123;<span class="hljs-doctag">@link</span> #isCancelled&#125;,</span></span><br><span class="line"><span class="hljs-comment">  * &#123;<span class="hljs-doctag">@link</span> #isDone&#125;, and &#123;<span class="hljs-doctag">@code</span> cancel&#125; will return &#123;<span class="hljs-doctag">@code</span> true&#125;</span></span><br><span class="line"><span class="hljs-comment">  * and calls to &#123;<span class="hljs-doctag">@link</span> #join&#125; and related methods will result in</span></span><br><span class="line"><span class="hljs-comment">  * &#123;<span class="hljs-doctag">@code</span> CancellationException&#125;.</span></span><br><span class="line"><span class="hljs-comment">  *</span></span><br><span class="line"><span class="hljs-comment">  * &lt;p&gt;This method may be overridden in subclasses, but if so, must</span></span><br><span class="line"><span class="hljs-comment">  * still ensure that these properties hold. In particular, the</span></span><br><span class="line"><span class="hljs-comment">  * &#123;<span class="hljs-doctag">@code</span> cancel&#125; method itself must not throw exceptions.</span></span><br><span class="line"><span class="hljs-comment">  *</span></span><br><span class="line"><span class="hljs-comment">  * &lt;p&gt;This method is designed to be invoked by &lt;em&gt;other&lt;/em&gt;</span></span><br><span class="line"><span class="hljs-comment">  * tasks. To terminate the current task, you can just return or</span></span><br><span class="line"><span class="hljs-comment">  * throw an unchecked exception from its computation method, or</span></span><br><span class="line"><span class="hljs-comment">  * invoke &#123;<span class="hljs-doctag">@link</span> #completeExceptionally&#125;.</span></span><br><span class="line"><span class="hljs-comment">  *</span></span><br><span class="line"><span class="hljs-comment">  * <span class="hljs-doctag">@param</span> mayInterruptIfRunning this value has no effect in the</span></span><br><span class="line"><span class="hljs-comment">  * default implementation because interrupts are not used to</span></span><br><span class="line"><span class="hljs-comment">  * control cancellation.</span></span><br><span class="line"><span class="hljs-comment">  *</span></span><br><span class="line"><span class="hljs-comment">  * <span class="hljs-doctag">@return</span> &#123;<span class="hljs-doctag">@code</span> true&#125; if this task is now cancelled</span></span><br><span class="line"><span class="hljs-comment">  */</span></span><br><span class="line"> <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">boolean</span> <span class="hljs-title">cancel</span><span class="hljs-params">(<span class="hljs-keyword">boolean</span> mayInterruptIfRunning)</span> </span>&#123;</span><br><span class="line">     <span class="hljs-keyword">return</span> setCompletion(CANCELLED) == CANCELLED;</span><br><span class="line"> &#125;</span><br></pre></td></tr></table></figure>
 <h2 id="ForkJoinTask-setCompletion"><a href="#ForkJoinTask-setCompletion" class="headerlink" title="ForkJoinTask#setCompletion()"></a>ForkJoinTask#setCompletion()</h2><figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment">  * Marks completion and wakes up threads waiting to join this task,</span></span><br><span class="line"><span class="hljs-comment">  * also clearing signal request bits.</span></span><br><span class="line"><span class="hljs-comment">  *</span></span><br><span class="line"><span class="hljs-comment">  * <span class="hljs-doctag">@param</span> completion one of NORMAL, CANCELLED, EXCEPTIONAL</span></span><br><span class="line"><span class="hljs-comment">  * <span class="hljs-doctag">@return</span> completion status on exit</span></span><br><span class="line"><span class="hljs-comment">  */</span></span><br><span class="line"> <span class="hljs-function"><span class="hljs-keyword">private</span> <span class="hljs-keyword">int</span> <span class="hljs-title">setCompletion</span><span class="hljs-params">(<span class="hljs-keyword">int</span> completion)</span> </span>&#123;</span><br><span class="line">     <span class="hljs-keyword">for</span> (<span class="hljs-keyword">int</span> s;;) &#123;</span><br><span class="line">         <span class="hljs-keyword">if</span> ((s = status) &lt; <span class="hljs-number">0</span>)</span><br><span class="line">             <span class="hljs-keyword">return</span> s;</span><br><span class="line">         <span class="hljs-keyword">if</span> (UNSAFE.compareAndSwapInt(<span class="hljs-keyword">this</span>, statusOffset, s, completion)) &#123;</span><br><span class="line">             <span class="hljs-keyword">if</span> (s != <span class="hljs-number">0</span>)</span><br><span class="line">                 <span class="hljs-keyword">synchronized</span> (<span class="hljs-keyword">this</span>) &#123; notifyAll(); &#125;</span><br><span class="line">             <span class="hljs-keyword">return</span> completion;</span><br><span class="line">         &#125;</span><br><span class="line">     &#125;</span><br><span class="line"> &#125;</span><br></pre></td></tr></table></figure>
 <p>设置任务运行状态为取消，然后唤醒在任务上等待的线程。<br><a id="more"></a></p>
@@ -271,7 +271,7 @@ var _hmt = _hmt || [];
 <p>判断<code>pool</code>是否正在结束过程中或者已经结束，只要<code>pool</code>的总控信息中有停止标记就可以了。</p>
 <h2 id="ForkJoinPool-isShutdown"><a href="#ForkJoinPool-isShutdown" class="headerlink" title="ForkJoinPool#isShutdown()"></a>ForkJoinPool#isShutdown()</h2><figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment">  * Returns &#123;<span class="hljs-doctag">@code</span> true&#125; if this pool has been shut down.</span></span><br><span class="line"><span class="hljs-comment">  *</span></span><br><span class="line"><span class="hljs-comment">  * <span class="hljs-doctag">@return</span> &#123;<span class="hljs-doctag">@code</span> true&#125; if this pool has been shut down</span></span><br><span class="line"><span class="hljs-comment">  */</span></span><br><span class="line"> <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">boolean</span> <span class="hljs-title">isShutdown</span><span class="hljs-params">()</span> </span>&#123;</span><br><span class="line">     <span class="hljs-keyword">return</span> shutdown;</span><br><span class="line"> &#125;</span><br></pre></td></tr></table></figure>
 <p>判断<code>pool</code>是否关闭，只要调用过<code>shutdown</code>或者<code>shutdownNow()</code>，这个就是true了。</p>
-<h1 id="2-ForkJoinWorkerThread"><a href="#2-ForkJoinWorkerThread" class="headerlink" title="2 ForkJoinWorkerThread"></a>2 ForkJoinWorkerThread</h1><p><code>ForkJoinWorkerThread</code>中定义了<code>casSlotNull()</code>和<code>writeSlot()</code>，为了提高性能，这两个方法已经被<code>UNSAFE</code>实现了。</p>
+<h1 id="ForkJoinWorkerThread"><a href="#ForkJoinWorkerThread" class="headerlink" title="ForkJoinWorkerThread"></a>ForkJoinWorkerThread</h1><p><code>ForkJoinWorkerThread</code>中定义了<code>casSlotNull()</code>和<code>writeSlot()</code>，为了提高性能，这两个方法已经被<code>UNSAFE</code>实现了。</p>
 <h2 id="ForkJoinWorkerThread-casSlotNull"><a href="#ForkJoinWorkerThread-casSlotNull" class="headerlink" title="ForkJoinWorkerThread#casSlotNull()"></a>ForkJoinWorkerThread#casSlotNull()</h2><figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment">  * CASes slot i of array q from t to null. Caller must ensure q is</span></span><br><span class="line"><span class="hljs-comment">  * non-null and index is in range.</span></span><br><span class="line"><span class="hljs-comment">  */</span></span><br><span class="line"> <span class="hljs-function"><span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">boolean</span> <span class="hljs-title">casSlotNull</span><span class="hljs-params">(ForkJoinTask&lt;?&gt;[] q, <span class="hljs-keyword">int</span> i,</span></span></span><br><span class="line"><span class="hljs-function"><span class="hljs-params">                                          ForkJoinTask&lt;?&gt; t)</span> </span>&#123;</span><br><span class="line">     <span class="hljs-keyword">return</span> UNSAFE.compareAndSwapObject(q, (i &lt;&lt; ASHIFT) + ABASE, t, <span class="hljs-keyword">null</span>);</span><br><span class="line"> &#125;</span><br></pre></td></tr></table></figure>
 <h2 id="ForkJoinWorkerThread-writeSlot"><a href="#ForkJoinWorkerThread-writeSlot" class="headerlink" title="ForkJoinWorkerThread#writeSlot()"></a>ForkJoinWorkerThread#writeSlot()</h2><figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment">  * Performs a volatile write of the given task at given slot of</span></span><br><span class="line"><span class="hljs-comment">  * array q.  Caller must ensure q is non-null and index is in</span></span><br><span class="line"><span class="hljs-comment">  * range. This method is used only during resets and backouts.</span></span><br><span class="line"><span class="hljs-comment">  */</span></span><br><span class="line"> <span class="hljs-function"><span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">void</span> <span class="hljs-title">writeSlot</span><span class="hljs-params">(ForkJoinTask&lt;?&gt;[] q, <span class="hljs-keyword">int</span> i,</span></span></span><br><span class="line"><span class="hljs-function"><span class="hljs-params">                                     ForkJoinTask&lt;?&gt; t)</span> </span>&#123;</span><br><span class="line">     UNSAFE.putObjectVolatile(q, (i &lt;&lt; ASHIFT) + ABASE, t);</span><br><span class="line"> &#125;</span><br></pre></td></tr></table></figure>
 <h2 id="ForkJoinWorkerThread-peekTask"><a href="#ForkJoinWorkerThread-peekTask" class="headerlink" title="ForkJoinWorkerThread#peekTask()"></a>ForkJoinWorkerThread#peekTask()</h2><figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment">  * Returns next task, or null if empty or contended.</span></span><br><span class="line"><span class="hljs-comment">  */</span></span><br><span class="line"> <span class="hljs-keyword">final</span> ForkJoinTask&lt;?&gt; peekTask() &#123;</span><br><span class="line">     <span class="hljs-keyword">int</span> m;</span><br><span class="line">     ForkJoinTask&lt;?&gt;[] q = queue;</span><br><span class="line">     <span class="hljs-keyword">if</span> (q == <span class="hljs-keyword">null</span> || (m = q.length - <span class="hljs-number">1</span>) &lt; <span class="hljs-number">0</span>)</span><br><span class="line">         <span class="hljs-keyword">return</span> <span class="hljs-keyword">null</span>;</span><br><span class="line">     <span class="hljs-keyword">int</span> i = locallyFifo ? queueBase : (queueTop - <span class="hljs-number">1</span>);</span><br><span class="line">     <span class="hljs-keyword">return</span> q[i &amp; m];</span><br><span class="line"> &#125;</span><br></pre></td></tr></table></figure>
@@ -358,7 +358,7 @@ var _hmt = _hmt || [];
 <p>方法内部会尝试将自身从当前工作线程的队列顶端移除，相当于在当前任务没有被调度执行之前取消了自己。</p>
 <h2 id="ForkJoinTask-getPool"><a href="#ForkJoinTask-getPool" class="headerlink" title="ForkJoinTask#getPool()"></a>ForkJoinTask#getPool()</h2><figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment"> * Returns the pool hosting the current task execution, or null</span></span><br><span class="line"><span class="hljs-comment"> * if this task is executing outside of any ForkJoinPool.</span></span><br><span class="line"><span class="hljs-comment"> *</span></span><br><span class="line"><span class="hljs-comment"> * <span class="hljs-doctag">@see</span> #inForkJoinPool</span></span><br><span class="line"><span class="hljs-comment"> * <span class="hljs-doctag">@return</span> the pool, or &#123;<span class="hljs-doctag">@code</span> null&#125; if none</span></span><br><span class="line"><span class="hljs-comment"> */</span></span><br><span class="line"><span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> ForkJoinPool <span class="hljs-title">getPool</span><span class="hljs-params">()</span> </span>&#123;</span><br><span class="line">    Thread t = Thread.currentThread();</span><br><span class="line">    <span class="hljs-keyword">return</span> (t <span class="hljs-keyword">instanceof</span> ForkJoinWorkerThread) ?</span><br><span class="line">        ((ForkJoinWorkerThread) t).pool : <span class="hljs-keyword">null</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <h2 id="ForkJoinTask-inForkJoinPool"><a href="#ForkJoinTask-inForkJoinPool" class="headerlink" title="ForkJoinTask#inForkJoinPool()"></a>ForkJoinTask#inForkJoinPool()</h2><figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment"> * Returns &#123;<span class="hljs-doctag">@code</span> true&#125; if the current thread is a &#123;<span class="hljs-doctag">@link</span></span></span><br><span class="line"><span class="hljs-comment"> * ForkJoinWorkerThread&#125; executing as a ForkJoinPool computation.</span></span><br><span class="line"><span class="hljs-comment"> *</span></span><br><span class="line"><span class="hljs-comment"> * <span class="hljs-doctag">@return</span> &#123;<span class="hljs-doctag">@code</span> true&#125; if the current thread is a &#123;<span class="hljs-doctag">@link</span></span></span><br><span class="line"><span class="hljs-comment"> * ForkJoinWorkerThread&#125; executing as a ForkJoinPool computation,</span></span><br><span class="line"><span class="hljs-comment"> * or &#123;<span class="hljs-doctag">@code</span> false&#125; otherwise</span></span><br><span class="line"><span class="hljs-comment"> */</span></span><br><span class="line"><span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">boolean</span> <span class="hljs-title">inForkJoinPool</span><span class="hljs-params">()</span> </span>&#123;</span><br><span class="line">    <span class="hljs-keyword">return</span> Thread.currentThread() <span class="hljs-keyword">instanceof</span> ForkJoinWorkerThread;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<h1 id="3-ForkJoinPool"><a href="#3-ForkJoinPool" class="headerlink" title="3 ForkJoinPool"></a>3 ForkJoinPool</h1><h2 id="ForkJoinPool-managedBlock"><a href="#ForkJoinPool-managedBlock" class="headerlink" title="ForkJoinPool#managedBlock()"></a>ForkJoinPool#managedBlock()</h2><figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment"> * Blocks in accord with the given blocker.  If the current thread</span></span><br><span class="line"><span class="hljs-comment"> * is a &#123;<span class="hljs-doctag">@link</span> ForkJoinWorkerThread&#125;, this method possibly</span></span><br><span class="line"><span class="hljs-comment"> * arranges for a spare thread to be activated if necessary to</span></span><br><span class="line"><span class="hljs-comment"> * ensure sufficient parallelism while the current thread is blocked.</span></span><br><span class="line"><span class="hljs-comment"> *</span></span><br><span class="line"><span class="hljs-comment"> * &lt;p&gt;If the caller is not a &#123;<span class="hljs-doctag">@link</span> ForkJoinTask&#125;, this method is</span></span><br><span class="line"><span class="hljs-comment"> * behaviorally equivalent to</span></span><br><span class="line"><span class="hljs-comment"> *  &lt;pre&gt; &#123;<span class="hljs-doctag">@code</span></span></span><br><span class="line"><span class="hljs-comment"> * while (!blocker.isReleasable())</span></span><br><span class="line"><span class="hljs-comment"> *   if (blocker.block())</span></span><br><span class="line"><span class="hljs-comment"> *     return;</span></span><br><span class="line"><span class="hljs-comment"> * &#125;&lt;/pre&gt;</span></span><br><span class="line"><span class="hljs-comment"> *</span></span><br><span class="line"><span class="hljs-comment"> * If the caller is a &#123;<span class="hljs-doctag">@code</span> ForkJoinTask&#125;, then the pool may</span></span><br><span class="line"><span class="hljs-comment"> * first be expanded to ensure parallelism, and later adjusted.</span></span><br><span class="line"><span class="hljs-comment"> *</span></span><br><span class="line"><span class="hljs-comment"> * <span class="hljs-doctag">@param</span> blocker the blocker</span></span><br><span class="line"><span class="hljs-comment"> * <span class="hljs-doctag">@throws</span> InterruptedException if blocker.block did so</span></span><br><span class="line"><span class="hljs-comment"> */</span></span><br><span class="line"><span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title">managedBlock</span><span class="hljs-params">(ManagedBlocker blocker)</span></span></span><br><span class="line"><span class="hljs-function">    <span class="hljs-keyword">throws</span> InterruptedException </span>&#123;</span><br><span class="line">    Thread t = Thread.currentThread();</span><br><span class="line">    <span class="hljs-keyword">if</span> (t <span class="hljs-keyword">instanceof</span> ForkJoinWorkerThread) &#123;</span><br><span class="line">        ForkJoinWorkerThread w = (ForkJoinWorkerThread) t;</span><br><span class="line">        w.pool.awaitBlocker(blocker);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="hljs-keyword">else</span> &#123;</span><br><span class="line">        <span class="hljs-keyword">do</span> &#123;&#125; <span class="hljs-keyword">while</span> (!blocker.isReleasable() &amp;&amp; !blocker.block());</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h1 id="ForkJoinPool"><a href="#ForkJoinPool" class="headerlink" title="ForkJoinPool"></a>ForkJoinPool</h1><h2 id="ForkJoinPool-managedBlock"><a href="#ForkJoinPool-managedBlock" class="headerlink" title="ForkJoinPool#managedBlock()"></a>ForkJoinPool#managedBlock()</h2><figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment"> * Blocks in accord with the given blocker.  If the current thread</span></span><br><span class="line"><span class="hljs-comment"> * is a &#123;<span class="hljs-doctag">@link</span> ForkJoinWorkerThread&#125;, this method possibly</span></span><br><span class="line"><span class="hljs-comment"> * arranges for a spare thread to be activated if necessary to</span></span><br><span class="line"><span class="hljs-comment"> * ensure sufficient parallelism while the current thread is blocked.</span></span><br><span class="line"><span class="hljs-comment"> *</span></span><br><span class="line"><span class="hljs-comment"> * &lt;p&gt;If the caller is not a &#123;<span class="hljs-doctag">@link</span> ForkJoinTask&#125;, this method is</span></span><br><span class="line"><span class="hljs-comment"> * behaviorally equivalent to</span></span><br><span class="line"><span class="hljs-comment"> *  &lt;pre&gt; &#123;<span class="hljs-doctag">@code</span></span></span><br><span class="line"><span class="hljs-comment"> * while (!blocker.isReleasable())</span></span><br><span class="line"><span class="hljs-comment"> *   if (blocker.block())</span></span><br><span class="line"><span class="hljs-comment"> *     return;</span></span><br><span class="line"><span class="hljs-comment"> * &#125;&lt;/pre&gt;</span></span><br><span class="line"><span class="hljs-comment"> *</span></span><br><span class="line"><span class="hljs-comment"> * If the caller is a &#123;<span class="hljs-doctag">@code</span> ForkJoinTask&#125;, then the pool may</span></span><br><span class="line"><span class="hljs-comment"> * first be expanded to ensure parallelism, and later adjusted.</span></span><br><span class="line"><span class="hljs-comment"> *</span></span><br><span class="line"><span class="hljs-comment"> * <span class="hljs-doctag">@param</span> blocker the blocker</span></span><br><span class="line"><span class="hljs-comment"> * <span class="hljs-doctag">@throws</span> InterruptedException if blocker.block did so</span></span><br><span class="line"><span class="hljs-comment"> */</span></span><br><span class="line"><span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title">managedBlock</span><span class="hljs-params">(ManagedBlocker blocker)</span></span></span><br><span class="line"><span class="hljs-function">    <span class="hljs-keyword">throws</span> InterruptedException </span>&#123;</span><br><span class="line">    Thread t = Thread.currentThread();</span><br><span class="line">    <span class="hljs-keyword">if</span> (t <span class="hljs-keyword">instanceof</span> ForkJoinWorkerThread) &#123;</span><br><span class="line">        ForkJoinWorkerThread w = (ForkJoinWorkerThread) t;</span><br><span class="line">        w.pool.awaitBlocker(blocker);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="hljs-keyword">else</span> &#123;</span><br><span class="line">        <span class="hljs-keyword">do</span> &#123;&#125; <span class="hljs-keyword">while</span> (!blocker.isReleasable() &amp;&amp; !blocker.block());</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <h3 id="ForkJoin工作线程"><a href="#ForkJoin工作线程" class="headerlink" title="ForkJoin工作线程"></a>ForkJoin工作线程</h3><p>会调用工作线程所在的<code>Pool</code>的<code>awaitBlocker()</code>。</p>
 <h3 id="非ForkJoin工作线程"><a href="#非ForkJoin工作线程" class="headerlink" title="非ForkJoin工作线程"></a>非ForkJoin工作线程</h3><p>相当于在blocker上阻塞，被唤醒后方法就结束了。</p>
 <h2 id="ForkJoinPool-awaitBlocker"><a href="#ForkJoinPool-awaitBlocker" class="headerlink" title="ForkJoinPool#awaitBlocker()"></a>ForkJoinPool#awaitBlocker()</h2><figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment"> * If necessary, compensates for blocker, and blocks</span></span><br><span class="line"><span class="hljs-comment"> */</span></span><br><span class="line"><span class="hljs-function"><span class="hljs-keyword">private</span> <span class="hljs-keyword">void</span> <span class="hljs-title">awaitBlocker</span><span class="hljs-params">(ManagedBlocker blocker)</span></span></span><br><span class="line"><span class="hljs-function">    <span class="hljs-keyword">throws</span> InterruptedException </span>&#123;</span><br><span class="line">    <span class="hljs-keyword">while</span> (!blocker.isReleasable()) &#123;</span><br><span class="line">        <span class="hljs-keyword">if</span> (tryPreBlock()) &#123;</span><br><span class="line">            <span class="hljs-keyword">try</span> &#123;</span><br><span class="line">                <span class="hljs-keyword">do</span> &#123;&#125; <span class="hljs-keyword">while</span> (!blocker.isReleasable() &amp;&amp; !blocker.block());</span><br><span class="line">            &#125; <span class="hljs-keyword">finally</span> &#123;</span><br><span class="line">                postBlock();</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="hljs-keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
@@ -843,9 +843,9 @@ var _hmt = _hmt || [];
                 目录
             </h3>
             <ul class="menu-list"><li>
-        <a class="is-flex" href="#1-ForkJoinTask">
+        <a class="is-flex" href="#ForkJoinTask">
         <span class="has-mr-6">1</span>
-        <span>1 ForkJoinTask</span>
+        <span>ForkJoinTask</span>
         </a><ul class="menu-list"><li>
         <a class="is-flex" href="#ForkJoinTask-cancel">
         <span class="has-mr-6">1.1</span>
@@ -895,9 +895,9 @@ var _hmt = _hmt || [];
         <span class="has-mr-6">1.10</span>
         <span>ForkJoinPool#isShutdown()</span>
         </a></li></ul></li><li>
-        <a class="is-flex" href="#2-ForkJoinWorkerThread">
+        <a class="is-flex" href="#ForkJoinWorkerThread">
         <span class="has-mr-6">2</span>
-        <span>2 ForkJoinWorkerThread</span>
+        <span>ForkJoinWorkerThread</span>
         </a><ul class="menu-list"><li>
         <a class="is-flex" href="#ForkJoinWorkerThread-casSlotNull">
         <span class="has-mr-6">2.1</span>
@@ -1059,9 +1059,9 @@ var _hmt = _hmt || [];
         <span class="has-mr-6">2.38</span>
         <span>ForkJoinTask#inForkJoinPool()</span>
         </a></li></ul></li><li>
-        <a class="is-flex" href="#3-ForkJoinPool">
+        <a class="is-flex" href="#ForkJoinPool">
         <span class="has-mr-6">3</span>
-        <span>3 ForkJoinPool</span>
+        <span>ForkJoinPool</span>
         </a><ul class="menu-list"><li>
         <a class="is-flex" href="#ForkJoinPool-managedBlock">
         <span class="has-mr-6">3.1</span>
@@ -1174,6 +1174,25 @@ var _hmt = _hmt || [];
         
         <article class="media">
             <!-- 
+            <a href="/Python2ToPython3/" class="media-left">
+                <p class="image is-64x64">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Python2切换Python3">
+                </p>
+            </a>
+             -->
+            <div class="media-content">
+                <div class="content">
+                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
+                    <a href="/Python2ToPython3/" class="has-link-black-ter is-size-6">Python2切换Python3</a>
+                    <p class="is-size-7 is-uppercase">
+                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
+                    </p>
+                </div>
+            </div>
+        </article>
+        
+        <article class="media">
+            <!-- 
             <a href="/MySQL-Command/" class="media-left">
                 <p class="image is-64x64">
                     <img class="thumbnail" src="/images/thumbnail.svg" alt="MySQL基本命令">
@@ -1186,25 +1205,6 @@ var _hmt = _hmt || [];
                     <a href="/MySQL-Command/" class="has-link-black-ter is-size-6">MySQL基本命令</a>
                     <p class="is-size-7 is-uppercase">
                         <a class="has-link-grey -link" href="/categories/MySQL/">MySQL</a>
-                    </p>
-                </div>
-            </div>
-        </article>
-        
-        <article class="media">
-            <!-- 
-            <a href="/Centos-Line/" class="media-left">
-                <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Centos命令行图形界面切换">
-                </p>
-            </a>
-             -->
-            <div class="media-content">
-                <div class="content">
-                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
-                    <a href="/Centos-Line/" class="has-link-black-ter is-size-6">Centos命令行图形界面切换</a>
-                    <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
                     </p>
                 </div>
             </div>
@@ -2066,9 +2066,9 @@ var _hmt = _hmt || [];
                 目录
             </h3>
             <ul class="menu-list"><li>
-        <a class="is-flex" href="#1-ForkJoinTask">
+        <a class="is-flex" href="#ForkJoinTask">
         <span class="has-mr-6">1</span>
-        <span>1 ForkJoinTask</span>
+        <span>ForkJoinTask</span>
         </a><ul class="menu-list"><li>
         <a class="is-flex" href="#ForkJoinTask-cancel">
         <span class="has-mr-6">1.1</span>
@@ -2118,9 +2118,9 @@ var _hmt = _hmt || [];
         <span class="has-mr-6">1.10</span>
         <span>ForkJoinPool#isShutdown()</span>
         </a></li></ul></li><li>
-        <a class="is-flex" href="#2-ForkJoinWorkerThread">
+        <a class="is-flex" href="#ForkJoinWorkerThread">
         <span class="has-mr-6">2</span>
-        <span>2 ForkJoinWorkerThread</span>
+        <span>ForkJoinWorkerThread</span>
         </a><ul class="menu-list"><li>
         <a class="is-flex" href="#ForkJoinWorkerThread-casSlotNull">
         <span class="has-mr-6">2.1</span>
@@ -2282,9 +2282,9 @@ var _hmt = _hmt || [];
         <span class="has-mr-6">2.38</span>
         <span>ForkJoinTask#inForkJoinPool()</span>
         </a></li></ul></li><li>
-        <a class="is-flex" href="#3-ForkJoinPool">
+        <a class="is-flex" href="#ForkJoinPool">
         <span class="has-mr-6">3</span>
-        <span>3 ForkJoinPool</span>
+        <span>ForkJoinPool</span>
         </a><ul class="menu-list"><li>
         <a class="is-flex" href="#ForkJoinPool-managedBlock">
         <span class="has-mr-6">3.1</span>
@@ -2397,6 +2397,25 @@ var _hmt = _hmt || [];
         
         <article class="media">
             <!-- 
+            <a href="/Python2ToPython3/" class="media-left">
+                <p class="image is-64x64">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Python2切换Python3">
+                </p>
+            </a>
+             -->
+            <div class="media-content">
+                <div class="content">
+                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
+                    <a href="/Python2ToPython3/" class="has-link-black-ter is-size-6">Python2切换Python3</a>
+                    <p class="is-size-7 is-uppercase">
+                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
+                    </p>
+                </div>
+            </div>
+        </article>
+        
+        <article class="media">
+            <!-- 
             <a href="/MySQL-Command/" class="media-left">
                 <p class="image is-64x64">
                     <img class="thumbnail" src="/images/thumbnail.svg" alt="MySQL基本命令">
@@ -2409,25 +2428,6 @@ var _hmt = _hmt || [];
                     <a href="/MySQL-Command/" class="has-link-black-ter is-size-6">MySQL基本命令</a>
                     <p class="is-size-7 is-uppercase">
                         <a class="has-link-grey -link" href="/categories/MySQL/">MySQL</a>
-                    </p>
-                </div>
-            </div>
-        </article>
-        
-        <article class="media">
-            <!-- 
-            <a href="/Centos-Line/" class="media-left">
-                <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Centos命令行图形界面切换">
-                </p>
-            </a>
-             -->
-            <div class="media-content">
-                <div class="content">
-                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
-                    <a href="/Centos-Line/" class="has-link-black-ter is-size-6">Centos命令行图形界面切换</a>
-                    <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
                     </p>
                 </div>
             </div>

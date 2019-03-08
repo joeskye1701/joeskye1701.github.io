@@ -173,44 +173,44 @@ var _hmt = _hmt || [];
         <div class="content">
             <!-- TOC -->
 <ul>
-<li><a href="#1-跳表介绍">1 跳表介绍</a><ul>
-<li><a href="#11-跳表核心思想">1.1 跳表核心思想</a></li>
+<li><a href="#跳表介绍">跳表介绍</a><ul>
+<li><a href="#跳表核心思想">跳表核心思想</a></li>
 </ul>
 </li>
-<li><a href="#2-存储模式">2 存储模式</a><ul>
-<li><a href="#21-性质">2.1 性质</a></li>
-<li><a href="#22-结构设计">2.2 结构设计</a></li>
+<li><a href="#存储模式">存储模式</a><ul>
+<li><a href="#性质">性质</a></li>
+<li><a href="#结构设计">结构设计</a></li>
 </ul>
 </li>
-<li><a href="#3-操作">3 操作</a><ul>
-<li><a href="#31-搜索">3.1 搜索</a></li>
-<li><a href="#32-插入">3.2 插入</a><ul>
+<li><a href="#操作">操作</a><ul>
+<li><a href="#搜索">搜索</a></li>
+<li><a href="#插入">插入</a><ul>
 <li><a href="#k取值">K取值</a></li>
 <li><a href="#高度">高度</a></li>
 <li><a href="#空间复杂度">空间复杂度</a></li>
 </ul>
 </li>
-<li><a href="#33-删除">3.3 删除</a></li>
+<li><a href="#删除">删除</a></li>
 </ul>
 </li>
-<li><a href="#4-代码">4 代码</a><ul>
-<li><a href="#41-java">4.1 Java</a></li>
-<li><a href="#42-c">4.2 C++</a><ul>
+<li><a href="#代码">代码</a><ul>
+<li><a href="#java">Java</a></li>
+<li><a href="#c">C++</a><ul>
 <li><a href="#初始化">初始化</a></li>
-<li><a href="#插入">插入</a></li>
-<li><a href="#删除">删除</a></li>
+<li><a href="#插入-1">插入</a></li>
+<li><a href="#删除-1">删除</a></li>
 </ul>
 </li>
 </ul>
 </li>
 </ul>
 <!-- /TOC -->
-<h1 id="1-跳表介绍"><a href="#1-跳表介绍" class="headerlink" title="1 跳表介绍"></a>1 跳表介绍</h1><p>目前经常使用的平衡数据结构有：B树，红黑树，AVL树，Splay Tree, Treep等。<br>跳表是一种随机化的数据结构，目前开源软件Redis和LevelDB都有用到它，它的效率和红黑树以及AVL树不相上下，但跳表的原理相当简单，只要你能熟练操作链表，就能轻松实现一个 SkipList。<br>这是跳表的作者，上面介绍的William Pugh给出的解释。  </p>
+<h1 id="跳表介绍"><a href="#跳表介绍" class="headerlink" title="跳表介绍"></a>跳表介绍</h1><p>目前经常使用的平衡数据结构有：B树，红黑树，AVL树，Splay Tree, Treep等。<br>跳表是一种随机化的数据结构，目前开源软件Redis和LevelDB都有用到它，它的效率和红黑树以及AVL树不相上下，但跳表的原理相当简单，只要你能熟练操作链表，就能轻松实现一个 SkipList。<br>这是跳表的作者，上面介绍的William Pugh给出的解释。  </p>
 <blockquote>
 <p>Skip lists are a data structure that can be used in place of balanced trees. Skip lists use probabilistic balancing rather than strictly enforced balancing and as a result the algorithms for insertion and deletion in skip lists are much simpler and significantly faster than equivalent algorithms for balanced trees.</p>
 </blockquote>
 <p>跳表是平衡树的一种替代的数据结构，但是和红黑树不相同的是，跳表对于树的平衡的实现是基于一种随机化的算法的，这样也就是说跳表的插入和删除的工作是比较简单的。</p>
-<h2 id="1-1-跳表核心思想"><a href="#1-1-跳表核心思想" class="headerlink" title="1.1 跳表核心思想"></a>1.1 跳表核心思想</h2><p><img src="./skiplist-1.jpg" alt><br>从该有序表中搜索元素“23,43,59”，需要比较的次数分别为&lt;2, 4, 6&gt;，总共比较的次数为<code>2 + 4 + 6 = 12</code>次。有没有优化的算法吗? 链表是有序的，但不能使用二分查找。类似二叉搜索树，把一些节点提取出来，作为索引。得到如下结构。<br><img src="./skiplist-2.jpg" alt><br>把“14,34,50,72”提取出来作为一级索引，这样搜索的时候就可以减少比较次数了。还可以再从一级索引提取一些元素出来，作为二级索引，变成如下结构。<br><img src="./skiplist-3.jpg" alt><br>如果是说链表是排序的，并且节点中还存储指向前面第二个节点的指针的话，那么在查找一个节点时，仅仅需要遍历<code>N/2</code>个节点即可。<br>这基本上就是跳表的核心思想，其实也是一种通过“空间来换取时间”的一个算法，通过在每个节点中增加了向前的指针，从而提升查找的效率。<br></p>
+<h2 id="跳表核心思想"><a href="#跳表核心思想" class="headerlink" title="跳表核心思想"></a>跳表核心思想</h2><p><img src="./skiplist-1.jpg" alt><br>从该有序表中搜索元素“23,43,59”，需要比较的次数分别为&lt;2, 4, 6&gt;，总共比较的次数为<code>2 + 4 + 6 = 12</code>次。有没有优化的算法吗? 链表是有序的，但不能使用二分查找。类似二叉搜索树，把一些节点提取出来，作为索引。得到如下结构。<br><img src="./skiplist-2.jpg" alt><br>把“14,34,50,72”提取出来作为一级索引，这样搜索的时候就可以减少比较次数了。还可以再从一级索引提取一些元素出来，作为二级索引，变成如下结构。<br><img src="./skiplist-3.jpg" alt><br>如果是说链表是排序的，并且节点中还存储指向前面第二个节点的指针的话，那么在查找一个节点时，仅仅需要遍历<code>N/2</code>个节点即可。<br>这基本上就是跳表的核心思想，其实也是一种通过“空间来换取时间”的一个算法，通过在每个节点中增加了向前的指针，从而提升查找的效率。<br></p>
         </div>
         
         
@@ -652,6 +652,25 @@ var _hmt = _hmt || [];
         
         <article class="media">
             <!-- 
+            <a href="/Python2ToPython3/" class="media-left">
+                <p class="image is-64x64">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Python2切换Python3">
+                </p>
+            </a>
+             -->
+            <div class="media-content">
+                <div class="content">
+                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
+                    <a href="/Python2ToPython3/" class="has-link-black-ter is-size-6">Python2切换Python3</a>
+                    <p class="is-size-7 is-uppercase">
+                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
+                    </p>
+                </div>
+            </div>
+        </article>
+        
+        <article class="media">
+            <!-- 
             <a href="/MySQL-Command/" class="media-left">
                 <p class="image is-64x64">
                     <img class="thumbnail" src="/images/thumbnail.svg" alt="MySQL基本命令">
@@ -664,25 +683,6 @@ var _hmt = _hmt || [];
                     <a href="/MySQL-Command/" class="has-link-black-ter is-size-6">MySQL基本命令</a>
                     <p class="is-size-7 is-uppercase">
                         <a class="has-link-grey -link" href="/categories/MySQL/">MySQL</a>
-                    </p>
-                </div>
-            </div>
-        </article>
-        
-        <article class="media">
-            <!-- 
-            <a href="/Centos-Line/" class="media-left">
-                <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Centos命令行图形界面切换">
-                </p>
-            </a>
-             -->
-            <div class="media-content">
-                <div class="content">
-                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
-                    <a href="/Centos-Line/" class="has-link-black-ter is-size-6">Centos命令行图形界面切换</a>
-                    <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
                     </p>
                 </div>
             </div>
@@ -1604,6 +1604,25 @@ var _hmt = _hmt || [];
         
         <article class="media">
             <!-- 
+            <a href="/Python2ToPython3/" class="media-left">
+                <p class="image is-64x64">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Python2切换Python3">
+                </p>
+            </a>
+             -->
+            <div class="media-content">
+                <div class="content">
+                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
+                    <a href="/Python2ToPython3/" class="has-link-black-ter is-size-6">Python2切换Python3</a>
+                    <p class="is-size-7 is-uppercase">
+                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
+                    </p>
+                </div>
+            </div>
+        </article>
+        
+        <article class="media">
+            <!-- 
             <a href="/MySQL-Command/" class="media-left">
                 <p class="image is-64x64">
                     <img class="thumbnail" src="/images/thumbnail.svg" alt="MySQL基本命令">
@@ -1616,25 +1635,6 @@ var _hmt = _hmt || [];
                     <a href="/MySQL-Command/" class="has-link-black-ter is-size-6">MySQL基本命令</a>
                     <p class="is-size-7 is-uppercase">
                         <a class="has-link-grey -link" href="/categories/MySQL/">MySQL</a>
-                    </p>
-                </div>
-            </div>
-        </article>
-        
-        <article class="media">
-            <!-- 
-            <a href="/Centos-Line/" class="media-left">
-                <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Centos命令行图形界面切换">
-                </p>
-            </a>
-             -->
-            <div class="media-content">
-                <div class="content">
-                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
-                    <a href="/Centos-Line/" class="has-link-black-ter is-size-6">Centos命令行图形界面切换</a>
-                    <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
                     </p>
                 </div>
             </div>

@@ -175,13 +175,13 @@ var _hmt = _hmt || [];
             <!-- TOC -->
 <ul>
 <li><a href="#proxy-18">Proxy 1.8</a><ul>
-<li><a href="#1-%E5%8F%98%E9%87%8F%E5%AE%9A%E4%B9%89">1 变量定义 `</a></li>
-<li><a href="#2-keyfactory">2 KeyFactory`</a></li>
-<li><a href="#3-key1key2keyx">3 Key1、Key2、KeyX`</a></li>
-<li><a href="#4-proxyclassfactory">4 ProxyClassFactory`</a></li>
-<li><a href="#5-newproxyinstance">5 newProxyInstance`</a></li>
-<li><a href="#6-proxygeneratorgenerateproxyclass">6 ProxyGenerator#generateProxyClass`</a></li>
-<li><a href="#7-proxy-class%E5%AD%97%E8%8A%82%E7%A0%81%E5%86%99%E5%85%A5%E7%A3%81%E7%9B%98">7 proxy class字节码写入磁盘</a><ul>
+<li><a href="#%E5%8F%98%E9%87%8F%E5%AE%9A%E4%B9%89">变量定义 `</a></li>
+<li><a href="#keyfactory">KeyFactory`</a></li>
+<li><a href="#key1key2keyx">Key1、Key2、KeyX`</a></li>
+<li><a href="#proxyclassfactory">ProxyClassFactory`</a></li>
+<li><a href="#newproxyinstance">newProxyInstance`</a></li>
+<li><a href="#proxygeneratorgenerateproxyclass">ProxyGenerator#generateProxyClass`</a></li>
+<li><a href="#proxy-class%E5%AD%97%E8%8A%82%E7%A0%81%E5%86%99%E5%85%A5%E7%A3%81%E7%9B%98">proxy class字节码写入磁盘</a><ul>
 <li><a href="#demo1">demo1</a></li>
 <li><a href="#%E5%AE%8C%E6%95%B4%E4%BB%A3%E7%A0%81%E4%BE%8B%E5%AD%90">完整代码例子</a><ul>
 <li><a href="#mammal">Mammal`</a></li>
@@ -193,11 +193,11 @@ var _hmt = _hmt || [];
 </li>
 </ul>
 </li>
-<li><a href="#8-proxy0class%E5%8F%A6%E4%B8%80%E7%A7%8D%E6%96%B9%E5%BC%8F%E5%86%99%E5%85%A5%E7%A3%81%E7%9B%98">8 proxy0.class另一种方式写入磁盘</a><ul>
+<li><a href="#proxy0class%E5%8F%A6%E4%B8%80%E7%A7%8D%E6%96%B9%E5%BC%8F%E5%86%99%E5%85%A5%E7%A3%81%E7%9B%98">proxy0.class另一种方式写入磁盘</a><ul>
 <li><a href="#code">code`</a></li>
 </ul>
 </li>
-<li><a href="#9-%E5%88%86%E6%9E%90proxyclass">9 分析$Proxy.class`</a><ul>
+<li><a href="#%E5%88%86%E6%9E%90proxyclass">分析$Proxy.class`</a><ul>
 <li><a href="#%E6%80%BB%E7%BB%93">总结</a></li>
 </ul>
 </li>
@@ -206,10 +206,10 @@ var _hmt = _hmt || [];
 </ul>
 <!-- /TOC -->
 <h1 id="Proxy-1-8"><a href="#Proxy-1-8" class="headerlink" title="Proxy 1.8"></a>Proxy 1.8</h1><p>以下源码分析取核心代码</p>
-<h2 id="1-变量定义"><a href="#1-变量定义" class="headerlink" title="1 变量定义"></a>1 变量定义</h2><figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-comment">/** parameter types of a proxy class constructor */</span></span><br><span class="line"><span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> Class&lt;?&gt;[] constructorParams =</span><br><span class="line">	&#123; InvocationHandler.class &#125;;</span><br><span class="line"></span><br><span class="line"><span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment"> * a cache of proxy classes</span></span><br><span class="line"><span class="hljs-comment"> */</span></span><br><span class="line"><span class="hljs-comment">// #1</span></span><br><span class="line"><span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> WeakCache&lt;ClassLoader, Class&lt;?&gt;[], Class&lt;?&gt;&gt;</span><br><span class="line">	proxyClassCache = <span class="hljs-keyword">new</span> WeakCache&lt;&gt;(<span class="hljs-keyword">new</span> KeyFactory(), <span class="hljs-keyword">new</span> ProxyClassFactory());</span><br><span class="line"></span><br><span class="line"><span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment"> * the invocation handler for this proxy instance.</span></span><br><span class="line"><span class="hljs-comment"> * <span class="hljs-doctag">@serial</span></span></span><br><span class="line"><span class="hljs-comment"> */</span></span><br><span class="line"><span class="hljs-keyword">protected</span> InvocationHandler h;</span><br></pre></td></tr></table></figure>
+<h2 id="变量定义"><a href="#变量定义" class="headerlink" title="变量定义"></a>变量定义</h2><figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-comment">/** parameter types of a proxy class constructor */</span></span><br><span class="line"><span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> Class&lt;?&gt;[] constructorParams =</span><br><span class="line">	&#123; InvocationHandler.class &#125;;</span><br><span class="line"></span><br><span class="line"><span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment"> * a cache of proxy classes</span></span><br><span class="line"><span class="hljs-comment"> */</span></span><br><span class="line"><span class="hljs-comment">// #1</span></span><br><span class="line"><span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> WeakCache&lt;ClassLoader, Class&lt;?&gt;[], Class&lt;?&gt;&gt;</span><br><span class="line">	proxyClassCache = <span class="hljs-keyword">new</span> WeakCache&lt;&gt;(<span class="hljs-keyword">new</span> KeyFactory(), <span class="hljs-keyword">new</span> ProxyClassFactory());</span><br><span class="line"></span><br><span class="line"><span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment"> * the invocation handler for this proxy instance.</span></span><br><span class="line"><span class="hljs-comment"> * <span class="hljs-doctag">@serial</span></span></span><br><span class="line"><span class="hljs-comment"> */</span></span><br><span class="line"><span class="hljs-keyword">protected</span> InvocationHandler h;</span><br></pre></td></tr></table></figure>
 <ol>
 <li><p>根据注释很容易理解，1.8在1.7基础上优化代码，依然是弱引用做为缓存。key和value都采用工厂模式。</p>
-<h2 id="2-KeyFactory"><a href="#2-KeyFactory" class="headerlink" title="2 KeyFactory"></a>2 KeyFactory</h2><figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment"> * A function that maps an array of interfaces to an optimal key where</span></span><br><span class="line"><span class="hljs-comment"> * Class objects representing interfaces are weakly referenced.</span></span><br><span class="line"><span class="hljs-comment"> */</span></span><br><span class="line"><span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">KeyFactory</span></span></span><br><span class="line">    implements BiFunction&lt;ClassLoader, Class&lt;?&gt;[], Object&gt;</span><br><span class="line">&#123;</span><br><span class="line">    <span class="hljs-meta">@Override</span></span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">public</span> Object <span class="hljs-title">apply</span><span class="hljs-params">(ClassLoader classLoader, Class&lt;?&gt;[] interfaces)</span> </span>&#123;</span><br><span class="line">        <span class="hljs-keyword">switch</span> (interfaces.length) &#123;</span><br><span class="line">            <span class="hljs-keyword">case</span> <span class="hljs-number">1</span>: <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> Key1(interfaces[<span class="hljs-number">0</span>]); <span class="hljs-comment">// the most frequent</span></span><br><span class="line">            <span class="hljs-keyword">case</span> <span class="hljs-number">2</span>: <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> Key2(interfaces[<span class="hljs-number">0</span>], interfaces[<span class="hljs-number">1</span>]);</span><br><span class="line">            <span class="hljs-keyword">case</span> <span class="hljs-number">0</span>: <span class="hljs-keyword">return</span> key0;</span><br><span class="line">            <span class="hljs-keyword">default</span>: <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> KeyX(interfaces);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="KeyFactory"><a href="#KeyFactory" class="headerlink" title="KeyFactory"></a>KeyFactory</h2><figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment"> * A function that maps an array of interfaces to an optimal key where</span></span><br><span class="line"><span class="hljs-comment"> * Class objects representing interfaces are weakly referenced.</span></span><br><span class="line"><span class="hljs-comment"> */</span></span><br><span class="line"><span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">KeyFactory</span></span></span><br><span class="line">    implements BiFunction&lt;ClassLoader, Class&lt;?&gt;[], Object&gt;</span><br><span class="line">&#123;</span><br><span class="line">    <span class="hljs-meta">@Override</span></span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">public</span> Object <span class="hljs-title">apply</span><span class="hljs-params">(ClassLoader classLoader, Class&lt;?&gt;[] interfaces)</span> </span>&#123;</span><br><span class="line">        <span class="hljs-keyword">switch</span> (interfaces.length) &#123;</span><br><span class="line">            <span class="hljs-keyword">case</span> <span class="hljs-number">1</span>: <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> Key1(interfaces[<span class="hljs-number">0</span>]); <span class="hljs-comment">// the most frequent</span></span><br><span class="line">            <span class="hljs-keyword">case</span> <span class="hljs-number">2</span>: <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> Key2(interfaces[<span class="hljs-number">0</span>], interfaces[<span class="hljs-number">1</span>]);</span><br><span class="line">            <span class="hljs-keyword">case</span> <span class="hljs-number">0</span>: <span class="hljs-keyword">return</span> key0;</span><br><span class="line">            <span class="hljs-keyword">default</span>: <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> KeyX(interfaces);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 </li>
 <li><p>根据上下文代码及注释，可以知道这是工厂模式。</p>
 </li>
@@ -657,6 +657,25 @@ var _hmt = _hmt || [];
         
         <article class="media">
             <!-- 
+            <a href="/Python2ToPython3/" class="media-left">
+                <p class="image is-64x64">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Python2切换Python3">
+                </p>
+            </a>
+             -->
+            <div class="media-content">
+                <div class="content">
+                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
+                    <a href="/Python2ToPython3/" class="has-link-black-ter is-size-6">Python2切换Python3</a>
+                    <p class="is-size-7 is-uppercase">
+                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
+                    </p>
+                </div>
+            </div>
+        </article>
+        
+        <article class="media">
+            <!-- 
             <a href="/MySQL-Command/" class="media-left">
                 <p class="image is-64x64">
                     <img class="thumbnail" src="/images/thumbnail.svg" alt="MySQL基本命令">
@@ -669,25 +688,6 @@ var _hmt = _hmt || [];
                     <a href="/MySQL-Command/" class="has-link-black-ter is-size-6">MySQL基本命令</a>
                     <p class="is-size-7 is-uppercase">
                         <a class="has-link-grey -link" href="/categories/MySQL/">MySQL</a>
-                    </p>
-                </div>
-            </div>
-        </article>
-        
-        <article class="media">
-            <!-- 
-            <a href="/Centos-Line/" class="media-left">
-                <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Centos命令行图形界面切换">
-                </p>
-            </a>
-             -->
-            <div class="media-content">
-                <div class="content">
-                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
-                    <a href="/Centos-Line/" class="has-link-black-ter is-size-6">Centos命令行图形界面切换</a>
-                    <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
                     </p>
                 </div>
             </div>
@@ -1609,6 +1609,25 @@ var _hmt = _hmt || [];
         
         <article class="media">
             <!-- 
+            <a href="/Python2ToPython3/" class="media-left">
+                <p class="image is-64x64">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Python2切换Python3">
+                </p>
+            </a>
+             -->
+            <div class="media-content">
+                <div class="content">
+                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
+                    <a href="/Python2ToPython3/" class="has-link-black-ter is-size-6">Python2切换Python3</a>
+                    <p class="is-size-7 is-uppercase">
+                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
+                    </p>
+                </div>
+            </div>
+        </article>
+        
+        <article class="media">
+            <!-- 
             <a href="/MySQL-Command/" class="media-left">
                 <p class="image is-64x64">
                     <img class="thumbnail" src="/images/thumbnail.svg" alt="MySQL基本命令">
@@ -1621,25 +1640,6 @@ var _hmt = _hmt || [];
                     <a href="/MySQL-Command/" class="has-link-black-ter is-size-6">MySQL基本命令</a>
                     <p class="is-size-7 is-uppercase">
                         <a class="has-link-grey -link" href="/categories/MySQL/">MySQL</a>
-                    </p>
-                </div>
-            </div>
-        </article>
-        
-        <article class="media">
-            <!-- 
-            <a href="/Centos-Line/" class="media-left">
-                <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Centos命令行图形界面切换">
-                </p>
-            </a>
-             -->
-            <div class="media-content">
-                <div class="content">
-                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
-                    <a href="/Centos-Line/" class="has-link-black-ter is-size-6">Centos命令行图形界面切换</a>
-                    <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
                     </p>
                 </div>
             </div>

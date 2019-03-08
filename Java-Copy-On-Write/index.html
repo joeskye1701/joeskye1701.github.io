@@ -7,18 +7,18 @@
 
 
 
-    <meta name="description" content="1 基础知识 1.1 CopyOnWrite容器   2 实现原理 CopyOnWriteArrayList源码 CopyOnWriteArrayList#add() CopyOnWriteArrayList#get()   实现简单的CopyOnWriteMap   3 应用场景 3.1 需要注意两件事情   4 缺点 内存占用问题 数据一致性问题     1 基础知识Copy-On-Wri">
+    <meta name="description" content="基础知识 CopyOnWrite容器   实现原理 CopyOnWriteArrayList源码 CopyOnWriteArrayList#add() CopyOnWriteArrayList#get()   实现简单的CopyOnWriteMap   应用场景 需要注意两件事情   缺点 内存占用问题 数据一致性问题     基础知识Copy-On-Write简称COW，是一种用于程序设计中">
 <meta name="keywords" content="Java,并发">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Java Copy-On-Write并发优化策略">
 <meta property="og:url" content="https://joeskye1701.github.io/Java-Copy-On-Write/index.html">
 <meta property="og:site_name" content="Joe|博客">
-<meta property="og:description" content="1 基础知识 1.1 CopyOnWrite容器   2 实现原理 CopyOnWriteArrayList源码 CopyOnWriteArrayList#add() CopyOnWriteArrayList#get()   实现简单的CopyOnWriteMap   3 应用场景 3.1 需要注意两件事情   4 缺点 内存占用问题 数据一致性问题     1 基础知识Copy-On-Wri">
+<meta property="og:description" content="基础知识 CopyOnWrite容器   实现原理 CopyOnWriteArrayList源码 CopyOnWriteArrayList#add() CopyOnWriteArrayList#get()   实现简单的CopyOnWriteMap   应用场景 需要注意两件事情   缺点 内存占用问题 数据一致性问题     基础知识Copy-On-Write简称COW，是一种用于程序设计中">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:updated_time" content="2019-03-06T19:31:15.966Z">
+<meta property="og:updated_time" content="2019-03-08T17:58:43.633Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Java Copy-On-Write并发优化策略">
-<meta name="twitter:description" content="1 基础知识 1.1 CopyOnWrite容器   2 实现原理 CopyOnWriteArrayList源码 CopyOnWriteArrayList#add() CopyOnWriteArrayList#get()   实现简单的CopyOnWriteMap   3 应用场景 3.1 需要注意两件事情   4 缺点 内存占用问题 数据一致性问题     1 基础知识Copy-On-Wri">
+<meta name="twitter:description" content="基础知识 CopyOnWrite容器   实现原理 CopyOnWriteArrayList源码 CopyOnWriteArrayList#add() CopyOnWriteArrayList#get()   实现简单的CopyOnWriteMap   应用场景 需要注意两件事情   缺点 内存占用问题 数据一致性问题     基础知识Copy-On-Write简称COW，是一种用于程序设计中">
 
 
 
@@ -171,11 +171,11 @@ var _hmt = _hmt || [];
         <div class="content">
             <!-- TOC -->
 <ul>
-<li><a href="#1-%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86">1 基础知识</a><ul>
-<li><a href="#11-copyonwrite%E5%AE%B9%E5%99%A8">1.1 CopyOnWrite容器</a></li>
+<li><a href="#%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86">基础知识</a><ul>
+<li><a href="#copyonwrite%E5%AE%B9%E5%99%A8">CopyOnWrite容器</a></li>
 </ul>
 </li>
-<li><a href="#2-%E5%AE%9E%E7%8E%B0%E5%8E%9F%E7%90%86">2 实现原理</a><ul>
+<li><a href="#%E5%AE%9E%E7%8E%B0%E5%8E%9F%E7%90%86">实现原理</a><ul>
 <li><a href="#copyonwritearraylist%E6%BA%90%E7%A0%81">CopyOnWriteArrayList源码</a><ul>
 <li><a href="#copyonwritearraylistadd">CopyOnWriteArrayList#add()</a></li>
 <li><a href="#copyonwritearraylistget">CopyOnWriteArrayList#get()</a></li>
@@ -184,26 +184,26 @@ var _hmt = _hmt || [];
 <li><a href="#%E5%AE%9E%E7%8E%B0%E7%AE%80%E5%8D%95%E7%9A%84copyonwritemap">实现简单的CopyOnWriteMap</a></li>
 </ul>
 </li>
-<li><a href="#3-%E5%BA%94%E7%94%A8%E5%9C%BA%E6%99%AF">3 应用场景</a><ul>
-<li><a href="#31-%E9%9C%80%E8%A6%81%E6%B3%A8%E6%84%8F%E4%B8%A4%E4%BB%B6%E4%BA%8B%E6%83%85">3.1 需要注意两件事情</a></li>
+<li><a href="#%E5%BA%94%E7%94%A8%E5%9C%BA%E6%99%AF">应用场景</a><ul>
+<li><a href="#%E9%9C%80%E8%A6%81%E6%B3%A8%E6%84%8F%E4%B8%A4%E4%BB%B6%E4%BA%8B%E6%83%85">需要注意两件事情</a></li>
 </ul>
 </li>
-<li><a href="#4-%E7%BC%BA%E7%82%B9">4 缺点</a><ul>
+<li><a href="#%E7%BC%BA%E7%82%B9">缺点</a><ul>
 <li><a href="#%E5%86%85%E5%AD%98%E5%8D%A0%E7%94%A8%E9%97%AE%E9%A2%98">内存占用问题</a></li>
 <li><a href="#%E6%95%B0%E6%8D%AE%E4%B8%80%E8%87%B4%E6%80%A7%E9%97%AE%E9%A2%98">数据一致性问题</a></li>
 </ul>
 </li>
 </ul>
 <!-- /TOC -->
-<h1 id="1-基础知识"><a href="#1-基础知识" class="headerlink" title="1 基础知识"></a>1 基础知识</h1><p>Copy-On-Write简称COW，是一种用于程序设计中的优化策略。<br>开始都在共享同一个内容，当想要修改这个内容的时候，才会真正把内容Copy出去形成一个新的内容然后再改，这是一种延时懒惰策略。  </p>
-<h2 id="1-1-CopyOnWrite容器"><a href="#1-1-CopyOnWrite容器" class="headerlink" title="1.1 CopyOnWrite容器"></a>1.1 CopyOnWrite容器</h2><p>CopyOnWrite容器即写时复制的容器。通俗的理解：往一个容器添加元素的时候，不直接往当前容器添加，而是先将当前容器进行Copy，复制出一个新的容器，然后新的容器里添加元素，添加完元素之后，再将原容器的引用指向新的容器。这样做的好处是可以对CopyOnWrite容器进行并发的读，而不需要加锁，因为当前容器不会添加任何元素。（但是读取的数据会有延迟）所以CopyOnWrite容器也是一种读写分离的思想，读和写不同的容器。目的是为了提高并发能力。<br><a id="more"></a></p>
-<h1 id="2-实现原理"><a href="#2-实现原理" class="headerlink" title="2 实现原理"></a>2 实现原理</h1><h2 id="CopyOnWriteArrayList源码"><a href="#CopyOnWriteArrayList源码" class="headerlink" title="CopyOnWriteArrayList源码"></a>CopyOnWriteArrayList源码</h2><h3 id="CopyOnWriteArrayList-add"><a href="#CopyOnWriteArrayList-add" class="headerlink" title="CopyOnWriteArrayList#add()"></a>CopyOnWriteArrayList#add()</h3><p>向<code>ArrayList</code>里添加元素，可以发现在添加的时候是需要加锁的，否则多线程写的时候会Copy出N个副本出来。<br><figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">boolean</span> <span class="hljs-title">add</span><span class="hljs-params">(T e)</span> </span>&#123;</span><br><span class="line">    <span class="hljs-keyword">final</span> ReentrantLock lock = <span class="hljs-keyword">this</span>.lock;</span><br><span class="line">    lock.lock();</span><br><span class="line">    <span class="hljs-keyword">try</span> &#123;</span><br><span class="line">        Object[] elements = getArray();</span><br><span class="line">        <span class="hljs-keyword">int</span> len = elements.length;</span><br><span class="line">        <span class="hljs-comment">// 复制出新数组</span></span><br><span class="line">        Object[] newElements = Arrays.copyOf(elements, len + <span class="hljs-number">1</span>);</span><br><span class="line">        <span class="hljs-comment">// 把新元素添加到新数组里</span></span><br><span class="line">        newElements[len] = e;</span><br><span class="line">        <span class="hljs-comment">// 把原数组引用指向新数组</span></span><br><span class="line">        setArray(newElements);</span><br><span class="line">        <span class="hljs-keyword">return</span> <span class="hljs-keyword">true</span>;</span><br><span class="line">    &#125; <span class="hljs-keyword">finally</span> &#123;</span><br><span class="line">        lock.unlock();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"> </span><br><span class="line"><span class="hljs-function"><span class="hljs-keyword">final</span> <span class="hljs-keyword">void</span> <span class="hljs-title">setArray</span><span class="hljs-params">(Object[] a)</span> </span>&#123;</span><br><span class="line">    array = a;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<h1 id="基础知识"><a href="#基础知识" class="headerlink" title="基础知识"></a>基础知识</h1><p>Copy-On-Write简称COW，是一种用于程序设计中的优化策略。<br>开始都在共享同一个内容，当想要修改这个内容的时候，才会真正把内容Copy出去形成一个新的内容然后再改，这是一种延时懒惰策略。  </p>
+<h2 id="CopyOnWrite容器"><a href="#CopyOnWrite容器" class="headerlink" title="CopyOnWrite容器"></a>CopyOnWrite容器</h2><p>CopyOnWrite容器即写时复制的容器。通俗的理解：往一个容器添加元素的时候，不直接往当前容器添加，而是先将当前容器进行Copy，复制出一个新的容器，然后新的容器里添加元素，添加完元素之后，再将原容器的引用指向新的容器。这样做的好处是可以对CopyOnWrite容器进行并发的读，而不需要加锁，因为当前容器不会添加任何元素。（但是读取的数据会有延迟）所以CopyOnWrite容器也是一种读写分离的思想，读和写不同的容器。目的是为了提高并发能力。<br><a id="more"></a></p>
+<h1 id="实现原理"><a href="#实现原理" class="headerlink" title="实现原理"></a>实现原理</h1><h2 id="CopyOnWriteArrayList源码"><a href="#CopyOnWriteArrayList源码" class="headerlink" title="CopyOnWriteArrayList源码"></a>CopyOnWriteArrayList源码</h2><h3 id="CopyOnWriteArrayList-add"><a href="#CopyOnWriteArrayList-add" class="headerlink" title="CopyOnWriteArrayList#add()"></a>CopyOnWriteArrayList#add()</h3><p>向<code>ArrayList</code>里添加元素，可以发现在添加的时候是需要加锁的，否则多线程写的时候会Copy出N个副本出来。<br><figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">boolean</span> <span class="hljs-title">add</span><span class="hljs-params">(T e)</span> </span>&#123;</span><br><span class="line">    <span class="hljs-keyword">final</span> ReentrantLock lock = <span class="hljs-keyword">this</span>.lock;</span><br><span class="line">    lock.lock();</span><br><span class="line">    <span class="hljs-keyword">try</span> &#123;</span><br><span class="line">        Object[] elements = getArray();</span><br><span class="line">        <span class="hljs-keyword">int</span> len = elements.length;</span><br><span class="line">        <span class="hljs-comment">// 复制出新数组</span></span><br><span class="line">        Object[] newElements = Arrays.copyOf(elements, len + <span class="hljs-number">1</span>);</span><br><span class="line">        <span class="hljs-comment">// 把新元素添加到新数组里</span></span><br><span class="line">        newElements[len] = e;</span><br><span class="line">        <span class="hljs-comment">// 把原数组引用指向新数组</span></span><br><span class="line">        setArray(newElements);</span><br><span class="line">        <span class="hljs-keyword">return</span> <span class="hljs-keyword">true</span>;</span><br><span class="line">    &#125; <span class="hljs-keyword">finally</span> &#123;</span><br><span class="line">        lock.unlock();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"> </span><br><span class="line"><span class="hljs-function"><span class="hljs-keyword">final</span> <span class="hljs-keyword">void</span> <span class="hljs-title">setArray</span><span class="hljs-params">(Object[] a)</span> </span>&#123;</span><br><span class="line">    array = a;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
 <h3 id="CopyOnWriteArrayList-get"><a href="#CopyOnWriteArrayList-get" class="headerlink" title="CopyOnWriteArrayList#get()"></a>CopyOnWriteArrayList#get()</h3><p>读的时候不需要加锁，如果读的时候有多个线程正在向<code>ArrayList</code>添加数据，读还是会读到旧的数据，因为写的时候不会锁住旧的<code>ArrayList</code>。（懒或者延迟加载机制）<br><figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function"><span class="hljs-keyword">public</span> E <span class="hljs-title">get</span><span class="hljs-params">(<span class="hljs-keyword">int</span> index)</span> </span>&#123;</span><br><span class="line">    <span class="hljs-keyword">return</span> get(getArray(), index);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
 <h2 id="实现简单的CopyOnWriteMap"><a href="#实现简单的CopyOnWriteMap" class="headerlink" title="实现简单的CopyOnWriteMap"></a>实现简单的CopyOnWriteMap</h2><p>根据Copy-On-Write策略，实现一个简单的CopyOnWriteMap。<br><figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">import</span> java.util.Collection;</span><br><span class="line"><span class="hljs-keyword">import</span> java.util.Map;</span><br><span class="line"><span class="hljs-keyword">import</span> java.util.Set;</span><br><span class="line"></span><br><span class="line"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">CopyOnWriteMap</span>&lt;<span class="hljs-title">K</span>, <span class="hljs-title">V</span>&gt; <span class="hljs-keyword">implements</span> <span class="hljs-title">Map</span>&lt;<span class="hljs-title">K</span>, <span class="hljs-title">V</span>&gt;, <span class="hljs-title">Cloneable</span> </span>&#123;</span><br><span class="line">    <span class="hljs-keyword">private</span> <span class="hljs-keyword">volatile</span> Map&lt;K, V&gt; internalMap;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-title">CopyOnWriteMap</span><span class="hljs-params">()</span> </span>&#123;</span><br><span class="line">        internalMap = <span class="hljs-keyword">new</span> HashMap&lt;K, V&gt;();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">public</span> V <span class="hljs-title">put</span><span class="hljs-params">(K key, V value)</span> </span>&#123;</span><br><span class="line">        <span class="hljs-keyword">synchronized</span> (<span class="hljs-keyword">this</span>) &#123;</span><br><span class="line">            Map&lt;K, V&gt; newMap = <span class="hljs-keyword">new</span> HashMap&lt;K, V&gt;(internalMap);</span><br><span class="line">            V val = newMap.put(key, value);</span><br><span class="line">            internalMap = newMap;</span><br><span class="line">            <span class="hljs-keyword">return</span> val;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"> </span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">public</span> V <span class="hljs-title">get</span><span class="hljs-params">(Object key)</span> </span>&#123;</span><br><span class="line">        <span class="hljs-keyword">return</span> internalMap.get(key);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">putAll</span><span class="hljs-params">(Map&lt;? extends K, ? extends V&gt; newData)</span> </span>&#123;</span><br><span class="line">        <span class="hljs-keyword">synchronized</span> (<span class="hljs-keyword">this</span>) &#123;</span><br><span class="line">            Map&lt;K, V&gt; newMap = <span class="hljs-keyword">new</span> HashMap&lt;K, V&gt;(internalMap);</span><br><span class="line">            newMap.putAll(newData);</span><br><span class="line">            internalMap = newMap;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
-<h1 id="3-应用场景"><a href="#3-应用场景" class="headerlink" title="3 应用场景"></a>3 应用场景</h1><p>CopyOnWrite并发容器用于读多写少的并发场景。<br>比如：白名单，黑名单，商品类目的访问和更新场景，假如我们有一个搜索网站，用户在这个网站的搜索框中，输入关键字搜索内容，但是某些关键字不允许被搜索。这些不能被搜索的关键字会被放在一个黑名单当中，黑名单每天晚上更新一次。当用户搜索时，会检查当前关键字在不在黑名单当中，如果在，则提示不能搜索。  </p>
-<h2 id="3-1-需要注意两件事情"><a href="#3-1-需要注意两件事情" class="headerlink" title="3.1 需要注意两件事情"></a>3.1 需要注意两件事情</h2><ul>
+<h1 id="应用场景"><a href="#应用场景" class="headerlink" title="应用场景"></a>应用场景</h1><p>CopyOnWrite并发容器用于读多写少的并发场景。<br>比如：白名单，黑名单，商品类目的访问和更新场景，假如我们有一个搜索网站，用户在这个网站的搜索框中，输入关键字搜索内容，但是某些关键字不允许被搜索。这些不能被搜索的关键字会被放在一个黑名单当中，黑名单每天晚上更新一次。当用户搜索时，会检查当前关键字在不在黑名单当中，如果在，则提示不能搜索。  </p>
+<h2 id="需要注意两件事情"><a href="#需要注意两件事情" class="headerlink" title="需要注意两件事情"></a>需要注意两件事情</h2><ul>
 <li>减少扩容开销。</li>
-<li>使用批量添加。因为每次添加，容器每次都会进行复制，所以减少添加次数，可以减少容器的复制次数。<h1 id="4-缺点"><a href="#4-缺点" class="headerlink" title="4 缺点"></a>4 缺点</h1>CopyOnWrite容器有很多优点，但是同时也存在两个问题，即内存占用问题和数据一致性问题。  <h2 id="内存占用问题"><a href="#内存占用问题" class="headerlink" title="内存占用问题"></a>内存占用问题</h2>因为CopyOnWrite的写时复制机制，所以在进行写操作的时候，内存里会同时驻扎两个对象的内存，旧的对象和新写入的对象（注意:在复制的时候只是复制容器里的引用，只是在写的时候会创建新对象添加到新容器里，而旧容器的对象还在使用，所以有两份对象内存）。如果这些对象占用的内存比较大，比如说200M左右，那么再写入100M数据进去，内存就会占用300M，那么这个时候很有可能造成频繁的<code>Yong GC</code>和<code>Full GC</code>。<br>针对内存占用问题，可以通过压缩容器中的元素的方法来减少大对象的内存消耗，比如，如果元素全是10进制的数字，可以考虑把它压缩成36进制或64进制。或者不使用CopyOnWrite容器，而使用其他的并发容器，如<code>ConcurrentHashMap</code>。<h2 id="数据一致性问题"><a href="#数据一致性问题" class="headerlink" title="数据一致性问题"></a>数据一致性问题</h2>CopyOnWrite容器只能保证数据的最终一致性，不能保证数据的实时一致性。（写入的时候是copy一份出来，读取是读老的数据）所以如果希望写入的的数据，马上能读到，请不要使用CopyOnWrite容器。 </li>
+<li>使用批量添加。因为每次添加，容器每次都会进行复制，所以减少添加次数，可以减少容器的复制次数。<h1 id="缺点"><a href="#缺点" class="headerlink" title="缺点"></a>缺点</h1>CopyOnWrite容器有很多优点，但是同时也存在两个问题，即内存占用问题和数据一致性问题。  <h2 id="内存占用问题"><a href="#内存占用问题" class="headerlink" title="内存占用问题"></a>内存占用问题</h2>因为CopyOnWrite的写时复制机制，所以在进行写操作的时候，内存里会同时驻扎两个对象的内存，旧的对象和新写入的对象（注意:在复制的时候只是复制容器里的引用，只是在写的时候会创建新对象添加到新容器里，而旧容器的对象还在使用，所以有两份对象内存）。如果这些对象占用的内存比较大，比如说200M左右，那么再写入100M数据进去，内存就会占用300M，那么这个时候很有可能造成频繁的<code>Yong GC</code>和<code>Full GC</code>。<br>针对内存占用问题，可以通过压缩容器中的元素的方法来减少大对象的内存消耗，比如，如果元素全是10进制的数字，可以考虑把它压缩成36进制或64进制。或者不使用CopyOnWrite容器，而使用其他的并发容器，如<code>ConcurrentHashMap</code>。<h2 id="数据一致性问题"><a href="#数据一致性问题" class="headerlink" title="数据一致性问题"></a>数据一致性问题</h2>CopyOnWrite容器只能保证数据的最终一致性，不能保证数据的实时一致性。（写入的时候是copy一份出来，读取是读老的数据）所以如果希望写入的的数据，马上能读到，请不要使用CopyOnWrite容器。 </li>
 </ul>
 
         </div>
@@ -662,17 +662,17 @@ var _hmt = _hmt || [];
                 目录
             </h3>
             <ul class="menu-list"><li>
-        <a class="is-flex" href="#1-基础知识">
+        <a class="is-flex" href="#基础知识">
         <span class="has-mr-6">1</span>
-        <span>1 基础知识</span>
+        <span>基础知识</span>
         </a><ul class="menu-list"><li>
-        <a class="is-flex" href="#1-1-CopyOnWrite容器">
+        <a class="is-flex" href="#CopyOnWrite容器">
         <span class="has-mr-6">1.1</span>
-        <span>1.1 CopyOnWrite容器</span>
+        <span>CopyOnWrite容器</span>
         </a></li></ul></li><li>
-        <a class="is-flex" href="#2-实现原理">
+        <a class="is-flex" href="#实现原理">
         <span class="has-mr-6">2</span>
-        <span>2 实现原理</span>
+        <span>实现原理</span>
         </a><ul class="menu-list"><li>
         <a class="is-flex" href="#CopyOnWriteArrayList源码">
         <span class="has-mr-6">2.1</span>
@@ -690,17 +690,17 @@ var _hmt = _hmt || [];
         <span class="has-mr-6">2.2</span>
         <span>实现简单的CopyOnWriteMap</span>
         </a></li></ul></li><li>
-        <a class="is-flex" href="#3-应用场景">
+        <a class="is-flex" href="#应用场景">
         <span class="has-mr-6">3</span>
-        <span>3 应用场景</span>
+        <span>应用场景</span>
         </a><ul class="menu-list"><li>
-        <a class="is-flex" href="#3-1-需要注意两件事情">
+        <a class="is-flex" href="#需要注意两件事情">
         <span class="has-mr-6">3.1</span>
-        <span>3.1 需要注意两件事情</span>
+        <span>需要注意两件事情</span>
         </a></li></ul></li><li>
-        <a class="is-flex" href="#4-缺点">
+        <a class="is-flex" href="#缺点">
         <span class="has-mr-6">4</span>
-        <span>4 缺点</span>
+        <span>缺点</span>
         </a><ul class="menu-list"><li>
         <a class="is-flex" href="#内存占用问题">
         <span class="has-mr-6">4.1</span>
@@ -781,6 +781,25 @@ var _hmt = _hmt || [];
         
         <article class="media">
             <!-- 
+            <a href="/Python2ToPython3/" class="media-left">
+                <p class="image is-64x64">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Python2切换Python3">
+                </p>
+            </a>
+             -->
+            <div class="media-content">
+                <div class="content">
+                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
+                    <a href="/Python2ToPython3/" class="has-link-black-ter is-size-6">Python2切换Python3</a>
+                    <p class="is-size-7 is-uppercase">
+                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
+                    </p>
+                </div>
+            </div>
+        </article>
+        
+        <article class="media">
+            <!-- 
             <a href="/MySQL-Command/" class="media-left">
                 <p class="image is-64x64">
                     <img class="thumbnail" src="/images/thumbnail.svg" alt="MySQL基本命令">
@@ -793,25 +812,6 @@ var _hmt = _hmt || [];
                     <a href="/MySQL-Command/" class="has-link-black-ter is-size-6">MySQL基本命令</a>
                     <p class="is-size-7 is-uppercase">
                         <a class="has-link-grey -link" href="/categories/MySQL/">MySQL</a>
-                    </p>
-                </div>
-            </div>
-        </article>
-        
-        <article class="media">
-            <!-- 
-            <a href="/Centos-Line/" class="media-left">
-                <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Centos命令行图形界面切换">
-                </p>
-            </a>
-             -->
-            <div class="media-content">
-                <div class="content">
-                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
-                    <a href="/Centos-Line/" class="has-link-black-ter is-size-6">Centos命令行图形界面切换</a>
-                    <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
                     </p>
                 </div>
             </div>
@@ -1673,17 +1673,17 @@ var _hmt = _hmt || [];
                 目录
             </h3>
             <ul class="menu-list"><li>
-        <a class="is-flex" href="#1-基础知识">
+        <a class="is-flex" href="#基础知识">
         <span class="has-mr-6">1</span>
-        <span>1 基础知识</span>
+        <span>基础知识</span>
         </a><ul class="menu-list"><li>
-        <a class="is-flex" href="#1-1-CopyOnWrite容器">
+        <a class="is-flex" href="#CopyOnWrite容器">
         <span class="has-mr-6">1.1</span>
-        <span>1.1 CopyOnWrite容器</span>
+        <span>CopyOnWrite容器</span>
         </a></li></ul></li><li>
-        <a class="is-flex" href="#2-实现原理">
+        <a class="is-flex" href="#实现原理">
         <span class="has-mr-6">2</span>
-        <span>2 实现原理</span>
+        <span>实现原理</span>
         </a><ul class="menu-list"><li>
         <a class="is-flex" href="#CopyOnWriteArrayList源码">
         <span class="has-mr-6">2.1</span>
@@ -1701,17 +1701,17 @@ var _hmt = _hmt || [];
         <span class="has-mr-6">2.2</span>
         <span>实现简单的CopyOnWriteMap</span>
         </a></li></ul></li><li>
-        <a class="is-flex" href="#3-应用场景">
+        <a class="is-flex" href="#应用场景">
         <span class="has-mr-6">3</span>
-        <span>3 应用场景</span>
+        <span>应用场景</span>
         </a><ul class="menu-list"><li>
-        <a class="is-flex" href="#3-1-需要注意两件事情">
+        <a class="is-flex" href="#需要注意两件事情">
         <span class="has-mr-6">3.1</span>
-        <span>3.1 需要注意两件事情</span>
+        <span>需要注意两件事情</span>
         </a></li></ul></li><li>
-        <a class="is-flex" href="#4-缺点">
+        <a class="is-flex" href="#缺点">
         <span class="has-mr-6">4</span>
-        <span>4 缺点</span>
+        <span>缺点</span>
         </a><ul class="menu-list"><li>
         <a class="is-flex" href="#内存占用问题">
         <span class="has-mr-6">4.1</span>
@@ -1792,6 +1792,25 @@ var _hmt = _hmt || [];
         
         <article class="media">
             <!-- 
+            <a href="/Python2ToPython3/" class="media-left">
+                <p class="image is-64x64">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Python2切换Python3">
+                </p>
+            </a>
+             -->
+            <div class="media-content">
+                <div class="content">
+                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
+                    <a href="/Python2ToPython3/" class="has-link-black-ter is-size-6">Python2切换Python3</a>
+                    <p class="is-size-7 is-uppercase">
+                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
+                    </p>
+                </div>
+            </div>
+        </article>
+        
+        <article class="media">
+            <!-- 
             <a href="/MySQL-Command/" class="media-left">
                 <p class="image is-64x64">
                     <img class="thumbnail" src="/images/thumbnail.svg" alt="MySQL基本命令">
@@ -1804,25 +1823,6 @@ var _hmt = _hmt || [];
                     <a href="/MySQL-Command/" class="has-link-black-ter is-size-6">MySQL基本命令</a>
                     <p class="is-size-7 is-uppercase">
                         <a class="has-link-grey -link" href="/categories/MySQL/">MySQL</a>
-                    </p>
-                </div>
-            </div>
-        </article>
-        
-        <article class="media">
-            <!-- 
-            <a href="/Centos-Line/" class="media-left">
-                <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Centos命令行图形界面切换">
-                </p>
-            </a>
-             -->
-            <div class="media-content">
-                <div class="content">
-                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
-                    <a href="/Centos-Line/" class="has-link-black-ter is-size-6">Centos命令行图形界面切换</a>
-                    <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
                     </p>
                 </div>
             </div>

@@ -7,18 +7,18 @@
 
 
 
-    <meta name="description" content="1 上下文分类 1.1 让步式上下文切换 1.2 抢占式上下文切换   2 线程池 2.1 关键点 对于耗时短的任务 对于耗时长的任务   2.2 三种情况 高并发，低耗时 低并发，高耗时 高并发高耗时       1 上下文分类上下文切换是指CPU的控制权由运行任务转移到另外一个就绪任务时所发生的事件。    高并发，低耗时的情况，上下文切换本来就多，并且高并发就意味着CPU是处于繁忙状态的">
+    <meta name="description" content="上下文分类 让步式上下文切换 抢占式上下文切换   线程池 关键点 对于耗时短的任务 对于耗时长的任务   三种情况 高并发，低耗时 低并发，高耗时 高并发高耗时       上下文分类上下文切换是指CPU的控制权由运行任务转移到另外一个就绪任务时所发生的事件。    高并发，低耗时的情况，上下文切换本来就多，并且高并发就意味着CPU是处于繁忙状态的， 增加更多地线程也不会让线程得到执行时间片">
 <meta name="keywords" content="并发">
 <meta property="og:type" content="article">
 <meta property="og:title" content="上下文切换和线程池">
 <meta property="og:url" content="https://joeskye1701.github.io/Context-Switch-And-Thread-Pool/index.html">
 <meta property="og:site_name" content="Joe|博客">
-<meta property="og:description" content="1 上下文分类 1.1 让步式上下文切换 1.2 抢占式上下文切换   2 线程池 2.1 关键点 对于耗时短的任务 对于耗时长的任务   2.2 三种情况 高并发，低耗时 低并发，高耗时 高并发高耗时       1 上下文分类上下文切换是指CPU的控制权由运行任务转移到另外一个就绪任务时所发生的事件。    高并发，低耗时的情况，上下文切换本来就多，并且高并发就意味着CPU是处于繁忙状态的">
+<meta property="og:description" content="上下文分类 让步式上下文切换 抢占式上下文切换   线程池 关键点 对于耗时短的任务 对于耗时长的任务   三种情况 高并发，低耗时 低并发，高耗时 高并发高耗时       上下文分类上下文切换是指CPU的控制权由运行任务转移到另外一个就绪任务时所发生的事件。    高并发，低耗时的情况，上下文切换本来就多，并且高并发就意味着CPU是处于繁忙状态的， 增加更多地线程也不会让线程得到执行时间片">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:updated_time" content="2019-03-06T19:27:54.419Z">
+<meta property="og:updated_time" content="2019-03-08T18:05:04.905Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="上下文切换和线程池">
-<meta name="twitter:description" content="1 上下文分类 1.1 让步式上下文切换 1.2 抢占式上下文切换   2 线程池 2.1 关键点 对于耗时短的任务 对于耗时长的任务   2.2 三种情况 高并发，低耗时 低并发，高耗时 高并发高耗时       1 上下文分类上下文切换是指CPU的控制权由运行任务转移到另外一个就绪任务时所发生的事件。    高并发，低耗时的情况，上下文切换本来就多，并且高并发就意味着CPU是处于繁忙状态的">
+<meta name="twitter:description" content="上下文分类 让步式上下文切换 抢占式上下文切换   线程池 关键点 对于耗时短的任务 对于耗时长的任务   三种情况 高并发，低耗时 低并发，高耗时 高并发高耗时       上下文分类上下文切换是指CPU的控制权由运行任务转移到另外一个就绪任务时所发生的事件。    高并发，低耗时的情况，上下文切换本来就多，并且高并发就意味着CPU是处于繁忙状态的， 增加更多地线程也不会让线程得到执行时间片">
 
 
 
@@ -171,18 +171,18 @@ var _hmt = _hmt || [];
         <div class="content">
             <!-- TOC -->
 <ul>
-<li><a href="#1-上下文分类">1 上下文分类</a><ul>
-<li><a href="#11-让步式上下文切换">1.1 让步式上下文切换</a></li>
-<li><a href="#12-抢占式上下文切换">1.2 抢占式上下文切换</a></li>
+<li><a href="#上下文分类">上下文分类</a><ul>
+<li><a href="#让步式上下文切换">让步式上下文切换</a></li>
+<li><a href="#抢占式上下文切换">抢占式上下文切换</a></li>
 </ul>
 </li>
-<li><a href="#2-线程池">2 线程池</a><ul>
-<li><a href="#21-关键点">2.1 关键点</a><ul>
+<li><a href="#线程池">线程池</a><ul>
+<li><a href="#关键点">关键点</a><ul>
 <li><a href="#对于耗时短的任务">对于耗时短的任务</a></li>
 <li><a href="#对于耗时长的任务">对于耗时长的任务</a></li>
 </ul>
 </li>
-<li><a href="#22-三种情况">2.2 三种情况</a><ul>
+<li><a href="#三种情况">三种情况</a><ul>
 <li><a href="#高并发低耗时">高并发，低耗时</a></li>
 <li><a href="#低并发高耗时">低并发，高耗时</a></li>
 <li><a href="#高并发高耗时">高并发高耗时</a></li>
@@ -192,13 +192,13 @@ var _hmt = _hmt || [];
 </li>
 </ul>
 <!-- /TOC -->
-<h1 id="1-上下文分类"><a href="#1-上下文分类" class="headerlink" title="1 上下文分类"></a>1 上下文分类</h1><p>上下文切换是指CPU的控制权由运行任务转移到另外一个就绪任务时所发生的事件。  </p>
+<h1 id="上下文分类"><a href="#上下文分类" class="headerlink" title="上下文分类"></a>上下文分类</h1><p>上下文切换是指CPU的控制权由运行任务转移到另外一个就绪任务时所发生的事件。  </p>
 <ul>
 <li>高并发，低耗时的情况，上下文切换本来就多，并且高并发就意味着CPU是处于繁忙状态的， 增加更多地线程也不会让线程得到执行时间片, 反而会增加线程切换的开销。  </li>
-<li>低并发，高耗时，保证有空闲线程或者增加线程数目，接收新任务，可以减少线程切换。  <h2 id="1-1-让步式上下文切换"><a href="#1-1-让步式上下文切换" class="headerlink" title="1.1 让步式上下文切换"></a>1.1 让步式上下文切换</h2>指执行线程主动释放CPU，与锁竞争严重程度成正比（锁竞争严重，释放多），可通过减少锁竞争来避免。<h2 id="1-2-抢占式上下文切换"><a href="#1-2-抢占式上下文切换" class="headerlink" title="1.2 抢占式上下文切换"></a>1.2 抢占式上下文切换</h2>后者是指线程因分配的时间片用尽而被迫放弃CPU或者被其他优先级更高的线程所抢占，一般由于线程数大于CPU可用核心数引起，可通过调整线程数，适当减少线程数来避免。<h1 id="2-线程池"><a href="#2-线程池" class="headerlink" title="2 线程池"></a>2 线程池</h1><h2 id="2-1-关键点"><a href="#2-1-关键点" class="headerlink" title="2.1 关键点"></a>2.1 关键点</h2></li>
+<li>低并发，高耗时，保证有空闲线程或者增加线程数目，接收新任务，可以减少线程切换。  <h2 id="让步式上下文切换"><a href="#让步式上下文切换" class="headerlink" title="让步式上下文切换"></a>让步式上下文切换</h2>指执行线程主动释放CPU，与锁竞争严重程度成正比（锁竞争严重，释放多），可通过减少锁竞争来避免。<h2 id="抢占式上下文切换"><a href="#抢占式上下文切换" class="headerlink" title="抢占式上下文切换"></a>抢占式上下文切换</h2>后者是指线程因分配的时间片用尽而被迫放弃CPU或者被其他优先级更高的线程所抢占，一般由于线程数大于CPU可用核心数引起，可通过调整线程数，适当减少线程数来避免。<h1 id="线程池"><a href="#线程池" class="headerlink" title="线程池"></a>线程池</h1><h2 id="关键点"><a href="#关键点" class="headerlink" title="关键点"></a>关键点</h2></li>
 <li>尽量减少线程切换和管理的开支：要求线程数尽量少，这样可以减少线程切换和管理的开支。</li>
 <li>最大化利用CPU：要求尽量多的线程，以保证CPU资源最大化的利用。 <a id="more"></a> 
-<h3 id="对于耗时短的任务"><a href="#对于耗时短的任务" class="headerlink" title="对于耗时短的任务"></a>对于耗时短的任务</h3>要求线程尽量少，如果线程太多，有可能出现线程切换和管理的时间，大于任务执行的时间，那效率就低了。  <h3 id="对于耗时长的任务"><a href="#对于耗时长的任务" class="headerlink" title="对于耗时长的任务"></a>对于耗时长的任务</h3>要分是CPU任务，还是io等类型的任务。如果是CPU类型的任务，线程数不宜太多；但是如果是io类型的任务，线程多一些更好，可以更充分利用cpu。<h2 id="2-2-三种情况"><a href="#2-2-三种情况" class="headerlink" title="2.2 三种情况"></a>2.2 三种情况</h2><h3 id="高并发，低耗时"><a href="#高并发，低耗时" class="headerlink" title="高并发，低耗时"></a>高并发，低耗时</h3>建议少线程，只要满足并发即可（充分利用CPU）；例如并发100，线程池可能设置为10就可以。<h3 id="低并发，高耗时"><a href="#低并发，高耗时" class="headerlink" title="低并发，高耗时"></a>低并发，高耗时</h3>建议多线程，保证有空闲线程，接受新的任务；例如并发10，线程池可能就要设置为20。<h3 id="高并发高耗时"><a href="#高并发高耗时" class="headerlink" title="高并发高耗时"></a>高并发高耗时</h3></li>
+<h3 id="对于耗时短的任务"><a href="#对于耗时短的任务" class="headerlink" title="对于耗时短的任务"></a>对于耗时短的任务</h3>要求线程尽量少，如果线程太多，有可能出现线程切换和管理的时间，大于任务执行的时间，那效率就低了。  <h3 id="对于耗时长的任务"><a href="#对于耗时长的任务" class="headerlink" title="对于耗时长的任务"></a>对于耗时长的任务</h3>要分是CPU任务，还是io等类型的任务。如果是CPU类型的任务，线程数不宜太多；但是如果是io类型的任务，线程多一些更好，可以更充分利用cpu。<h2 id="三种情况"><a href="#三种情况" class="headerlink" title="三种情况"></a>三种情况</h2><h3 id="高并发，低耗时"><a href="#高并发，低耗时" class="headerlink" title="高并发，低耗时"></a>高并发，低耗时</h3>建议少线程，只要满足并发即可（充分利用CPU）；例如并发100，线程池可能设置为10就可以。<h3 id="低并发，高耗时"><a href="#低并发，高耗时" class="headerlink" title="低并发，高耗时"></a>低并发，高耗时</h3>建议多线程，保证有空闲线程，接受新的任务；例如并发10，线程池可能就要设置为20。<h3 id="高并发高耗时"><a href="#高并发高耗时" class="headerlink" title="高并发高耗时"></a>高并发高耗时</h3></li>
 <li>要分析任务类型（CPU型，io型，任务时间）。</li>
 <li>增加排队。</li>
 <li>加大线程数。</li>
@@ -660,25 +660,25 @@ var _hmt = _hmt || [];
                 目录
             </h3>
             <ul class="menu-list"><li>
-        <a class="is-flex" href="#1-上下文分类">
+        <a class="is-flex" href="#上下文分类">
         <span class="has-mr-6">1</span>
-        <span>1 上下文分类</span>
+        <span>上下文分类</span>
         </a><ul class="menu-list"><li>
-        <a class="is-flex" href="#1-1-让步式上下文切换">
+        <a class="is-flex" href="#让步式上下文切换">
         <span class="has-mr-6">1.1</span>
-        <span>1.1 让步式上下文切换</span>
+        <span>让步式上下文切换</span>
         </a></li><li>
-        <a class="is-flex" href="#1-2-抢占式上下文切换">
+        <a class="is-flex" href="#抢占式上下文切换">
         <span class="has-mr-6">1.2</span>
-        <span>1.2 抢占式上下文切换</span>
+        <span>抢占式上下文切换</span>
         </a></li></ul></li><li>
-        <a class="is-flex" href="#2-线程池">
+        <a class="is-flex" href="#线程池">
         <span class="has-mr-6">2</span>
-        <span>2 线程池</span>
+        <span>线程池</span>
         </a><ul class="menu-list"><li>
-        <a class="is-flex" href="#2-1-关键点">
+        <a class="is-flex" href="#关键点">
         <span class="has-mr-6">2.1</span>
-        <span>2.1 关键点</span>
+        <span>关键点</span>
         </a><ul class="menu-list"><li>
         <a class="is-flex" href="#对于耗时短的任务">
         <span class="has-mr-6">2.1.1</span>
@@ -688,9 +688,9 @@ var _hmt = _hmt || [];
         <span class="has-mr-6">2.1.2</span>
         <span>对于耗时长的任务</span>
         </a></li></ul></li><li>
-        <a class="is-flex" href="#2-2-三种情况">
+        <a class="is-flex" href="#三种情况">
         <span class="has-mr-6">2.2</span>
-        <span>2.2 三种情况</span>
+        <span>三种情况</span>
         </a><ul class="menu-list"><li>
         <a class="is-flex" href="#高并发，低耗时">
         <span class="has-mr-6">2.2.1</span>
@@ -775,6 +775,25 @@ var _hmt = _hmt || [];
         
         <article class="media">
             <!-- 
+            <a href="/Python2ToPython3/" class="media-left">
+                <p class="image is-64x64">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Python2切换Python3">
+                </p>
+            </a>
+             -->
+            <div class="media-content">
+                <div class="content">
+                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
+                    <a href="/Python2ToPython3/" class="has-link-black-ter is-size-6">Python2切换Python3</a>
+                    <p class="is-size-7 is-uppercase">
+                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
+                    </p>
+                </div>
+            </div>
+        </article>
+        
+        <article class="media">
+            <!-- 
             <a href="/MySQL-Command/" class="media-left">
                 <p class="image is-64x64">
                     <img class="thumbnail" src="/images/thumbnail.svg" alt="MySQL基本命令">
@@ -787,25 +806,6 @@ var _hmt = _hmt || [];
                     <a href="/MySQL-Command/" class="has-link-black-ter is-size-6">MySQL基本命令</a>
                     <p class="is-size-7 is-uppercase">
                         <a class="has-link-grey -link" href="/categories/MySQL/">MySQL</a>
-                    </p>
-                </div>
-            </div>
-        </article>
-        
-        <article class="media">
-            <!-- 
-            <a href="/Centos-Line/" class="media-left">
-                <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Centos命令行图形界面切换">
-                </p>
-            </a>
-             -->
-            <div class="media-content">
-                <div class="content">
-                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
-                    <a href="/Centos-Line/" class="has-link-black-ter is-size-6">Centos命令行图形界面切换</a>
-                    <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
                     </p>
                 </div>
             </div>
@@ -1667,25 +1667,25 @@ var _hmt = _hmt || [];
                 目录
             </h3>
             <ul class="menu-list"><li>
-        <a class="is-flex" href="#1-上下文分类">
+        <a class="is-flex" href="#上下文分类">
         <span class="has-mr-6">1</span>
-        <span>1 上下文分类</span>
+        <span>上下文分类</span>
         </a><ul class="menu-list"><li>
-        <a class="is-flex" href="#1-1-让步式上下文切换">
+        <a class="is-flex" href="#让步式上下文切换">
         <span class="has-mr-6">1.1</span>
-        <span>1.1 让步式上下文切换</span>
+        <span>让步式上下文切换</span>
         </a></li><li>
-        <a class="is-flex" href="#1-2-抢占式上下文切换">
+        <a class="is-flex" href="#抢占式上下文切换">
         <span class="has-mr-6">1.2</span>
-        <span>1.2 抢占式上下文切换</span>
+        <span>抢占式上下文切换</span>
         </a></li></ul></li><li>
-        <a class="is-flex" href="#2-线程池">
+        <a class="is-flex" href="#线程池">
         <span class="has-mr-6">2</span>
-        <span>2 线程池</span>
+        <span>线程池</span>
         </a><ul class="menu-list"><li>
-        <a class="is-flex" href="#2-1-关键点">
+        <a class="is-flex" href="#关键点">
         <span class="has-mr-6">2.1</span>
-        <span>2.1 关键点</span>
+        <span>关键点</span>
         </a><ul class="menu-list"><li>
         <a class="is-flex" href="#对于耗时短的任务">
         <span class="has-mr-6">2.1.1</span>
@@ -1695,9 +1695,9 @@ var _hmt = _hmt || [];
         <span class="has-mr-6">2.1.2</span>
         <span>对于耗时长的任务</span>
         </a></li></ul></li><li>
-        <a class="is-flex" href="#2-2-三种情况">
+        <a class="is-flex" href="#三种情况">
         <span class="has-mr-6">2.2</span>
-        <span>2.2 三种情况</span>
+        <span>三种情况</span>
         </a><ul class="menu-list"><li>
         <a class="is-flex" href="#高并发，低耗时">
         <span class="has-mr-6">2.2.1</span>
@@ -1782,6 +1782,25 @@ var _hmt = _hmt || [];
         
         <article class="media">
             <!-- 
+            <a href="/Python2ToPython3/" class="media-left">
+                <p class="image is-64x64">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Python2切换Python3">
+                </p>
+            </a>
+             -->
+            <div class="media-content">
+                <div class="content">
+                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
+                    <a href="/Python2ToPython3/" class="has-link-black-ter is-size-6">Python2切换Python3</a>
+                    <p class="is-size-7 is-uppercase">
+                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
+                    </p>
+                </div>
+            </div>
+        </article>
+        
+        <article class="media">
+            <!-- 
             <a href="/MySQL-Command/" class="media-left">
                 <p class="image is-64x64">
                     <img class="thumbnail" src="/images/thumbnail.svg" alt="MySQL基本命令">
@@ -1794,25 +1813,6 @@ var _hmt = _hmt || [];
                     <a href="/MySQL-Command/" class="has-link-black-ter is-size-6">MySQL基本命令</a>
                     <p class="is-size-7 is-uppercase">
                         <a class="has-link-grey -link" href="/categories/MySQL/">MySQL</a>
-                    </p>
-                </div>
-            </div>
-        </article>
-        
-        <article class="media">
-            <!-- 
-            <a href="/Centos-Line/" class="media-left">
-                <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Centos命令行图形界面切换">
-                </p>
-            </a>
-             -->
-            <div class="media-content">
-                <div class="content">
-                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
-                    <a href="/Centos-Line/" class="has-link-black-ter is-size-6">Centos命令行图形界面切换</a>
-                    <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
                     </p>
                 </div>
             </div>

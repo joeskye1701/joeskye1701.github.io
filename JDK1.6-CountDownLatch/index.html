@@ -7,18 +7,18 @@
 
 
 
-    <meta name="description" content="1 介绍CountDownLatch 2 源码分析 CountDownLatch#Sync CountDownLatch   3 总结   1 介绍CountDownLatch一种锁，称为闭锁。可以让一个或多个线程等待另外一个或多个线程执行完毕后再执行。CountDownLatch是基于AQS构建，使用共享模式。CountDownLatch中提供一个count值来表示要等待的(其他任务)完成次">
+    <meta name="description" content="介绍CountDownLatch 源码分析 CountDownLatch#Sync CountDownLatch   总结   介绍CountDownLatch一种锁，称为闭锁。可以让一个或多个线程等待另外一个或多个线程执行完毕后再执行。CountDownLatch是基于AQS构建，使用共享模式。CountDownLatch中提供一个count值来表示要等待的(其他任务)完成次数，常规用法有两">
 <meta name="keywords" content="JDK6 源码">
 <meta property="og:type" content="article">
 <meta property="og:title" content="JDK1.6 CountDownLatch">
 <meta property="og:url" content="https://joeskye1701.github.io/JDK1.6-CountDownLatch/index.html">
 <meta property="og:site_name" content="Joe|博客">
-<meta property="og:description" content="1 介绍CountDownLatch 2 源码分析 CountDownLatch#Sync CountDownLatch   3 总结   1 介绍CountDownLatch一种锁，称为闭锁。可以让一个或多个线程等待另外一个或多个线程执行完毕后再执行。CountDownLatch是基于AQS构建，使用共享模式。CountDownLatch中提供一个count值来表示要等待的(其他任务)完成次">
+<meta property="og:description" content="介绍CountDownLatch 源码分析 CountDownLatch#Sync CountDownLatch   总结   介绍CountDownLatch一种锁，称为闭锁。可以让一个或多个线程等待另外一个或多个线程执行完毕后再执行。CountDownLatch是基于AQS构建，使用共享模式。CountDownLatch中提供一个count值来表示要等待的(其他任务)完成次数，常规用法有两">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:updated_time" content="2019-03-06T19:31:54.198Z">
+<meta property="og:updated_time" content="2019-03-08T19:12:35.340Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="JDK1.6 CountDownLatch">
-<meta name="twitter:description" content="1 介绍CountDownLatch 2 源码分析 CountDownLatch#Sync CountDownLatch   3 总结   1 介绍CountDownLatch一种锁，称为闭锁。可以让一个或多个线程等待另外一个或多个线程执行完毕后再执行。CountDownLatch是基于AQS构建，使用共享模式。CountDownLatch中提供一个count值来表示要等待的(其他任务)完成次">
+<meta name="twitter:description" content="介绍CountDownLatch 源码分析 CountDownLatch#Sync CountDownLatch   总结   介绍CountDownLatch一种锁，称为闭锁。可以让一个或多个线程等待另外一个或多个线程执行完毕后再执行。CountDownLatch是基于AQS构建，使用共享模式。CountDownLatch中提供一个count值来表示要等待的(其他任务)完成次数，常规用法有两">
 
 
 
@@ -171,18 +171,18 @@ var _hmt = _hmt || [];
         <div class="content">
             <!-- TOC -->
 <ul>
-<li><a href="#1-%E4%BB%8B%E7%BB%8Dcountdownlatch">1 介绍CountDownLatch</a></li>
-<li><a href="#2-%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90">2 源码分析</a><ul>
+<li><a href="#%E4%BB%8B%E7%BB%8Dcountdownlatch">介绍CountDownLatch</a></li>
+<li><a href="#%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90">源码分析</a><ul>
 <li><a href="#countdownlatchsync">CountDownLatch#Sync</a></li>
 <li><a href="#countdownlatch">CountDownLatch</a></li>
 </ul>
 </li>
-<li><a href="#3-%E6%80%BB%E7%BB%93">3 总结</a></li>
+<li><a href="#%E6%80%BB%E7%BB%93">总结</a></li>
 </ul>
 <!-- /TOC -->
-<h1 id="1-介绍CountDownLatch"><a href="#1-介绍CountDownLatch" class="headerlink" title="1 介绍CountDownLatch"></a>1 介绍CountDownLatch</h1><p>一种锁，称为闭锁。可以让一个或多个线程等待另外一个或多个线程执行完毕后再执行。<br>CountDownLatch是基于AQS构建，使用共享模式。<br>CountDownLatch中提供一个count值来表示要等待的(其他任务)完成次数，常规用法有两种：Count(1)和Count(N)。举个栗子，百米赛跑，N个选手，每个选手可以看成是一个线程。起跑前，选手准备(线程启动，然后在Count(1)上阻塞)，当发令枪响后(相当于Count(1)闭锁释放)，选手一起起跑(相当于线程通过Count(1)继续执行)，当所有选手都通过终点(相当于Count(N)闭锁释放)，然后再统计成绩。</p>
+<h1 id="介绍CountDownLatch"><a href="#介绍CountDownLatch" class="headerlink" title="介绍CountDownLatch"></a>介绍CountDownLatch</h1><p>一种锁，称为闭锁。可以让一个或多个线程等待另外一个或多个线程执行完毕后再执行。<br>CountDownLatch是基于AQS构建，使用共享模式。<br>CountDownLatch中提供一个count值来表示要等待的(其他任务)完成次数，常规用法有两种：Count(1)和Count(N)。举个栗子，百米赛跑，N个选手，每个选手可以看成是一个线程。起跑前，选手准备(线程启动，然后在Count(1)上阻塞)，当发令枪响后(相当于Count(1)闭锁释放)，选手一起起跑(相当于线程通过Count(1)继续执行)，当所有选手都通过终点(相当于Count(N)闭锁释放)，然后再统计成绩。</p>
 <a id="more"></a>
-<h1 id="2-源码分析"><a href="#2-源码分析" class="headerlink" title="2 源码分析"></a>2 源码分析</h1><h2 id="CountDownLatch-Sync"><a href="#CountDownLatch-Sync" class="headerlink" title="CountDownLatch#Sync"></a>CountDownLatch#Sync</h2><figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment"> * Synchronization control For CountDownLatch.</span></span><br><span class="line"><span class="hljs-comment"> * Uses AQS state to represent count.</span></span><br><span class="line"><span class="hljs-comment"> */</span></span><br><span class="line"><span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Sync</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">AbstractQueuedSynchronizer</span> </span>&#123;</span><br><span class="line">    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">long</span> serialVersionUID = <span class="hljs-number">4982264981922014374L</span>;</span><br><span class="line"></span><br><span class="line">    Sync(<span class="hljs-keyword">int</span> count) &#123;</span><br><span class="line">        setState(count);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">int</span> <span class="hljs-title">getCount</span><span class="hljs-params">()</span> </span>&#123;</span><br><span class="line">        <span class="hljs-keyword">return</span> getState();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-comment">// 1</span></span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">int</span> <span class="hljs-title">tryAcquireShared</span><span class="hljs-params">(<span class="hljs-keyword">int</span> acquires)</span> </span>&#123;</span><br><span class="line">        <span class="hljs-keyword">return</span> getState() == <span class="hljs-number">0</span>? <span class="hljs-number">1</span> : -<span class="hljs-number">1</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-comment">// 2</span></span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">boolean</span> <span class="hljs-title">tryReleaseShared</span><span class="hljs-params">(<span class="hljs-keyword">int</span> releases)</span> </span>&#123;</span><br><span class="line">        <span class="hljs-comment">// Decrement count; signal when transition to zero</span></span><br><span class="line">        <span class="hljs-keyword">for</span> (;;) &#123;</span><br><span class="line">            <span class="hljs-keyword">int</span> c = getState();</span><br><span class="line">            <span class="hljs-keyword">if</span> (c == <span class="hljs-number">0</span>)</span><br><span class="line">                <span class="hljs-keyword">return</span> <span class="hljs-keyword">false</span>;</span><br><span class="line">            <span class="hljs-keyword">int</span> nextc = c-<span class="hljs-number">1</span>;</span><br><span class="line">            <span class="hljs-keyword">if</span> (compareAndSetState(c, nextc))</span><br><span class="line">                <span class="hljs-keyword">return</span> nextc == <span class="hljs-number">0</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h1 id="源码分析"><a href="#源码分析" class="headerlink" title="源码分析"></a>源码分析</h1><h2 id="CountDownLatch-Sync"><a href="#CountDownLatch-Sync" class="headerlink" title="CountDownLatch#Sync"></a>CountDownLatch#Sync</h2><figure class="highlight java hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment"> * Synchronization control For CountDownLatch.</span></span><br><span class="line"><span class="hljs-comment"> * Uses AQS state to represent count.</span></span><br><span class="line"><span class="hljs-comment"> */</span></span><br><span class="line"><span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Sync</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">AbstractQueuedSynchronizer</span> </span>&#123;</span><br><span class="line">    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">long</span> serialVersionUID = <span class="hljs-number">4982264981922014374L</span>;</span><br><span class="line"></span><br><span class="line">    Sync(<span class="hljs-keyword">int</span> count) &#123;</span><br><span class="line">        setState(count);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">int</span> <span class="hljs-title">getCount</span><span class="hljs-params">()</span> </span>&#123;</span><br><span class="line">        <span class="hljs-keyword">return</span> getState();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-comment">// 1</span></span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">int</span> <span class="hljs-title">tryAcquireShared</span><span class="hljs-params">(<span class="hljs-keyword">int</span> acquires)</span> </span>&#123;</span><br><span class="line">        <span class="hljs-keyword">return</span> getState() == <span class="hljs-number">0</span>? <span class="hljs-number">1</span> : -<span class="hljs-number">1</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-comment">// 2</span></span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">boolean</span> <span class="hljs-title">tryReleaseShared</span><span class="hljs-params">(<span class="hljs-keyword">int</span> releases)</span> </span>&#123;</span><br><span class="line">        <span class="hljs-comment">// Decrement count; signal when transition to zero</span></span><br><span class="line">        <span class="hljs-keyword">for</span> (;;) &#123;</span><br><span class="line">            <span class="hljs-keyword">int</span> c = getState();</span><br><span class="line">            <span class="hljs-keyword">if</span> (c == <span class="hljs-number">0</span>)</span><br><span class="line">                <span class="hljs-keyword">return</span> <span class="hljs-keyword">false</span>;</span><br><span class="line">            <span class="hljs-keyword">int</span> nextc = c-<span class="hljs-number">1</span>;</span><br><span class="line">            <span class="hljs-keyword">if</span> (compareAndSetState(c, nextc))</span><br><span class="line">                <span class="hljs-keyword">return</span> nextc == <span class="hljs-number">0</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <p>标注代码分析</p>
 <ol>
 <li>如果当前count为0，那么方法返回1，按照之前对AQS的分析，请求成功，并唤醒同步队列里下一个共享模式的线程(这里都是共享模式的)。如果当前count不为0，那么方法返回-1，请求失败，当前线程最终会被阻塞(之前会不止一次调用tryAcquireShared)。</li>
@@ -195,7 +195,7 @@ var _hmt = _hmt || [];
 <li>如果当前count=0，那么方法立即返回true。如果当前count!=0，那么当前线程会一直等待，直到count被(其他线程)减到0或者当前线程被中断或者超时。 </li>
 <li>如果当前count大于0，递减count。如果递减后，count等于0，那么AQS中所有等待线程都被唤醒。如果当前count等于0，什么事都不会发生。</li>
 </ol>
-<h1 id="3-总结"><a href="#3-总结" class="headerlink" title="3 总结"></a>3 总结</h1><ol>
+<h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><ol>
 <li>建立一个count为n的闭锁后，闭锁的内部计数为n，这时如果有线程调用闭锁的await方法，会阻塞。</li>
 <li>每一次调用闭锁的countDown方法，内部计数就会减1，当闭锁的countDown方法被调用n次后，内部计数减为0，这时在闭锁await方法上等待的线程就被唤醒了。</li>
 </ol>
@@ -656,13 +656,13 @@ var _hmt = _hmt || [];
                 目录
             </h3>
             <ul class="menu-list"><li>
-        <a class="is-flex" href="#1-介绍CountDownLatch">
+        <a class="is-flex" href="#介绍CountDownLatch">
         <span class="has-mr-6">1</span>
-        <span>1 介绍CountDownLatch</span>
+        <span>介绍CountDownLatch</span>
         </a></li><li>
-        <a class="is-flex" href="#2-源码分析">
+        <a class="is-flex" href="#源码分析">
         <span class="has-mr-6">2</span>
-        <span>2 源码分析</span>
+        <span>源码分析</span>
         </a><ul class="menu-list"><li>
         <a class="is-flex" href="#CountDownLatch-Sync">
         <span class="has-mr-6">2.1</span>
@@ -672,9 +672,9 @@ var _hmt = _hmt || [];
         <span class="has-mr-6">2.2</span>
         <span>CountDownLatch</span>
         </a></li></ul></li><li>
-        <a class="is-flex" href="#3-总结">
+        <a class="is-flex" href="#总结">
         <span class="has-mr-6">3</span>
-        <span>3 总结</span>
+        <span>总结</span>
         </a></li></ul>
         </div>
     </div>
@@ -747,6 +747,25 @@ var _hmt = _hmt || [];
         
         <article class="media">
             <!-- 
+            <a href="/Python2ToPython3/" class="media-left">
+                <p class="image is-64x64">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Python2切换Python3">
+                </p>
+            </a>
+             -->
+            <div class="media-content">
+                <div class="content">
+                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
+                    <a href="/Python2ToPython3/" class="has-link-black-ter is-size-6">Python2切换Python3</a>
+                    <p class="is-size-7 is-uppercase">
+                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
+                    </p>
+                </div>
+            </div>
+        </article>
+        
+        <article class="media">
+            <!-- 
             <a href="/MySQL-Command/" class="media-left">
                 <p class="image is-64x64">
                     <img class="thumbnail" src="/images/thumbnail.svg" alt="MySQL基本命令">
@@ -759,25 +778,6 @@ var _hmt = _hmt || [];
                     <a href="/MySQL-Command/" class="has-link-black-ter is-size-6">MySQL基本命令</a>
                     <p class="is-size-7 is-uppercase">
                         <a class="has-link-grey -link" href="/categories/MySQL/">MySQL</a>
-                    </p>
-                </div>
-            </div>
-        </article>
-        
-        <article class="media">
-            <!-- 
-            <a href="/Centos-Line/" class="media-left">
-                <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Centos命令行图形界面切换">
-                </p>
-            </a>
-             -->
-            <div class="media-content">
-                <div class="content">
-                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
-                    <a href="/Centos-Line/" class="has-link-black-ter is-size-6">Centos命令行图形界面切换</a>
-                    <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
                     </p>
                 </div>
             </div>
@@ -1639,13 +1639,13 @@ var _hmt = _hmt || [];
                 目录
             </h3>
             <ul class="menu-list"><li>
-        <a class="is-flex" href="#1-介绍CountDownLatch">
+        <a class="is-flex" href="#介绍CountDownLatch">
         <span class="has-mr-6">1</span>
-        <span>1 介绍CountDownLatch</span>
+        <span>介绍CountDownLatch</span>
         </a></li><li>
-        <a class="is-flex" href="#2-源码分析">
+        <a class="is-flex" href="#源码分析">
         <span class="has-mr-6">2</span>
-        <span>2 源码分析</span>
+        <span>源码分析</span>
         </a><ul class="menu-list"><li>
         <a class="is-flex" href="#CountDownLatch-Sync">
         <span class="has-mr-6">2.1</span>
@@ -1655,9 +1655,9 @@ var _hmt = _hmt || [];
         <span class="has-mr-6">2.2</span>
         <span>CountDownLatch</span>
         </a></li></ul></li><li>
-        <a class="is-flex" href="#3-总结">
+        <a class="is-flex" href="#总结">
         <span class="has-mr-6">3</span>
-        <span>3 总结</span>
+        <span>总结</span>
         </a></li></ul>
         </div>
     </div>
@@ -1730,6 +1730,25 @@ var _hmt = _hmt || [];
         
         <article class="media">
             <!-- 
+            <a href="/Python2ToPython3/" class="media-left">
+                <p class="image is-64x64">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Python2切换Python3">
+                </p>
+            </a>
+             -->
+            <div class="media-content">
+                <div class="content">
+                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
+                    <a href="/Python2ToPython3/" class="has-link-black-ter is-size-6">Python2切换Python3</a>
+                    <p class="is-size-7 is-uppercase">
+                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
+                    </p>
+                </div>
+            </div>
+        </article>
+        
+        <article class="media">
+            <!-- 
             <a href="/MySQL-Command/" class="media-left">
                 <p class="image is-64x64">
                     <img class="thumbnail" src="/images/thumbnail.svg" alt="MySQL基本命令">
@@ -1742,25 +1761,6 @@ var _hmt = _hmt || [];
                     <a href="/MySQL-Command/" class="has-link-black-ter is-size-6">MySQL基本命令</a>
                     <p class="is-size-7 is-uppercase">
                         <a class="has-link-grey -link" href="/categories/MySQL/">MySQL</a>
-                    </p>
-                </div>
-            </div>
-        </article>
-        
-        <article class="media">
-            <!-- 
-            <a href="/Centos-Line/" class="media-left">
-                <p class="image is-64x64">
-                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Centos命令行图形界面切换">
-                </p>
-            </a>
-             -->
-            <div class="media-content">
-                <div class="content">
-                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2018-11-03T04:37:22.000Z">2018-11-03</time></div>
-                    <a href="/Centos-Line/" class="has-link-black-ter is-size-6">Centos命令行图形界面切换</a>
-                    <p class="is-size-7 is-uppercase">
-                        <a class="has-link-grey -link" href="/categories/Linux/">Linux</a>
                     </p>
                 </div>
             </div>
